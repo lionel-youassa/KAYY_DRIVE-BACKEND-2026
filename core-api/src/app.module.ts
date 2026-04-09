@@ -8,7 +8,7 @@ import { NavigationModule } from './modules/navigation/navigation.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    NavigationModule, // On injecte notre module métier ici !
+    NavigationModule,
   ],
   controllers: [],
   providers: [],

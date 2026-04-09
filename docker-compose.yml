@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  core-api:
+    build:
+      context: ./core-api
+      dockerfile: Dockerfile
+      target: development # Utilise l'étape de développement pour le développement local
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./core-api:/app
+      - /app/node_modules # Empêche le montage du node_modules local
+    env_file:
+      - ./core-api/.env
+    depends_on:
+      - ia-service # Dépend du service IA (même si pas encore implémenté)
+    networks:
+      - kayydrive-network
+
+  ia-service:
+    build:
+      context: ./ia-service
+      dockerfile: Dockerfile # Ce Dockerfile sera créé par Danielle
+    ports:
+      - "8000:8000" # Port par défaut pour FastAPI
+    volumes:
+      - ./ia-service:/app
+    env_file:
+      - ./ia-service/.env # Fichier .env pour le service IA
+    networks:
+      - kayydrive-network
+
+networks:
+  kayydrive-network:
+    driver: bridge

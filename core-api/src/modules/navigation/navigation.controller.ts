@@ -1,4 +1,5 @@
-import { Controller, Get, Query, ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { NavigationService } from './navigation.service';
 import { GetRouteDto } from './dto/get-route.dto';
 

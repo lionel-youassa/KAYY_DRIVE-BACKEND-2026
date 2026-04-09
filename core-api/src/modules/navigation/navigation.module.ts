@@ -5,6 +5,6 @@ import { NavigationService } from './navigation.service';
 @Module({
   controllers: [NavigationController],
   providers: [NavigationService],
-  exports: [NavigationService], // Pour que d'autres modules puissent l'utiliser plus tard
+  exports: [NavigationService],
 })
 export class NavigationModule {}
