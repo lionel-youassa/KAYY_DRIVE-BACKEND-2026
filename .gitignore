@@ -8,6 +8,11 @@
 *.sln
 *.sw?
 
+# Python
+venv/
+**/__pycache__/
+**/*.pyc
+
 # Core-api (NestJS) specific ignores
 /core-api/node_modules
 /core-api/dist
