@@ -1,0 +1,17 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="cv2" />
+          <option value="analyse.all_steps_completed" />
+          <option value="analyse.transparent_style" />
+          <option value="testeur.image_paths" />
+          <option value="analyse.start_pythonwin" />
+          <option value="analyse.event" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
