@@ -16,7 +16,7 @@ class TrafficPredictor:
         heures = np.random.randint(0, 24, n_samples)
         jours = np.random.randint(0, 7, n_samples)
         meteo = np.random.randint(0, 3, n_samples) # 0=soleil,1=pluie, 2=orage
-        historique = np.random.randint(50, 2, n_samples)
+        historique = np.random.normal(50, 2, n_samples)
 
         X = np.column_stack([heures, jours, meteo, historique])
 

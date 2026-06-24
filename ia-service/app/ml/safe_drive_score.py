@@ -6,7 +6,7 @@ class SafeDriveScore:
     def __init__(self):
         self.scaler = StandardScaler()
         self.model = RandomForestRegressor ( n_estimators=100,random_state=42)
-        self.train_with_simulated_data()
+        self._train_with_simulated_data()
 
     def _generate_simulated_data(self):
         np.random.seed(42)
@@ -14,9 +14,9 @@ class SafeDriveScore:
 
         #Nombre de nids-de-poule, intensité secousses, vitesse moyenne
 
-        nids_de_poule = np.random.randint (0,20, n_samples)
-        intensite = np.random.randint(1.0, 0.5, n_samples)
-        vitesse = np.random.randint(40, 15, n_samples)
+        nids_de_poule = np.random.randint(0,20, n_samples)
+        intensite = np.random.normal(1.0, 0.5, n_samples)
+        vitesse = np.random.normal(40, 15, n_samples)
         signalements = np.random.randint(0, 50, n_samples)
 
         X = np.column_stack([nids_de_poule, intensite, vitesse, signalements])
