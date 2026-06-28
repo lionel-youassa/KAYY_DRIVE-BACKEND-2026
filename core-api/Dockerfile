@@ -1,39 +1,25 @@
-# Utilise une image Node.js officielle comme base
-FROM node:18-alpine AS development
+# --- Étape 1 : build ---
+FROM node:22-alpine AS builder
 
-# Crée et définit le répertoire de travail
 WORKDIR /app
 
-# Copie package.json et package-lock.json (ou yarn.lock)
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml* ./
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
-# Installe les dépendances
-RUN npm install
-
-# Copie le reste du code source
 COPY . .
+RUN pnpm run build
 
-# Construit l'application NestJS
-RUN npm run build
-
-# Image de production
-FROM node:18-alpine AS production
+# --- Étape 2 : exécution (image finale allégée) ---
+FROM node:22-alpine AS runner
 
 WORKDIR /app
+ENV NODE_ENV=production
 
-# Copie uniquement les dépendances de production
-COPY --from=development /app/package*.json ./
-RUN npm install --only=production
+COPY package.json pnpm-lock.yaml* ./
+RUN npm install -g pnpm && pnpm install --frozen-lockfile --prod
 
-# Copie le code construit depuis l'étape de développement
-COPY --from=development /app/dist ./dist
-COPY --from=development /app/.env ./
-COPY --from=development /app/src/common/filters ./src/common/filters
-COPY --from=development /app/src/common/interceptors ./src/common/interceptors
-COPY --from=development /app/src/modules ./src/modules
+COPY --from=builder /app/dist ./dist
 
-# Expose le port sur lequel l'application s'exécute
 EXPOSE 3000
 
-# Commande pour démarrer l'application
-CMD ["node", "dist/main"]
+CMD ["node", "dist/main.js"]

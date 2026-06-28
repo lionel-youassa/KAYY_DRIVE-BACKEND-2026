@@ -1,0 +1,12 @@
+import { Module } from '@nestjs/common';
+import { TraficController } from './trafic.controller';
+import { TraficService } from './trafic.service';
+import { AuthModule } from '../auth/auth.module';
+
+@Module({
+  imports: [AuthModule],
+  controllers: [TraficController],
+  providers: [TraficService],
+  exports: [TraficService],
+})
+export class TraficModule {}
