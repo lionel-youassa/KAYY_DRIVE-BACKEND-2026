@@ -104,3 +104,16 @@ model Incident {
 
   @@index([position], type: Gist)
 }
+
+model Publicite {
+  id                String   @id @default(uuid())
+  titre             String
+  dateDebut         String
+  dateFin           String
+  type              String
+  description       String?
+  duree             Int?
+  lienRedirection   String?
+  positionAffichage String?
+  createdAt         DateTime @default(now())
+}

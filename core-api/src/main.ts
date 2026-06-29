@@ -6,35 +6,41 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule);
 
-  // 1. Intercepteur de Logs global
-  app.useGlobalInterceptors(new LoggingInterceptor());
+    // 🔴 AJOUT INDISPENSABLE : Active le CORS pour autoriser ton téléphone
+    app.enableCors();
 
-  // 2. Filtre d'exceptions global
-  app.useGlobalFilters(new HttpExceptionFilter());
+    // 1. Intercepteur de Logs global
+    app.useGlobalInterceptors(new LoggingInterceptor());
 
-  // 3. Validation globale
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
+    // 2. Filtre d'exceptions global
+    app.useGlobalFilters(new HttpExceptionFilter());
 
-  // Configuration Swagger
-  const config = new DocumentBuilder()
-    .setTitle('KayyDrive API')
-    .setDescription('Backend Core de navigation intelligente pour KayyDrive')
-    .setVersion('1.0')
-    .addTag('navigation')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+    // 3. Validation globale
+    //app.useGlobalPipes(
+        //new ValidationPipe({
+            //whitelist: true,
+            //forbidNonWhitelisted: true,
+            //transform: true,
+        //}),
+    //);
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-  console.log(`🚀 KayyDrive Core API is running on: http://localhost:${port}`);
+    // Configuration Swagger
+    const config = new DocumentBuilder()
+        .setTitle('KayyDrive API')
+        .setDescription('Backend Core de navigation intelligente pour KayyDrive')
+        .setVersion('1.0')
+        .addTag('navigation')
+        .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+
+    const port = process.env.PORT || 3000;
+
+    // 🔴 CORRECTION INDISPENSABLE : Ajoute '0.0.0.0' pour écouter ton réseau Wi-Fi local
+    await app.listen(port, '0.0.0.0');
+
+    console.log(`🚀 KayyDrive Core API is running on: http://localhost:${port}`);
 }
 bootstrap();
