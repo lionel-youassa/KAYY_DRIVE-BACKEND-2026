@@ -1,13 +1,226 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, HttpException, HttpStatus, Inject } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { firstValueFrom } from 'rxjs';
 import { GetRouteDto } from './dto/get-route.dto';
+import { NavigationParserService } from './navigation-parser.service';
+import { RoutesService, PointGPS } from '../routes/routes.service';
+import { AxiosResponse } from 'axios';
 
 @Injectable()
 export class NavigationService {
-  getBasicRoute(query: GetRouteDto): string {
-    return `Basic route from OSRM for ${query.startLat},${query.startLng} to ${query.endLat},${query.endLng}.`;
+  private readonly logger = new Logger(NavigationService.name);
+  private readonly osrmUrl: string;
+  private readonly iaServiceUrl: string;
+
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+    private readonly parserService: NavigationParserService,
+    private readonly routesService: RoutesService,
+  ) {
+    this.osrmUrl = this.configService.get<string>('OSRM_URL', 'http://osrm-backend:5000');
+    this.iaServiceUrl = this.configService.get<string>('IA_SERVICE_URL', 'http://ia-service:8000');
   }
 
-  getSmartRoute(query: GetRouteDto): string {
-    return `Smart route for ${query.startLat},${query.startLng} to ${query.endLat},${query.endLng}.`;
+  async getBasicRoute(query: GetRouteDto): Promise<any> {
+    const startLatStr = query.startLat.toString();
+    const startLngStr = query.startLng.toString();
+    const endLatStr = query.endLat.toString();
+    const endLngStr = query.endLng.toString();
+
+    const startLat = parseFloat(startLatStr);
+    const startLng = parseFloat(startLngStr);
+    const endLat = parseFloat(endLatStr);
+    const endLng = parseFloat(endLngStr);
+
+    if (isNaN(startLat) || isNaN(startLng) || isNaN(endLat) || isNaN(endLng)) {
+      throw new HttpException('Les coordonnées doivent être des nombres valides.', HttpStatus.BAD_REQUEST);
+    }
+
+    const url = `${this.osrmUrl}/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson&steps=true`;
+
+    try {
+      this.logger.log(`Appel OSRM (Cameroun): ${url}`);
+      const response: AxiosResponse<any> = await firstValueFrom(this.httpService.get(url));
+
+      if (response.data.code !== 'Ok') {
+        throw new HttpException(
+          `Erreur OSRM: ${response.data.message || 'Impossible de calculer l\'itinéraire'}`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const instructions = this.parserService.parseInstructions(response.data);
+
+      // Récupération des routes locales pertinentes via le service de Cindy
+      const startCoords: PointGPS = { latitude: startLat, longitude: startLng };
+      const endCoords: PointGPS = { latitude: endLat, longitude: endLng };
+      const relevantLocalRoutes = await this.routesService.suggererRaccourcis(startCoords, endCoords, 1000);
+      this.logger.log(`Routes locales récupérées: ${relevantLocalRoutes.length}`);
+
+      // --- Logique d'injection/suggestion des routes locales ---
+      const finalInstructions = [...instructions]; // Copie des instructions OSRM
+      const suggestedLocalRoutes = [];
+
+      if (relevantLocalRoutes.length > 0) {
+        // Pour cette première itération, nous allons juste ajouter une instruction de suggestion
+        // et lister les routes locales pertinentes.
+        finalInstructions.push({
+          text: `Attention: ${relevantLocalRoutes.length} route(s) locale(s) alternative(s) ou raccourci(s) disponible(s).`,
+          distance: 0,
+          duration: 0,
+          location: response.data.routes[0].geometry.coordinates[0], // Au début de la route
+        });
+
+        // On ajoute les routes locales suggérées à une section dédiée de la réponse
+        suggestedLocalRoutes.push(...relevantLocalRoutes);
+      }
+      // --- Fin de la logique d'injection/suggestion ---
+
+      return {
+        duration: response.data.routes[0].duration,
+        distance: response.data.routes[0].distance,
+        geometry: response.data.routes[0].geometry,
+        instructions: finalInstructions, // Instructions enrichies
+        suggestedLocalRoutes: suggestedLocalRoutes, // Routes locales suggérées
+      };
+    } catch (error) {
+      this.logger.error(`Erreur OSRM: ${error.message}`);
+      if (error instanceof HttpException) throw error;
+      throw new HttpException('Erreur de communication avec le moteur OSRM.', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getSmartRoute(query: GetRouteDto): Promise<any> {
+    const startLatStr = query.startLat.toString();
+    const startLngStr = query.startLng.toString();
+    const endLatStr = query.endLat.toString();
+    const endLngStr = query.endLng.toString();
+
+    const startLat = parseFloat(startLatStr);
+    const startLng = parseFloat(startLngStr);
+    const endLat = parseFloat(endLatStr);
+    const endLng = parseFloat(endLngStr);
+
+    if (isNaN(startLat) || isNaN(startLng) || isNaN(endLat) || isNaN(endLng)) {
+      throw new HttpException('Les coordonnées doivent être des nombres valides.', HttpStatus.BAD_REQUEST);
+    }
+
+    this.logger.log(`Calcul d'itinéraire intelligent entre [${startLat},${startLng}] et [${endLat},${endLng}]`);
+
+    try {
+      // 1. Appel OSRM pour l'itinéraire de base
+      const osrmUrl = `${this.osrmUrl}/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson&steps=true`;
+      const osrmResponse: AxiosResponse<any> = await firstValueFrom(this.httpService.get(osrmUrl));
+
+      if (osrmResponse.data.code !== 'Ok') {
+        throw new HttpException(
+          `Erreur OSRM: ${osrmResponse.data.message || 'Impossible de calculer l\'itinéraire'}`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const osrmInstructions = this.parserService.parseInstructions(osrmResponse.data);
+      const baseDuration = osrmResponse.data.routes[0].duration;
+      const baseDistance = osrmResponse.data.routes[0].distance;
+
+      // 2. Récupération des routes locales pertinentes via le service de Cindy
+      const startCoords: PointGPS = { latitude: startLat, longitude: startLng };
+      const endCoords: PointGPS = { latitude: endLat, longitude: endLng };
+      const relevantLocalRoutes = await this.routesService.suggererRaccourcis(startCoords, endCoords, 1000);
+
+      // 3. Appel au service IA pour la prédiction de trafic
+      let trafficPrediction = null;
+      try {
+        const iaUrl = `${this.iaServiceUrl}/ia/traffic`;
+        const iaPayload = {
+          timestamp: new Date(),
+          meteo: 'soleil', // Pourrait être dynamique
+        };
+        const iaResponse: AxiosResponse<any> = await firstValueFrom(this.httpService.post(iaUrl, iaPayload));
+        trafficPrediction = iaResponse.data;
+        this.logger.log(`Prédiction trafic: ${JSON.stringify(trafficPrediction)}`);
+      } catch (iaError) {
+        this.logger.warn(`Service IA indisponible: ${iaError.message}`);
+        trafficPrediction = { niveau_trafic: 'inconnu', temps_estime_minutes: Math.round(baseDuration / 60) };
+      }
+
+      // 4. Récupération des incidents sur le trajet (Hydro-Guard)
+      let incidentsOnRoute = [];
+      try {
+        // Pour l'instant, on simule la récupération des incidents
+        // Plus tard, on utilisera le service incidents pour filtrer par proximité du trajet
+        this.logger.log('Récupération des incidents sur le trajet (simulée)');
+        incidentsOnRoute = [
+          {
+            type: 'travaux',
+            description: 'Travaux sur N3',
+            latitude: (startLat + endLat) / 2,
+            longitude: (startLng + endLng) / 2,
+            statut: 'confirme',
+          },
+        ];
+      } catch (incidentError) {
+        this.logger.warn(`Service incidents indisponible: ${incidentError.message}`);
+      }
+
+      // 5. Fusion et enrichissement des instructions
+      const finalInstructions = [...osrmInstructions];
+
+      // Ajout des alertes incidents
+      if (incidentsOnRoute.length > 0) {
+        finalInstructions.unshift({
+          text: `⚠️ ${incidentsOnRoute.length} incident(s) signalé(s) sur votre trajet`,
+          distance: 0,
+          duration: 0,
+          location: osrmResponse.data.routes[0].geometry.coordinates[0],
+        });
+      }
+
+      // Ajout des suggestions de routes locales
+      if (relevantLocalRoutes.length > 0) {
+        finalInstructions.push({
+          text: `💡 ${relevantLocalRoutes.length} route(s) locale(s) alternative(s) disponible(s)`,
+          distance: 0,
+          duration: 0,
+          location: osrmResponse.data.routes[0].geometry.coordinates[0],
+        });
+      }
+
+      // Ajout des informations de trafic
+      if (trafficPrediction && trafficPrediction.niveau_trafic !== 'inconnu') {
+        finalInstructions.push({
+          text: `🚗 Trafic prévu: ${trafficPrediction.niveau_trafic} (+${trafficPrediction.temps_estime_minutes} min)`,
+          distance: 0,
+          duration: 0,
+          location: osrmResponse.data.routes[0].geometry.coordinates[0],
+        });
+      }
+
+      // Calcul du temps ajusté avec trafic
+      const adjustedDuration = trafficPrediction && trafficPrediction.temps_estime_minutes
+        ? baseDuration + (trafficPrediction.temps_estime_minutes * 60)
+        : baseDuration;
+
+      return {
+        duration: adjustedDuration,
+        distance: baseDistance,
+        geometry: osrmResponse.data.routes[0].geometry,
+        instructions: finalInstructions,
+        suggestedLocalRoutes: relevantLocalRoutes,
+        incidentsOnRoute: incidentsOnRoute,
+        trafficPrediction: trafficPrediction,
+        smartFeatures: {
+          trafficEnabled: trafficPrediction !== null,
+          localRoutesEnabled: relevantLocalRoutes.length > 0,
+          incidentsEnabled: incidentsOnRoute.length > 0,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Erreur dans getSmartRoute: ${error.message}`);
+      if (error instanceof HttpException) throw error;
+      throw new HttpException('Erreur lors du calcul d\'itinéraire intelligent.', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }

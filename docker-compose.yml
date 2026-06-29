@@ -1,33 +1,38 @@
-version: '3.8'
-
 services:
   core-api:
     build:
       context: ./core-api
       dockerfile: Dockerfile
-      target: development # Utilise l'étape de développement pour le développement local
+      target: development
     ports:
-      - "3000:3000"
+      - "4000:3000" # On utilise à nouveau le port 4000 pour Windows
     volumes:
       - ./core-api:/app
-      - /app/node_modules # Empêche le montage du node_modules local
+      - /app/node_modules
+      - /app/dist
     env_file:
       - ./core-api/.env
-    depends_on:
-      - ia-service # Dépend du service IA (même si pas encore implémenté)
     networks:
       - kayydrive-network
 
   ia-service:
     build:
       context: ./ia-service
-      dockerfile: Dockerfile # Ce Dockerfile sera créé par Danielle
+      dockerfile: Dockerfile
     ports:
-      - "8000:8000" # Port par défaut pour FastAPI
+      - "8000:8000"
     volumes:
       - ./ia-service:/app
-    env_file:
-      - ./ia-service/.env # Fichier .env pour le service IA
+    networks:
+      - kayydrive-network
+
+  osrm-backend:
+    image: osrm/osrm-backend:latest
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./osrm-data:/data
+    command: osrm-routed --algorithm mld /data/cameroon-latest.osrm
     networks:
       - kayydrive-network
 
