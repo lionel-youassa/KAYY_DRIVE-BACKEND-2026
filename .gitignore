@@ -25,3 +25,7 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# OSRM data files (gros fichiers binaires générés)
+osrm-data/*.osrm*
+osrm-data/*.osm.pbf
