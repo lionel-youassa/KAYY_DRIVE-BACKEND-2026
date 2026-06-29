@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
 from dotenv import load_dotenv
+from pydantic import BaseModel
 
 from app.schemas.road import SafeDriveRequest, SafeDriveResponse
 from app.schemas.traffic import TrafficRequest, TrafficResponse
@@ -143,3 +144,33 @@ def predict_traffic_batch(batch: BatchPredictionInput):
         ))
 
     return BatchPredictionOutput(resultats=resultats, total=len(resultats))
+
+
+# ─── Chatbot ──────────────────────────────────────────────────────────────────
+
+class ChatRequest(BaseModel):
+    message: str
+
+@app.post("/ia/chat", tags=["IA"])
+async def chat(request: ChatRequest):
+    try:
+        from google import genai as google_genai
+        client = google_genai.Client(
+            api_key=os.getenv("GEMINI_API_KEY")
+        )
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=(
+                'Tu es un assistant de navigation pour KAYY Drive à Douala. '
+                'Réponds toujours en français en 2-3 phrases max. '
+                'Tu aides avec le trafic, les itinéraires et les incidents routiers.\n\n'
+                f'Utilisateur: {request.message}'
+            ),
+        )
+        return {"reponse": response.text, "statut": "ok"}
+    except Exception as e:
+        return {
+            "reponse": "Je suis temporairement indisponible.",
+            "statut": "erreur",
+            "detail": str(e)
+        }
