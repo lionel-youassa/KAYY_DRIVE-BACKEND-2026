@@ -6,6 +6,9 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Active CORS
+  app.enableCors();
+
   // Active automatiquement la validation des DTO (class-validator) sur
   // toutes les routes. Sans ça, les décorateurs @IsString(), @IsNumber()
   // etc. dans nos DTO ne servent à rien.
@@ -20,8 +23,7 @@ async function bootstrap() {
     }),
   );
 
-  app.enableCors(); // à restreindre à votre domaine frontend en production
-
+  // Configuration Swagger
   const config = new DocumentBuilder()
     .setTitle('KayyDrive API')
     .setDescription('Backend Core de navigation intelligente pour KayyDrive')
@@ -31,6 +33,9 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port, '0.0.0.0');
+
+  console.log(`🚀 KayyDrive Core API is running on: http://localhost:${port}`);
 }
 bootstrap();

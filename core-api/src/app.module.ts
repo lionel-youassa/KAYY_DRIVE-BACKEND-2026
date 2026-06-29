@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
+import { NavigationModule } from './modules/navigation/navigation.module';
+import { AdsModule } from './modules/ads/ads.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { RewardsService } from './modules/rewards/rewards.service';
 import { FirebaseModule } from './firebase/firebase.module';
 import { AuthModule } from './auth/auth.module';
 import { IncidentsModule } from './incidents/incidents.module';
@@ -22,6 +26,9 @@ import { AdressesFavoritesModule } from './adresses-favorites/adresses-favorites
         url: process.env.REDIS_URL,
       },
     }),
+    PrismaModule,
+    NavigationModule,
+    AdsModule,
     FirebaseModule,
     AuthModule,
     IncidentsModule,
@@ -35,5 +42,7 @@ import { AdressesFavoritesModule } from './adresses-favorites/adresses-favorites
     UsersModule,
     AdressesFavoritesModule,
   ],
+  controllers: [],
+  providers: [RewardsService],
 })
 export class AppModule {}
