@@ -17,6 +17,8 @@ import { CategoriesModule } from './categories/categories.module';
 import { PreferencesModule } from './preferences/preferences.module';
 import { UsersModule } from './users/users.module';
 import { AdressesFavoritesModule } from './adresses-favorites/adresses-favorites.module';
+import { OfflineModule } from './modules/offline/offline.module';
+import { TelemetryModule } from './modules/telemetry/telemetry.module';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { AdressesFavoritesModule } from './adresses-favorites/adresses-favorites
     PreferencesModule,
     UsersModule,
     AdressesFavoritesModule,
+    OfflineModule,
+    TelemetryModule,
   ],
   controllers: [],
   providers: [RewardsService],
