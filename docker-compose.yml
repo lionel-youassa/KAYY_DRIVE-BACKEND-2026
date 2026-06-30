@@ -8,10 +8,17 @@ services:
       - "4000:3000" # On utilise à nouveau le port 4000 pour Windows
     volumes:
       - ./core-api:/app
-      - /app/node_modules
-      - /app/dist
+      - core-api-node-modules:/app/node_modules
     env_file:
-      - ./core-api/.env
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://kayydrive_user:kayydrive_secure_password_2026@postgres:5432/kayydrive_db
+      - REDIS_URL=redis://redis:6379
+      - OSRM_URL=http://osrm-backend:5000
+      - IA_SERVICE_URL=http://ia-service:8000
+    depends_on:
+      - postgres
+      - redis
     networks:
       - kayydrive-network
 
@@ -20,22 +27,79 @@ services:
       context: ./ia-service
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "9000:8000"
     volumes:
-      - ./ia-service:/app
+      - ./ia-service/app:/app/app
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://kayydrive_user:kayydrive_secure_password_2026@postgres:5432/kayydrive_db
+    depends_on:
+      - postgres
     networks:
       - kayydrive-network
 
-  osrm-backend:
-    image: osrm/osrm-backend:latest
+  # osrm-backend:
+  #   image: osrm/osrm-backend:latest
+  #   ports:
+  #     - "5000:5000"
+  #   volumes:
+  #     - ./osrm-data:/data
+  #   command: osrm-routed --algorithm mld /data/cameroon-latest.osrm
+  #   networks:
+  #     - kayydrive-network
+
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: kayydrive-postgres
+    env_file:
+      - ./postgres/.env
     ports:
-      - "5000:5000"
+      - "5432:5432"
     volumes:
-      - ./osrm-data:/data
-    command: osrm-routed --algorithm mld /data/cameroon-latest.osrm
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - kayydrive-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kayydrive_user -d kayydrive_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: kayydrive-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - kayydrive-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: nginx:alpine
+    container_name: kayydrive-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - core-api
+      - ia-service
+    networks:
+      - kayydrive-network
+    restart: unless-stopped
 
 networks:
   kayydrive-network:
     driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  core-api-node-modules:
