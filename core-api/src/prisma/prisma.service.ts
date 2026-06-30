@@ -5,7 +5,6 @@ import { Pool } from 'pg';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-    recompense: any;
     constructor() {
         // 1. On crée un pool de connexion PostgreSQL classique via le module 'pg'
         const pool = new Pool({

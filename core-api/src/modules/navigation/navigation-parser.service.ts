@@ -33,7 +33,7 @@ export class NavigationParserService {
   parseInstructions(osrmData: any): any[] {
     if (!osrmData.routes || osrmData.routes.length === 0) return [];
 
-    const instructions = [];
+    const instructions: any[] = [];
     const route = osrmData.routes[0];
 
     route.legs.forEach((leg) => {

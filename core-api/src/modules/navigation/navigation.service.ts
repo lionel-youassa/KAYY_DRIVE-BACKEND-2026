@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { GetRouteDto } from './dto/get-route.dto';
 import { NavigationParserService } from './navigation-parser.service';
-import { RoutesService, PointGPS } from '../routes/routes.service';
+import { RoutesService, PointGPS } from '../../routes/routes.service';
 import { AxiosResponse } from 'axios';
 
 @Injectable()
@@ -60,8 +60,8 @@ export class NavigationService {
       this.logger.log(`Routes locales récupérées: ${relevantLocalRoutes.length}`);
 
       // --- Logique d'injection/suggestion des routes locales ---
-      const finalInstructions = [...instructions]; // Copie des instructions OSRM
-      const suggestedLocalRoutes = [];
+      const finalInstructions: any[] = [...instructions]; // Copie des instructions OSRM
+      const suggestedLocalRoutes: any[] = [];
 
       if (relevantLocalRoutes.length > 0) {
         // Pour cette première itération, nous allons juste ajouter une instruction de suggestion
@@ -131,7 +131,7 @@ export class NavigationService {
       const relevantLocalRoutes = await this.routesService.suggererRaccourcis(startCoords, endCoords, 1000);
 
       // 3. Appel au service IA pour la prédiction de trafic
-      let trafficPrediction = null;
+      let trafficPrediction: any = null;
       try {
         const iaUrl = `${this.iaServiceUrl}/ia/traffic`;
         const iaPayload = {
@@ -147,7 +147,7 @@ export class NavigationService {
       }
 
       // 4. Récupération des incidents sur le trajet (Hydro-Guard)
-      let incidentsOnRoute = [];
+      let incidentsOnRoute: any[] = [];
       try {
         // Pour l'instant, on simule la récupération des incidents
         // Plus tard, on utilisera le service incidents pour filtrer par proximité du trajet
@@ -166,7 +166,7 @@ export class NavigationService {
       }
 
       // 5. Fusion et enrichissement des instructions
-      const finalInstructions = [...osrmInstructions];
+      const finalInstructions: any[] = [...osrmInstructions];
 
       // Ajout des alertes incidents
       if (incidentsOnRoute.length > 0) {

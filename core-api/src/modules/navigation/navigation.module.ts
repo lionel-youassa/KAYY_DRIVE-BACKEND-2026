@@ -4,7 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { NavigationController } from './navigation.controller';
 import { NavigationService } from './navigation.service';
 import { NavigationParserService } from './navigation-parser.service';
-import { RoutesModule } from '../routes/routes.module';
+import { RoutesModule } from '../../routes/routes.module';
 import { RouteRecalculationService } from './route-recalculation.service';
 
 @Module({
