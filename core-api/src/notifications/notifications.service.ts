@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { FirebaseService } from '../firebase/firebase.service';
 
 export type TypeNotification =
@@ -21,33 +22,35 @@ export interface NotificationData {
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly firebase: FirebaseService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly firebase: FirebaseService,
+  ) {}
 
   async enregistrerTokenFCM(uid: string, token: string): Promise<void> {
-    await this.firebase.db
-      .collection('users')
-      .doc(uid)
-      .collection('tokens_fcm')
-      .doc(token)
-      .set({ token, dateEnregistrement: new Date().toISOString() });
+    await this.prisma.tokenFCM.create({
+      data: {
+        utilisateurId: uid,
+        token,
+        dateEnregistrement: new Date(),
+      },
+    });
   }
 
   async supprimerTokenFCM(uid: string, token: string): Promise<void> {
-    await this.firebase.db
-      .collection('users')
-      .doc(uid)
-      .collection('tokens_fcm')
-      .doc(token)
-      .delete();
+    await this.prisma.tokenFCM.deleteMany({
+      where: {
+        utilisateurId: uid,
+        token,
+      },
+    });
   }
 
   private async getTokensUtilisateur(uid: string): Promise<string[]> {
-    const snapshot = await this.firebase.db
-      .collection('users')
-      .doc(uid)
-      .collection('tokens_fcm')
-      .get();
-    return snapshot.docs.map((doc: FirebaseFirestore.QueryDocumentSnapshot) => doc.id);
+    const tokens = await this.prisma.tokenFCM.findMany({
+      where: { utilisateurId: uid },
+    });
+    return tokens.map((t) => t.token);
   }
 
   async envoyerNotification(input: {
@@ -57,13 +60,17 @@ export class NotificationsService {
     corps: string;
     data?: Record<string, string>;
   }): Promise<NotificationData> {
-    const notification: NotificationData = {
-      ...input,
-      lu: false,
-      dateCreation: new Date().toISOString(),
-    };
-
-    const docRef = await this.firebase.db.collection('notifications').add(notification);
+    const notification = await this.prisma.notification.create({
+      data: {
+        utilisateurId: input.id_utilisateur,
+        type: input.type,
+        titre: input.titre,
+        corps: input.corps,
+        data: input.data || {},
+        lu: false,
+        dateCreation: new Date(),
+      },
+    });
 
     const tokens = await this.getTokensUtilisateur(input.id_utilisateur);
 
@@ -88,7 +95,16 @@ export class NotificationsService {
       }
     }
 
-    return { ...notification, id: docRef.id };
+    return {
+      id: notification.id,
+      id_utilisateur: notification.utilisateurId,
+      type: notification.type as TypeNotification,
+      titre: notification.titre,
+      corps: notification.corps,
+      data: notification.data as Record<string, string>,
+      lu: notification.lu,
+      dateCreation: notification.dateCreation.toISOString(),
+    };
   }
 
   async notifierUtilisateursProches(
@@ -97,7 +113,7 @@ export class NotificationsService {
     rayonMetres: number,
     notif: { type: TypeNotification; titre: string; corps: string; data?: Record<string, string> },
   ): Promise<number> {
-    const snapshot = await this.firebase.db.collection('positions_utilisateurs').get();
+    const positions = await this.prisma.positionUtilisateur.findMany();
 
     function distanceEnMetres(lat1: number, lon1: number, lat2: number, lon2: number) {
       const R = 6371000;
@@ -112,10 +128,9 @@ export class NotificationsService {
 
     let nombreNotifies = 0;
 
-    for (const doc of snapshot.docs) {
-      const pos = doc.data() as { latitude: number; longitude: number; id_utilisateur: string };
+    for (const pos of positions) {
       if (distanceEnMetres(latitude, longitude, pos.latitude, pos.longitude) <= rayonMetres) {
-        await this.envoyerNotification({ id_utilisateur: pos.id_utilisateur, ...notif });
+        await this.envoyerNotification({ id_utilisateur: pos.utilisateurId, ...notif });
         nombreNotifies++;
       }
     }
@@ -124,20 +139,28 @@ export class NotificationsService {
   }
 
   async getNotificationsUtilisateur(uid: string): Promise<NotificationData[]> {
-    const snapshot = await this.firebase.db
-      .collection('notifications')
-      .where('id_utilisateur', '==', uid)
-      .orderBy('dateCreation', 'desc')
-      .limit(50)
-      .get();
+    const notifications = await this.prisma.notification.findMany({
+      where: { utilisateurId: uid },
+      orderBy: { dateCreation: 'desc' },
+      take: 50,
+    });
 
-    return snapshot.docs.map((doc: FirebaseFirestore.QueryDocumentSnapshot) => ({
-      ...(doc.data() as NotificationData),
-      id: doc.id,
+    return notifications.map((notif) => ({
+      id: notif.id,
+      id_utilisateur: notif.utilisateurId,
+      type: notif.type as TypeNotification,
+      titre: notif.titre,
+      corps: notif.corps,
+      data: notif.data as Record<string, string>,
+      lu: notif.lu,
+      dateCreation: notif.dateCreation.toISOString(),
     }));
   }
 
   async marquerCommeLue(notificationId: string): Promise<void> {
-    await this.firebase.db.collection('notifications').doc(notificationId).update({ lu: true });
+    await this.prisma.notification.update({
+      where: { id: notificationId },
+      data: { lu: true },
+    });
   }
 }

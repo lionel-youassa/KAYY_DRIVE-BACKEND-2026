@@ -1,4 +1,5 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { FirebaseService } from '../firebase/firebase.service';
 
 export type UserRole = 'user' | 'admin';
@@ -14,10 +15,13 @@ export interface UserProfile {
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly firebase: FirebaseService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly firebase: FirebaseService,
+  ) {}
 
   // -------------------------------------------------------------------------
-  // Inscription : crée le compte Firebase Auth + profil Firestore + rôle par défaut
+  // Inscription : crée le compte Firebase Auth + profil Prisma + rôle par défaut
   // -------------------------------------------------------------------------
   async createUser(input: {
     email: string;
@@ -36,20 +40,31 @@ export class AuthService {
 
       await this.firebase.auth.setCustomUserClaims(userRecord.uid, { role: 'user' });
 
-      const profile: UserProfile = {
-        uid: userRecord.uid,
-        email,
-        nom,
-        telephone,
-        role: 'user',
-        dateCreation: new Date().toISOString(),
+      const utilisateur = await this.prisma.utilisateur.create({
+        data: {
+          id: userRecord.uid,
+          pseudo: nom,
+          email: email,
+          telephone: telephone,
+          role: 'user',
+          scoreReputation: 0,
+          dateCreation: new Date(),
+        },
+      });
+
+      return {
+        uid: utilisateur.id,
+        email: utilisateur.email,
+        nom: utilisateur.pseudo,
+        telephone: utilisateur.telephone || undefined,
+        role: utilisateur.role as UserRole,
+        dateCreation: utilisateur.dateCreation.toISOString(),
       };
-
-      await this.firebase.db.collection('users').doc(userRecord.uid).set(profile);
-
-      return profile;
     } catch (error: any) {
       if (error?.code === 'auth/email-already-exists') {
+        throw new ConflictException('Cet email est déjà utilisé');
+      }
+      if (error?.code === 'P2002') {
         throw new ConflictException('Cet email est déjà utilisé');
       }
       throw error;
@@ -68,17 +83,31 @@ export class AuthService {
   // -------------------------------------------------------------------------
   async setUserRole(uid: string, role: UserRole): Promise<void> {
     await this.firebase.auth.setCustomUserClaims(uid, { role });
-    await this.firebase.db.collection('users').doc(uid).update({ role });
+    await this.prisma.utilisateur.update({
+      where: { id: uid },
+      data: { role },
+    });
   }
 
   // -------------------------------------------------------------------------
   // Récupération du profil complet
   // -------------------------------------------------------------------------
   async getUserProfile(uid: string): Promise<UserProfile> {
-    const doc = await this.firebase.db.collection('users').doc(uid).get();
-    if (!doc.exists) {
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { id: uid },
+    });
+
+    if (!utilisateur) {
       throw new NotFoundException('Profil introuvable');
     }
-    return doc.data() as UserProfile;
+
+    return {
+      uid: utilisateur.id,
+      email: utilisateur.email,
+      nom: utilisateur.pseudo,
+      telephone: utilisateur.telephone || undefined,
+      role: utilisateur.role as UserRole,
+      dateCreation: utilisateur.dateCreation.toISOString(),
+    };
   }
 }

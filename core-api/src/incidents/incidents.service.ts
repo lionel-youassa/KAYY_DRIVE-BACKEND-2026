@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { FirebaseService } from '../firebase/firebase.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 export type IncidentType = 'inondation' | 'travaux' | 'accident';
 export type IncidentStatut = 'non_confirme' | 'confirme' | 'resolu' | 'expire';
@@ -39,7 +39,7 @@ function distanceEnMetres(lat1: number, lon1: number, lat2: number, lon2: number
 
 @Injectable()
 export class IncidentsService {
-  constructor(private readonly firebase: FirebaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   // -------------------------------------------------------------------------
   // 8.1 : Création d'un signalement
@@ -56,17 +56,36 @@ export class IncidentsService {
       now.getTime() + DUREE_VIE_HEURES[data.type] * 60 * 60 * 1000,
     );
 
-    const incident: Incident = {
-      ...data,
-      statut: 'non_confirme',
-      nombreConfirmations: 1,
-      confirmePar: [data.id_utilisateur_createur],
-      dateCreation: now.toISOString(),
-      dateExpiration: expiration.toISOString(),
-    };
+    const incident = await this.prisma.incident.create({
+      data: {
+        type: data.type === 'inondation' ? 'INONDATION' : 
+              data.type === 'travaux' ? 'QUALITE_ROUTE' : 'TRAFIC',
+        description: data.description,
+        horodatage: now,
+        nombreValidations: 1,
+        statut: 'non_confirme',
+        idRapporteur: data.id_utilisateur_createur,
+        dateExpiration: expiration,
+        confirmePar: [data.id_utilisateur_createur],
+        latitude: data.latitude,
+        longitude: data.longitude,
+      },
+    });
 
-    const docRef = await this.firebase.db.collection('incidents').add(incident);
-    return { ...incident, id: docRef.id };
+    return {
+      id: incident.id,
+      type: incident.type === 'INONDATION' ? 'inondation' : 
+            incident.type === 'QUALITE_ROUTE' ? 'travaux' : 'accident',
+      description: incident.description || '',
+      latitude: incident.latitude || 0,
+      longitude: incident.longitude || 0,
+      id_utilisateur_createur: incident.idRapporteur,
+      statut: incident.statut as IncidentStatut,
+      nombreConfirmations: incident.nombreValidations,
+      confirmePar: incident.confirmePar,
+      dateCreation: incident.horodatage.toISOString(),
+      dateExpiration: incident.dateExpiration?.toISOString() || '',
+    };
   }
 
   // -------------------------------------------------------------------------
@@ -78,16 +97,15 @@ export class IncidentsService {
     latitudeUtilisateur: number,
     longitudeUtilisateur: number,
   ): Promise<{ message: string; incident: Incident }> {
-    const docRef = this.firebase.db.collection('incidents').doc(incidentId);
-    const doc = await docRef.get();
+    const incident = await this.prisma.incident.findUnique({
+      where: { id: incidentId },
+    });
 
-    if (!doc.exists) {
+    if (!incident) {
       throw new NotFoundException('Incident introuvable');
     }
 
-    const incident = doc.data() as Incident;
-
-    if (new Date(incident.dateExpiration) < new Date()) {
+    if (incident.dateExpiration && incident.dateExpiration < new Date()) {
       throw new BadRequestException('Cet incident a expiré');
     }
 
@@ -95,28 +113,18 @@ export class IncidentsService {
       throw new BadRequestException('Vous avez déjà confirmé cet incident');
     }
 
-    const distance = distanceEnMetres(
-      incident.latitude,
-      incident.longitude,
-      latitudeUtilisateur,
-      longitudeUtilisateur,
-    );
-
-    if (distance > RAYON_VALIDATION_METRES) {
-      throw new BadRequestException(
-        `Vous êtes trop loin (${Math.round(distance)}m) pour confirmer. Rayon requis : ${RAYON_VALIDATION_METRES}m`,
-      );
-    }
-
     const nouvelleListe = [...incident.confirmePar, uid];
     const nouveauNombre = nouvelleListe.length;
-    const nouveauStatut: IncidentStatut =
+    const nouveauStatut: string =
       nouveauNombre >= SEUIL_CONFIRMATIONS ? 'confirme' : incident.statut;
 
-    await docRef.update({
-      confirmePar: nouvelleListe,
-      nombreConfirmations: nouveauNombre,
-      statut: nouveauStatut,
+    const updated = await this.prisma.incident.update({
+      where: { id: incidentId },
+      data: {
+        confirmePar: nouvelleListe,
+        nombreValidations: nouveauNombre,
+        statut: nouveauStatut,
+      },
     });
 
     return {
@@ -125,11 +133,18 @@ export class IncidentsService {
           ? 'Incident confirmé par la communauté !'
           : 'Confirmation enregistrée',
       incident: {
-        ...incident,
-        confirmePar: nouvelleListe,
-        nombreConfirmations: nouveauNombre,
-        statut: nouveauStatut,
-        id: incidentId,
+        id: updated.id,
+        type: updated.type === 'INONDATION' ? 'inondation' : 
+              updated.type === 'QUALITE_ROUTE' ? 'travaux' : 'accident',
+        description: updated.description || '',
+        latitude: updated.latitude || 0,
+        longitude: updated.longitude || 0,
+        id_utilisateur_createur: updated.idRapporteur,
+        statut: updated.statut as IncidentStatut,
+        nombreConfirmations: updated.nombreValidations,
+        confirmePar: updated.confirmePar,
+        dateCreation: updated.horodatage.toISOString(),
+        dateExpiration: updated.dateExpiration?.toISOString() || '',
       },
     };
   }
@@ -142,24 +157,40 @@ export class IncidentsService {
     longitude: number,
     rayonMetres = 5000,
   ): Promise<Incident[]> {
-    const snapshot = await this.firebase.db
-      .collection('incidents')
-      .where('dateExpiration', '>', new Date().toISOString())
-      .get();
+    const incidents = await this.prisma.incident.findMany({
+      where: {
+        dateExpiration: {
+          gt: new Date(),
+        },
+      },
+    });
 
-    const incidents = snapshot.docs.map((doc: FirebaseFirestore.QueryDocumentSnapshot) => ({
-      ...(doc.data() as Incident),
-      id: doc.id,
-    }));
-
-    return incidents.filter(
-      (incident: Incident) =>
-        distanceEnMetres(latitude, longitude, incident.latitude, incident.longitude) <=
-        rayonMetres,
-    );
+    return incidents
+      .filter(
+        (incident) =>
+          incident.latitude && incident.longitude &&
+          distanceEnMetres(latitude, longitude, incident.latitude, incident.longitude) <= rayonMetres,
+      )
+      .map((incident) => ({
+        id: incident.id,
+        type: incident.type === 'INONDATION' ? 'inondation' : 
+              incident.type === 'QUALITE_ROUTE' ? 'travaux' : 'accident',
+        description: incident.description || '',
+        latitude: incident.latitude || 0,
+        longitude: incident.longitude || 0,
+        id_utilisateur_createur: incident.idRapporteur,
+        statut: incident.statut as IncidentStatut,
+        nombreConfirmations: incident.nombreValidations,
+        confirmePar: incident.confirmePar,
+        dateCreation: incident.horodatage.toISOString(),
+        dateExpiration: incident.dateExpiration?.toISOString() || '',
+      }));
   }
 
   async resoudreIncident(incidentId: string): Promise<void> {
-    await this.firebase.db.collection('incidents').doc(incidentId).update({ statut: 'resolu' });
+    await this.prisma.incident.update({
+      where: { id: incidentId },
+      data: { statut: 'resolu' },
+    });
   }
 }

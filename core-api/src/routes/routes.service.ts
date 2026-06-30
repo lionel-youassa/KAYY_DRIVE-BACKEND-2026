@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { FirebaseService } from '../firebase/firebase.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface PointGPS {
   latitude: number;
@@ -39,7 +39,7 @@ function distanceEnMetres(a: PointGPS, b: PointGPS): number {
 
 @Injectable()
 export class RoutesService {
-  constructor(private readonly firebase: FirebaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   // -------------------------------------------------------------------------
   // 9.1 : Création d'une suggestion de raccourci
@@ -52,18 +52,39 @@ export class RoutesService {
     trace: PointGPS[];
     id_utilisateur_createur: string;
   }): Promise<RaccourciCommunautaire> {
-    const raccourci: RaccourciCommunautaire = {
-      ...data,
-      votesPositifs: 0,
-      votesNegatifs: 0,
-      votants: {},
-      scoreFiabilite: 0,
-      statut: 'propose',
-      dateCreation: new Date().toISOString(),
-    };
+    const raccourci = await this.prisma.raccourciCommunautaire.create({
+      data: {
+        nom: data.nom,
+        description: data.description,
+        pointDepartLat: data.pointDepart.latitude,
+        pointDepartLng: data.pointDepart.longitude,
+        pointArriveeLat: data.pointArrivee.latitude,
+        pointArriveeLng: data.pointArrivee.longitude,
+        trace: data.trace as any,
+        idUtilisateurCreateur: data.id_utilisateur_createur,
+        votesPositifs: 0,
+        votesNegatifs: 0,
+        scoreFiabilite: 0,
+        statut: 'propose',
+        dateCreation: new Date(),
+      },
+    });
 
-    const docRef = await this.firebase.db.collection('routes').add(raccourci);
-    return { ...raccourci, id: docRef.id };
+    return {
+      id: raccourci.id,
+      nom: raccourci.nom,
+      description: raccourci.description,
+      pointDepart: { latitude: raccourci.pointDepartLat, longitude: raccourci.pointDepartLng },
+      pointArrivee: { latitude: raccourci.pointArriveeLat, longitude: raccourci.pointArriveeLng },
+      trace: (raccourci.trace as unknown) as PointGPS[],
+      id_utilisateur_createur: raccourci.idUtilisateurCreateur,
+      votesPositifs: raccourci.votesPositifs,
+      votesNegatifs: raccourci.votesNegatifs,
+      votants: {},
+      scoreFiabilite: raccourci.scoreFiabilite,
+      statut: raccourci.statut as 'propose' | 'valide' | 'rejete',
+      dateCreation: raccourci.dateCreation.toISOString(),
+    };
   }
 
   // -------------------------------------------------------------------------
@@ -74,26 +95,25 @@ export class RoutesService {
     uid: string,
     vote: 'positif' | 'negatif',
   ): Promise<{ message: string; raccourci: RaccourciCommunautaire }> {
-    const docRef = this.firebase.db.collection('routes').doc(raccourciId);
-    const doc = await docRef.get();
+    const raccourci = await this.prisma.raccourciCommunautaire.findUnique({
+      where: { id: raccourciId },
+      include: { votes: true },
+    });
 
-    if (!doc.exists) {
+    if (!raccourci) {
       throw new NotFoundException('Raccourci introuvable');
     }
 
-    const raccourci = doc.data() as RaccourciCommunautaire;
-    const votants = { ...raccourci.votants };
-    const ancienVote = votants[uid];
+    const ancienVote = raccourci.votes.find((v) => v.utilisateurId === uid)?.vote;
 
     let votesPositifs = raccourci.votesPositifs;
     let votesNegatifs = raccourci.votesNegatifs;
 
     if (ancienVote === 'positif') votesPositifs--;
     if (ancienVote === 'negatif') votesNegatifs--;
+
     if (vote === 'positif') votesPositifs++;
     if (vote === 'negatif') votesNegatifs++;
-
-    votants[uid] = vote;
 
     const totalVotes = votesPositifs + votesNegatifs;
     const scoreFiabilite = totalVotes > 0 ? votesPositifs / totalVotes : 0;
@@ -104,18 +124,47 @@ export class RoutesService {
       else if (scoreFiabilite <= SEUIL_SCORE_REJET) statut = 'rejete';
     }
 
-    await docRef.update({ votants, votesPositifs, votesNegatifs, scoreFiabilite, statut });
+    await this.prisma.voteRaccourci.upsert({
+      where: {
+        raccourciId_utilisateurId: {
+          raccourciId,
+          utilisateurId: uid,
+        },
+      },
+      update: { vote },
+      create: {
+        raccourciId,
+        utilisateurId: uid,
+        vote,
+      },
+    });
 
-    return {
-      message: 'Vote enregistré',
-      raccourci: {
-        ...raccourci,
-        votants,
+    const updated = await this.prisma.raccourciCommunautaire.update({
+      where: { id: raccourciId },
+      data: {
         votesPositifs,
         votesNegatifs,
         scoreFiabilite,
         statut,
-        id: raccourciId,
+      },
+    });
+
+    return {
+      message: 'Vote enregistré',
+      raccourci: {
+        id: updated.id,
+        nom: updated.nom,
+        description: updated.description,
+        pointDepart: { latitude: updated.pointDepartLat, longitude: updated.pointDepartLng },
+        pointArrivee: { latitude: updated.pointArriveeLat, longitude: updated.pointArriveeLng },
+        trace: (updated.trace as unknown) as PointGPS[],
+        id_utilisateur_createur: updated.idUtilisateurCreateur,
+        votesPositifs: updated.votesPositifs,
+        votesNegatifs: updated.votesNegatifs,
+        votants: {},
+        scoreFiabilite: updated.scoreFiabilite,
+        statut: updated.statut as 'propose' | 'valide' | 'rejete',
+        dateCreation: updated.dateCreation.toISOString(),
       },
     };
   }
@@ -128,20 +177,30 @@ export class RoutesService {
     arrivee: PointGPS,
     rayonMetres = 1000,
   ): Promise<RaccourciCommunautaire[]> {
-    const snapshot = await this.firebase.db
-      .collection('routes')
-      .where('statut', '==', 'valide')
-      .get();
+    const raccourcis = await this.prisma.raccourciCommunautaire.findMany({
+      where: { statut: 'valide' },
+    });
 
-    const raccourcis = snapshot.docs.map((doc: FirebaseFirestore.QueryDocumentSnapshot) => ({
-      ...(doc.data() as RaccourciCommunautaire),
-      id: doc.id,
-    }));
-
-    return raccourcis.filter(
-      (r: RaccourciCommunautaire) =>
-        distanceEnMetres(depart, r.pointDepart) <= rayonMetres &&
-        distanceEnMetres(arrivee, r.pointArrivee) <= rayonMetres,
-    );
+    return raccourcis
+      .filter(
+        (r) =>
+          distanceEnMetres(depart, { latitude: r.pointDepartLat, longitude: r.pointDepartLng }) <= rayonMetres &&
+          distanceEnMetres(arrivee, { latitude: r.pointArriveeLat, longitude: r.pointArriveeLng }) <= rayonMetres,
+      )
+      .map((r) => ({
+        id: r.id,
+        nom: r.nom,
+        description: r.description,
+        pointDepart: { latitude: r.pointDepartLat, longitude: r.pointDepartLng },
+        pointArrivee: { latitude: r.pointArriveeLat, longitude: r.pointArriveeLng },
+        trace: (r.trace as unknown) as PointGPS[],
+        id_utilisateur_createur: r.idUtilisateurCreateur,
+        votesPositifs: r.votesPositifs,
+        votesNegatifs: r.votesNegatifs,
+        votants: {},
+        scoreFiabilite: r.scoreFiabilite,
+        statut: r.statut as 'propose' | 'valide' | 'rejete',
+        dateCreation: r.dateCreation.toISOString(),
+      }));
   }
 }

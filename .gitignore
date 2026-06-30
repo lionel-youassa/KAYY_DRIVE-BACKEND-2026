@@ -8,6 +8,11 @@
 *.sln
 *.sw?
 
+# Environment files (secrets)
+.env
+.env.local
+.env.*.local
+
 # Core-api (NestJS) specific ignores
 /core-api/node_modules
 /core-api/dist
@@ -18,6 +23,7 @@
 /ia-service/venv
 /ia-service/__pycache__
 /ia-service/.env
+/ia-service/.env.local
 venv/
 __pycache__/
 *.pyc

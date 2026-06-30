@@ -3,8 +3,11 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
+import { PrismaModule } from '../prisma/prisma.module';
+import { FirebaseModule } from '../firebase/firebase.module';
 
 @Module({
+  imports: [PrismaModule, FirebaseModule],
   controllers: [AuthController],
   providers: [AuthService, AuthGuard, AdminGuard],
   exports: [AuthService, AuthGuard, AdminGuard], // exportés pour être réutilisés par les autres modules

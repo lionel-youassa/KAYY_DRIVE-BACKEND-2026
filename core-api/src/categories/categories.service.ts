@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { FirebaseService } from '../firebase/firebase.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface Categorie {
   id?: string;
@@ -21,19 +21,37 @@ export const CATEGORIES_PAR_DEFAUT: Omit<Categorie, 'id'>[] = [
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly firebase: FirebaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async getCategories(): Promise<Categorie[]> {
-    const snapshot = await this.firebase.db.collection('categories').orderBy('ordre', 'asc').get();
-    return snapshot.docs.map((doc: FirebaseFirestore.QueryDocumentSnapshot) => ({
-      ...(doc.data() as Categorie),
-      id: doc.id,
+    const categories = await this.prisma.categorie.findMany({
+      orderBy: { ordre: 'asc' },
+    });
+    return categories.map((cat) => ({
+      id: cat.id,
+      nom: cat.nom,
+      icone: cat.icone,
+      couleur: cat.couleur,
+      ordre: cat.ordre,
     }));
   }
 
   async createCategorie(data: Omit<Categorie, 'id'>): Promise<Categorie> {
-    const docRef = await this.firebase.db.collection('categories').add(data);
-    return { ...data, id: docRef.id };
+    const categorie = await this.prisma.categorie.create({
+      data: {
+        nom: data.nom,
+        icone: data.icone,
+        couleur: data.couleur,
+        ordre: data.ordre,
+      },
+    });
+    return {
+      id: categorie.id,
+      nom: categorie.nom,
+      icone: categorie.icone,
+      couleur: categorie.couleur,
+      ordre: categorie.ordre,
+    };
   }
 
   async seedCategoriesParDefaut(): Promise<number> {

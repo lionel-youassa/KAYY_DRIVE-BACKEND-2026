@@ -8,6 +8,9 @@ RUN npm install --legacy-peer-deps
 
 COPY . .
 
+# Install OpenSSL for Prisma compatibility
+RUN apk add --no-cache openssl
+
 EXPOSE 3000
 
 CMD ["sh", "-c", "npm install --legacy-peer-deps && npx prisma generate && npm run start:dev"]
