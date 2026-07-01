@@ -1,13 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  OverviewStatsDto,
-  ShortcutStatsDto,
-  IncidentsStatsDto,
-  SafeDriveStatsDto,
-  UserEngagementDto,
-  SystemPerformanceDto,
-} from './dto';
+import { OverviewStatsDto } from './dto/overview-stats.dto';
+import { ShortcutStatsDto } from './dto/shortcuts-stats.dto';
+import { IncidentsStatsDto, DailyIncidentDto } from './dto/incidents-stats.dto';
+import { SafeDriveStatsDto } from './dto/safe-drive-stats.dto';
+import { UserEngagementDto } from './dto/user-engagement.dto';
+import { SystemPerformanceDto } from './dto/system-performance.dto';
 
 @Injectable()
 export class DashboardService {
@@ -171,7 +169,7 @@ export class DashboardService {
     const confirmationRate = totalIncidents > 0 ? (confirmedIncidents / totalIncidents) * 100 : 0;
 
     // Incidents des 7 derniers jours
-    const incidentsLast7Days = [];
+    const incidentsLast7Days: DailyIncidentDto[] = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
       const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());

@@ -19,7 +19,7 @@ async function initDatabase() {
     console.log('🌱 Aucun admin trouvé, exécution du seed...');
     
     // Exécuter le seed
-    await import('../prisma/seed');
+    await import('../prisma/seed.js');
     
     console.log('✅ Initialisation de la base de données terminée.');
   } catch (error) {
