@@ -19,6 +19,7 @@ import { UsersModule } from './users/users.module';
 import { AdressesFavoritesModule } from './adresses-favorites/adresses-favorites.module';
 import { OfflineModule } from './modules/offline/offline.module';
 import { TelemetryModule } from './modules/telemetry/telemetry.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { TelemetryModule } from './modules/telemetry/telemetry.module';
     AdressesFavoritesModule,
     OfflineModule,
     TelemetryModule,
+    DashboardModule,
   ],
   controllers: [],
   providers: [RewardsService],

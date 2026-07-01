@@ -801,6 +801,156 @@ Cela créera :
 
 **Important :** Changez le mot de passe de l'admin après la première connexion en production.
 
+## Dashboard Admin
+
+Le dashboard admin fournit des métriques et statistiques pour analyser l'efficacité de l'application KayyDrive dans la résolution des problèmes de navigation routière.
+
+Toutes les routes du dashboard nécessitent un token JWT avec le rôle `admin`.
+
+### GET /dashboard/all
+Récupérer toutes les statistiques du dashboard en un seul appel.
+
+**Headers :**
+```
+Authorization: Bearer <admin_token>
+```
+
+**Réponse :**
+```json
+{
+  "overview": { ... },
+  "shortcuts": { ... },
+  "incidents": { ... },
+  "safeDrive": { ... },
+  "engagement": { ... },
+  "performance": { ... }
+}
+```
+
+### GET /dashboard/overview
+Statistiques générales du système.
+
+**Réponse :**
+```json
+{
+  "totalUsers": 1250,
+  "activeUsers24h": 85,
+  "activeUsers7d": 320,
+  "activeUsers30d": 580,
+  "activeSessions": 42,
+  "totalDistanceKm": 15420.5,
+  "incidentsToday": 12,
+  "totalShortcuts": 156,
+  "incidentConfirmationRate": 78.5
+}
+```
+
+### GET /dashboard/shortcuts
+Statistiques des raccourcis communautaires.
+
+**Réponse :**
+```json
+{
+  "totalShortcuts": 156,
+  "averageReliabilityScore": 4.2,
+  "adoptionRate": 65.8,
+  "topShortcuts": [
+    {
+      "id": "uuid",
+      "nom": "Raccourci Bastos - Mvan",
+      "description": "Évite les embouteillages de l'avenue Kennedy",
+      "scoreFiabilite": 4.8,
+      "votesPositifs": 45,
+      "votesNegatifs": 2,
+      "createurNom": "Jean Dupont"
+    }
+  ]
+}
+```
+
+### GET /dashboard/incidents
+Statistiques des incidents (Hydro-Guard).
+
+**Réponse :**
+```json
+{
+  "incidentsByType": [
+    { "type": "INONDATION", "count": 45, "percentage": 35.2 },
+    { "type": "QUALITE_ROUTE", "count": 52, "percentage": 40.6 },
+    { "type": "TRAFIC", "count": 31, "percentage": 24.2 }
+  ],
+  "confirmationRate": 78.5,
+  "confirmedIncidents": 98,
+  "pendingIncidents": 30,
+  "incidentsLast7Days": [
+    { "date": "2026-06-25", "count": 15 },
+    { "date": "2026-06-26", "count": 18 },
+    { "date": "2026-06-27", "count": 22 }
+  ]
+}
+```
+
+### GET /dashboard/safe-drive
+Statistiques Safe-Drive (qualité des routes).
+
+**Réponse :**
+```json
+{
+  "averageQualityScore": 0.75,
+  "floodedRoutesCount": 12,
+  "degradedRoutesCount": 28,
+  "averageSpeedByRouteType": [
+    { "routeType": "officiel", "averageSpeed": 35.5, "segmentCount": 450 },
+    { "routeType": "local", "averageSpeed": 28.2, "segmentCount": 320 }
+  ],
+  "riskLevelDistribution": [
+    { "riskLevel": "SUR", "count": 120, "percentage": 45.0 },
+    { "riskLevel": "MODERE", "count": 98, "percentage": 36.8 },
+    { "riskLevel": "RISQUE_INONDATION", "count": 35, "percentage": 13.1 },
+    { "riskLevel": "ROUTE_DEGRADEE", "count": 13, "percentage": 4.9 }
+  ]
+}
+```
+
+### GET /dashboard/engagement
+Statistiques d'engagement utilisateur.
+
+**Réponse :**
+```json
+{
+  "topContributors": [
+    {
+      "id": "uuid",
+      "pseudo": "Marie Curie",
+      "email": "marie@example.com",
+      "scoreReputation": 850,
+      "incidentsReported": 45,
+      "shortcutsCreated": 12,
+      "votesCount": 78
+    }
+  ],
+  "averageReportsPerUser": 2.3,
+  "averageVotesPerUser": 5.8,
+  "totalFavoriteAddresses": 890,
+  "usersWithFavorites": 420
+}
+```
+
+### GET /dashboard/performance
+Statistiques de performance système.
+
+**Réponse :**
+```json
+{
+  "averageRouteResponseTime": 0,
+  "osrmSuccessRate": 95,
+  "totalRouteRequests": 5420,
+  "trafficPredictionUsage": 0,
+  "notificationsSent24h": 156,
+  "activeFcmTokens": 380
+}
+```
+
 ## Développement
 
 Chaque service a son propre `package.json` (pour Node.js) ou `requirements.txt` (pour Python) et peut être développé indépendamment.
