@@ -19,8 +19,14 @@ export class PreferencesController {
 
   // PATCH /preferences
   @Patch()
-  async update(@Body() dto: UpdatePreferencesDto, @CurrentUser() user: DecodedIdToken) {
-    const preferences = await this.preferencesService.updatePreferences(user.uid, dto);
+  async update(
+    @Body() dto: UpdatePreferencesDto,
+    @CurrentUser() user: DecodedIdToken,
+  ) {
+    const preferences = await this.preferencesService.updatePreferences(
+      user.uid,
+      dto,
+    );
     return { success: true, preferences };
   }
 }

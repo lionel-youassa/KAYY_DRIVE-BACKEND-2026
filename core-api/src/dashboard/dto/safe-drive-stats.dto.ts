@@ -32,7 +32,7 @@ export class RiskLevelDistributionDto {
   @ApiProperty({ description: 'Niveau de risque' })
   riskLevel: string;
 
-  @ApiProperty({ description: 'Nombre d\'itinéraires' })
+  @ApiProperty({ description: "Nombre d'itinéraires" })
   count: number;
 
   @ApiProperty({ description: 'Pourcentage' })

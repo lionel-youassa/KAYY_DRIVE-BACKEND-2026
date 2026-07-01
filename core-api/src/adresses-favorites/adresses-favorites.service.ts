@@ -21,7 +21,9 @@ export class AdressesFavoritesService {
     categorieId?: string;
     id_utilisateur: string;
   }): Promise<string> {
-    const docRef = await this.firebase.db.collection('adresses_favorites').add(data);
+    const docRef = await this.firebase.db
+      .collection('adresses_favorites')
+      .add(data);
     return docRef.id;
   }
 
@@ -31,10 +33,12 @@ export class AdressesFavoritesService {
       .where('id_utilisateur', '==', uid)
       .get();
 
-    return snapshot.docs.map((doc: FirebaseFirestore.QueryDocumentSnapshot) => ({
-      ...(doc.data() as AdresseFavorite),
-      id: doc.id,
-    }));
+    return snapshot.docs.map(
+      (doc: FirebaseFirestore.QueryDocumentSnapshot) => ({
+        ...(doc.data() as AdresseFavorite),
+        id: doc.id,
+      }),
+    );
   }
 
   async deleteAdresseFavorite(id: string): Promise<void> {

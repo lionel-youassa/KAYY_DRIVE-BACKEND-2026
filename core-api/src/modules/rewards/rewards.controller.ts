@@ -1,4 +1,14 @@
-import { Controller, Post, Get, Delete, Body, Param, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
 import { RewardsService } from './rewards.service';
 import { AuthGuard } from '../../auth/guards/auth.guard';
 import { AdminGuard } from '../../auth/guards/admin.guard';
@@ -8,39 +18,35 @@ import { FileInterceptor } from '@nestjs/platform-express';
 @Controller('rewards')
 @UseGuards(AuthGuard)
 export class RewardsController {
-    // 1. On injecte le service qui contient la logique Prisma
-    constructor(
-        private readonly rewardsService: RewardsService,
-        private readonly storageService: StorageService,
-    ) {}
+  constructor(
+    private readonly rewardsService: RewardsService,
+    private readonly storageService: StorageService,
+  ) {}
 
-    // 2. Route POST : Créer une récompense (admin uniquement)
-    @Post()
-    @UseGuards(AdminGuard)
-    @UseInterceptors(FileInterceptor('image'))
-    async createReward(
-        @Body() data: any,
-        @UploadedFile() image?: Express.Multer.File,
-    ) {
-        let imageUrl: string | undefined;
-        
-        if (image) {
-            imageUrl = await this.storageService.uploadFile(image, 'rewards');
-        }
+  @Post()
+  @UseGuards(AdminGuard)
+  @UseInterceptors(FileInterceptor('image'))
+  async createReward(
+    @Body() data: any,
+    @UploadedFile() image?: Express.Multer.File,
+  ) {
+    let imageUrl: string | undefined;
 
-        return await this.rewardsService.createReward({ ...data, imageUrl });
+    if (image) {
+      imageUrl = await this.storageService.uploadFile(image, 'rewards');
     }
 
-    // 3. Route GET : Lister toutes les récompenses
-    @Get()
-    async getAllRewards() {
-        return await this.rewardsService.getAllRewards();
-    }
+    return await this.rewardsService.createReward({ ...data, imageUrl });
+  }
 
-    // 4. Route DELETE : Supprimer une récompense (admin uniquement)
-    @Delete(':id')
-    @UseGuards(AdminGuard)
-    async deleteReward(@Param('id') id: string) {
-        return await this.rewardsService.deleteReward(id);
-    }
+  @Get()
+  async getAllRewards() {
+    return await this.rewardsService.getAllRewards();
+  }
+
+  @Delete(':id')
+  @UseGuards(AdminGuard)
+  async deleteReward(@Param('id') id: string) {
+    return await this.rewardsService.deleteReward(id);
+  }
 }

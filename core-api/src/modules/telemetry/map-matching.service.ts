@@ -35,7 +35,9 @@ export class MapMatchingService {
    * Algorithme de Map-Matching pour lier un point GPS à un segment de route
    * Utilise PostGIS pour trouver le segment le plus proche
    */
-  async matchTelemetryToSegment(point: TelemetryPoint): Promise<MapMatchingResult | null> {
+  async matchTelemetryToSegment(
+    point: TelemetryPoint,
+  ): Promise<MapMatchingResult | null> {
     try {
       this.logger.log(
         `Map-Matching pour utilisateur ${point.id_utilisateur} à [${point.latitude}, ${point.longitude}]`,
@@ -70,10 +72,12 @@ export class MapMatchingService {
         query,
         point.longitude,
         point.latitude,
-      ) as any[];
+      );
 
       if (!result || result.length === 0) {
-        this.logger.warn(`Aucun segment trouvé pour le point [${point.latitude}, ${point.longitude}]`);
+        this.logger.warn(
+          `Aucun segment trouvé pour le point [${point.latitude}, ${point.longitude}]`,
+        );
         return null;
       }
 
@@ -114,7 +118,9 @@ export class MapMatchingService {
    * Map-Matching pour une séquence de points (trajet)
    * Utile pour reconstruire un itinéraire complet
    */
-  async matchTrajectoryToSegments(points: TelemetryPoint[]): Promise<MapMatchingResult[]> {
+  async matchTrajectoryToSegments(
+    points: TelemetryPoint[],
+  ): Promise<MapMatchingResult[]> {
     const results: MapMatchingResult[] = [];
 
     for (const point of points) {
@@ -124,7 +130,9 @@ export class MapMatchingService {
       }
     }
 
-    this.logger.log(`Map-Matching terminé: ${results.length}/${points.length} points matchés`);
+    this.logger.log(
+      `Map-Matching terminé: ${results.length}/${points.length} points matchés`,
+    );
     return results;
   }
 
@@ -156,7 +164,9 @@ export class MapMatchingService {
         }
       }
     } catch (error) {
-      this.logger.error(`Erreur lors de la mise à jour du segment: ${error.message}`);
+      this.logger.error(
+        `Erreur lors de la mise à jour du segment: ${error.message}`,
+      );
     }
   }
 
@@ -197,7 +207,7 @@ export class MapMatchingService {
         longitude,
         latitude,
         radiusMeters,
-      ) as any[];
+      );
 
       return results.map((segment) => ({
         id: segment.id,
@@ -209,7 +219,9 @@ export class MapMatchingService {
         distance: parseFloat(segment.distance),
       }));
     } catch (error) {
-      this.logger.error(`Erreur lors de la recherche de segments proches: ${error.message}`);
+      this.logger.error(
+        `Erreur lors de la recherche de segments proches: ${error.message}`,
+      );
       return [];
     }
   }
@@ -221,6 +233,6 @@ export class MapMatchingService {
   private calculateConfidence(distance: number): number {
     const maxDistance = 50; // mètres
     if (distance >= maxDistance) return 0;
-    return 1 - (distance / maxDistance);
+    return 1 - distance / maxDistance;
   }
 }

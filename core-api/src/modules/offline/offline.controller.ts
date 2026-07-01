@@ -1,4 +1,11 @@
-import { Controller, Get, Post, Param, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { OfflineService } from './offline.service';
 
 @Controller('offline')

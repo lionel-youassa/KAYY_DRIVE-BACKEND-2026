@@ -6,25 +6,25 @@ export class NavigationParserService {
    * Traduit les manœuvres OSRM en français
    */
   private readonly translations = {
-    'turn': 'Tournez',
+    turn: 'Tournez',
     'new name': 'Continuez sur',
-    'depart': 'Départ de',
-    'arrive': 'Arrivée à',
-    'merge': 'Rejoignez',
-    'ramp': 'Prenez la rampe',
+    depart: 'Départ de',
+    arrive: 'Arrivée à',
+    merge: 'Rejoignez',
+    ramp: 'Prenez la rampe',
     'on ramp': 'Prenez la bretelle',
     'off ramp': 'Sortez de la bretelle',
-    'fork': 'Au carrefour, prenez',
-    'roundabout': 'Au rond-point, prenez',
+    fork: 'Au carrefour, prenez',
+    roundabout: 'Au rond-point, prenez',
     'exit roundabout': 'Sortez du rond-point',
     'slight right': 'légèrement à droite',
-    'right': 'à droite',
+    right: 'à droite',
     'sharp right': 'complètement à droite',
     'slight left': 'légèrement à gauche',
-    'left': 'à gauche',
+    left: 'à gauche',
     'sharp left': 'complètement à gauche',
-    'straight': 'tout droit',
-    'uturn': 'faites demi-tour',
+    straight: 'tout droit',
+    uturn: 'faites demi-tour',
   };
 
   /**

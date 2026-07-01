@@ -23,7 +23,8 @@ export class SafeDriveProcessor extends WorkerHost {
   }
 
   async process(job: Job<SecousseData>): Promise<{ traite: boolean }> {
-    const { id_utilisateur, latitude, longitude, intensite, timestamp } = job.data;
+    const { id_utilisateur, latitude, longitude, intensite, timestamp } =
+      job.data;
 
     // 1. Enregistrement systématique de la lecture brute
     await this.firebase.db.collection('trafic').add({

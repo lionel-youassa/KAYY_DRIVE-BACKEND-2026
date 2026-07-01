@@ -12,7 +12,10 @@ export interface PreferencesUtilisateur {
   dateMiseAJour: string;
 }
 
-const PREFERENCES_PAR_DEFAUT: Omit<PreferencesUtilisateur, 'id_utilisateur' | 'dateMiseAJour'> = {
+const PREFERENCES_PAR_DEFAUT: Omit<
+  PreferencesUtilisateur,
+  'id_utilisateur' | 'dateMiseAJour'
+> = {
   modeDeplacement: 'voiture',
   notificationsIncidents: true,
   notificationsRaccourcis: true,
@@ -41,7 +44,9 @@ export class PreferencesService {
 
   async updatePreferences(
     uid: string,
-    updates: Partial<Omit<PreferencesUtilisateur, 'id_utilisateur' | 'dateMiseAJour'>>,
+    updates: Partial<
+      Omit<PreferencesUtilisateur, 'id_utilisateur' | 'dateMiseAJour'>
+    >,
   ): Promise<PreferencesUtilisateur> {
     const actuelles = await this.getPreferences(uid);
 

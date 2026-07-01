@@ -6,6 +6,6 @@ import { StorageModule } from '../../storage/storage.module';
 @Module({
   imports: [StorageModule],
   controllers: [AdsController],
-  providers: [AdsService]
+  providers: [AdsService],
 })
 export class AdsModule {}

@@ -19,9 +19,11 @@ export class FirebaseService implements OnModuleInit {
 
   onModuleInit() {
     const firebaseConfig = process.env.FIREBASE_ADMIN_CONFIG;
-    
+
     if (!firebaseConfig) {
-      console.warn('⚠️ FIREBASE_ADMIN_CONFIG non défini - Firebase sera désactivé');
+      console.warn(
+        '⚠️ FIREBASE_ADMIN_CONFIG non défini - Firebase sera désactivé',
+      );
       return;
     }
 
@@ -37,10 +39,13 @@ export class FirebaseService implements OnModuleInit {
       this.db = getFirestore();
       this.auth = getAuth();
       this.messaging = getMessaging();
-      
+
       console.log('✅ Firebase initialisé avec succès');
     } catch (error) {
-      console.error('❌ Erreur lors de l\'initialisation Firebase:', error.message);
+      console.error(
+        "❌ Erreur lors de l'initialisation Firebase:",
+        error.message,
+      );
     }
   }
 }

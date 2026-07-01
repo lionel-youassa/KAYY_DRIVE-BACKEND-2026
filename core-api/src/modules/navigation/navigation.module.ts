@@ -16,7 +16,15 @@ import { RouteRecalculationService } from './route-recalculation.service';
     }),
   ],
   controllers: [NavigationController],
-  providers: [NavigationService, NavigationParserService, RouteRecalculationService],
-  exports: [NavigationService, NavigationParserService, RouteRecalculationService],
+  providers: [
+    NavigationService,
+    NavigationParserService,
+    RouteRecalculationService,
+  ],
+  exports: [
+    NavigationService,
+    NavigationParserService,
+    RouteRecalculationService,
+  ],
 })
 export class NavigationModule {}

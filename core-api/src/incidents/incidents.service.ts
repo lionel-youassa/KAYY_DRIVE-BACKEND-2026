@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 export type IncidentType = 'inondation' | 'travaux' | 'accident';
@@ -26,7 +30,12 @@ const DUREE_VIE_HEURES: Record<IncidentType, number> = {
   accident: 3,
 };
 
-function distanceEnMetres(lat1: number, lon1: number, lat2: number, lon2: number): number {
+function distanceEnMetres(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
   const R = 6371000;
   const toRad = (deg: number) => (deg * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
@@ -59,8 +68,12 @@ export class IncidentsService {
 
     const incident = await this.prisma.incident.create({
       data: {
-        type: data.type === 'inondation' ? 'INONDATION' : 
-              data.type === 'travaux' ? 'QUALITE_ROUTE' : 'TRAFIC',
+        type:
+          data.type === 'inondation'
+            ? 'INONDATION'
+            : data.type === 'travaux'
+              ? 'QUALITE_ROUTE'
+              : 'TRAFIC',
         description: data.description,
         horodatage: now,
         nombreValidations: 1,
@@ -76,8 +89,12 @@ export class IncidentsService {
 
     return {
       id: incident.id,
-      type: incident.type === 'INONDATION' ? 'inondation' : 
-            incident.type === 'QUALITE_ROUTE' ? 'travaux' : 'accident',
+      type:
+        incident.type === 'INONDATION'
+          ? 'inondation'
+          : incident.type === 'QUALITE_ROUTE'
+            ? 'travaux'
+            : 'accident',
       description: incident.description || '',
       latitude: incident.latitude || 0,
       longitude: incident.longitude || 0,
@@ -136,8 +153,12 @@ export class IncidentsService {
           : 'Confirmation enregistrée',
       incident: {
         id: updated.id,
-        type: updated.type === 'INONDATION' ? 'inondation' : 
-              updated.type === 'QUALITE_ROUTE' ? 'travaux' : 'accident',
+        type:
+          updated.type === 'INONDATION'
+            ? 'inondation'
+            : updated.type === 'QUALITE_ROUTE'
+              ? 'travaux'
+              : 'accident',
         description: updated.description || '',
         latitude: updated.latitude || 0,
         longitude: updated.longitude || 0,
@@ -170,13 +191,23 @@ export class IncidentsService {
     return incidents
       .filter(
         (incident) =>
-          incident.latitude && incident.longitude &&
-          distanceEnMetres(latitude, longitude, incident.latitude, incident.longitude) <= rayonMetres,
+          incident.latitude &&
+          incident.longitude &&
+          distanceEnMetres(
+            latitude,
+            longitude,
+            incident.latitude,
+            incident.longitude,
+          ) <= rayonMetres,
       )
       .map((incident) => ({
         id: incident.id,
-        type: incident.type === 'INONDATION' ? 'inondation' : 
-              incident.type === 'QUALITE_ROUTE' ? 'travaux' : 'accident',
+        type:
+          incident.type === 'INONDATION'
+            ? 'inondation'
+            : incident.type === 'QUALITE_ROUTE'
+              ? 'travaux'
+              : 'accident',
         description: incident.description || '',
         latitude: incident.latitude || 0,
         longitude: incident.longitude || 0,

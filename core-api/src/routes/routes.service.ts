@@ -33,7 +33,9 @@ function distanceEnMetres(a: PointGPS, b: PointGPS): number {
   const dLon = toRad(b.longitude - a.longitude);
   const x =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(a.latitude)) * Math.cos(toRad(b.latitude)) * Math.sin(dLon / 2) ** 2;
+    Math.cos(toRad(a.latitude)) *
+      Math.cos(toRad(b.latitude)) *
+      Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
 
@@ -74,9 +76,15 @@ export class RoutesService {
       id: raccourci.id,
       nom: raccourci.nom,
       description: raccourci.description,
-      pointDepart: { latitude: raccourci.pointDepartLat, longitude: raccourci.pointDepartLng },
-      pointArrivee: { latitude: raccourci.pointArriveeLat, longitude: raccourci.pointArriveeLng },
-      trace: (raccourci.trace as unknown) as PointGPS[],
+      pointDepart: {
+        latitude: raccourci.pointDepartLat,
+        longitude: raccourci.pointDepartLng,
+      },
+      pointArrivee: {
+        latitude: raccourci.pointArriveeLat,
+        longitude: raccourci.pointArriveeLng,
+      },
+      trace: raccourci.trace as unknown as PointGPS[],
       id_utilisateur_createur: raccourci.idUtilisateurCreateur,
       votesPositifs: raccourci.votesPositifs,
       votesNegatifs: raccourci.votesNegatifs,
@@ -104,7 +112,9 @@ export class RoutesService {
       throw new NotFoundException('Raccourci introuvable');
     }
 
-    const ancienVote = raccourci.votes.find((v) => v.utilisateurId === uid)?.vote;
+    const ancienVote = raccourci.votes.find(
+      (v) => v.utilisateurId === uid,
+    )?.vote;
 
     let votesPositifs = raccourci.votesPositifs;
     let votesNegatifs = raccourci.votesNegatifs;
@@ -155,9 +165,15 @@ export class RoutesService {
         id: updated.id,
         nom: updated.nom,
         description: updated.description,
-        pointDepart: { latitude: updated.pointDepartLat, longitude: updated.pointDepartLng },
-        pointArrivee: { latitude: updated.pointArriveeLat, longitude: updated.pointArriveeLng },
-        trace: (updated.trace as unknown) as PointGPS[],
+        pointDepart: {
+          latitude: updated.pointDepartLat,
+          longitude: updated.pointDepartLng,
+        },
+        pointArrivee: {
+          latitude: updated.pointArriveeLat,
+          longitude: updated.pointArriveeLng,
+        },
+        trace: updated.trace as unknown as PointGPS[],
         id_utilisateur_createur: updated.idUtilisateurCreateur,
         votesPositifs: updated.votesPositifs,
         votesNegatifs: updated.votesNegatifs,
@@ -184,16 +200,28 @@ export class RoutesService {
     return raccourcis
       .filter(
         (r) =>
-          distanceEnMetres(depart, { latitude: r.pointDepartLat, longitude: r.pointDepartLng }) <= rayonMetres &&
-          distanceEnMetres(arrivee, { latitude: r.pointArriveeLat, longitude: r.pointArriveeLng }) <= rayonMetres,
+          distanceEnMetres(depart, {
+            latitude: r.pointDepartLat,
+            longitude: r.pointDepartLng,
+          }) <= rayonMetres &&
+          distanceEnMetres(arrivee, {
+            latitude: r.pointArriveeLat,
+            longitude: r.pointArriveeLng,
+          }) <= rayonMetres,
       )
       .map((r) => ({
         id: r.id,
         nom: r.nom,
         description: r.description,
-        pointDepart: { latitude: r.pointDepartLat, longitude: r.pointDepartLng },
-        pointArrivee: { latitude: r.pointArriveeLat, longitude: r.pointArriveeLng },
-        trace: (r.trace as unknown) as PointGPS[],
+        pointDepart: {
+          latitude: r.pointDepartLat,
+          longitude: r.pointDepartLng,
+        },
+        pointArrivee: {
+          latitude: r.pointArriveeLat,
+          longitude: r.pointArriveeLng,
+        },
+        trace: r.trace as unknown as PointGPS[],
         id_utilisateur_createur: r.idUtilisateurCreateur,
         votesPositifs: r.votesPositifs,
         votesNegatifs: r.votesNegatifs,

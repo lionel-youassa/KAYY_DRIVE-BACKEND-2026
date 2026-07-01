@@ -5,7 +5,11 @@ import { PrismaService } from '../prisma/prisma.service';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async mettreAJourPosition(uid: string, latitude: number, longitude: number): Promise<void> {
+  async mettreAJourPosition(
+    uid: string,
+    latitude: number,
+    longitude: number,
+  ): Promise<void> {
     await this.prisma.positionUtilisateur.upsert({
       where: { utilisateurId: uid },
       update: {

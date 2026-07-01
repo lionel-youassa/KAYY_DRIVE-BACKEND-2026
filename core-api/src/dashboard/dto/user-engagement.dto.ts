@@ -30,7 +30,7 @@ export class TopContributorDto {
   @ApiProperty({ description: 'Score de réputation' })
   scoreReputation: number;
 
-  @ApiProperty({ description: 'Nombre d\'incidents signalés' })
+  @ApiProperty({ description: "Nombre d'incidents signalés" })
   incidentsReported: number;
 
   @ApiProperty({ description: 'Nombre de raccourcis créés' })

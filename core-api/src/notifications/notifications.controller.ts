@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { RegisterTokenDto } from './dto/register-token.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
@@ -13,13 +21,17 @@ export class NotificationsController {
   // GET /notifications
   @Get()
   async getNotifications(@CurrentUser() user: DecodedIdToken) {
-    const notifications = await this.notificationsService.getNotificationsUtilisateur(user.uid);
+    const notifications =
+      await this.notificationsService.getNotificationsUtilisateur(user.uid);
     return { notifications };
   }
 
   // POST /notifications/token
   @Post('token')
-  async registerToken(@Body() dto: RegisterTokenDto, @CurrentUser() user: DecodedIdToken) {
+  async registerToken(
+    @Body() dto: RegisterTokenDto,
+    @CurrentUser() user: DecodedIdToken,
+  ) {
     await this.notificationsService.enregistrerTokenFCM(user.uid, dto.token);
     return { success: true };
   }
