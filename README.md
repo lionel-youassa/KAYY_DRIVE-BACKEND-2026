@@ -533,6 +533,100 @@ Authorization: Bearer <token>
 }
 ```
 
+## Navigation
+
+Le module de navigation permet de calculer des itinéraires avec des fonctionnalités intelligentes.
+
+### GET /route/basic
+Calcul d'un itinéraire basique via OSRM.
+
+**Query params :**
+```
+startLat=4.051
+startLng=9.767
+endLat=3.848
+endLng=11.502
+```
+
+**Réponse :**
+```json
+{
+  "duration": 1800,
+  "distance": 15000,
+  "geometry": { "type": "LineString", "coordinates": [...] },
+  "instructions": [
+    { "text": "Tourner à droite", "distance": 500, "duration": 60, "location": [...] }
+  ],
+  "suggestedLocalRoutes": [
+    {
+      "id": "route-id",
+      "nom": "Raccourci Yaoundé",
+      "description": "Raccourci rapide",
+      "score": 4.5
+    }
+  ]
+}
+```
+
+### GET /route/smart
+Calcul d'un itinéraire intelligent avec toutes les fonctionnalités activées (Hydro-Guard, Safe-Drive, routes locales, trafic).
+
+**Query params :**
+```
+startLat=4.051
+startLng=9.767
+endLat=3.848
+endLng=11.502
+```
+
+**Réponse :**
+```json
+{
+  "duration": 2100,
+  "distance": 15000,
+  "geometry": { "type": "LineString", "coordinates": [...] },
+  "instructions": [
+    { "text": "⚠️ 1 incident(s) signalé(s) sur votre trajet", "distance": 0, "duration": 0, "location": [...] },
+    { "text": "Tourner à droite", "distance": 500, "duration": 60, "location": [...] },
+    { "text": "💡 2 route(s) locale(s) alternative(s) disponible(s)", "distance": 0, "duration": 0, "location": [...] },
+    { "text": "🚗 Trafic prévu: modéré (+5 min)", "distance": 0, "duration": 0, "location": [...] }
+  ],
+  "suggestedLocalRoutes": [
+    {
+      "id": "route-id",
+      "nom": "Raccourci Yaoundé",
+      "description": "Raccourci rapide",
+      "score": 4.5
+    }
+  ],
+  "incidentsOnRoute": [
+    {
+      "type": "travaux",
+      "description": "Travaux sur N3",
+      "latitude": 3.849,
+      "longitude": 11.503,
+      "statut": "confirme"
+    }
+  ],
+  "trafficPrediction": {
+    "niveau_trafic": "modéré",
+    "temps_estime_minutes": 5,
+    "confiance": 0.85
+  },
+  "smartFeatures": {
+    "trafficEnabled": true,
+    "localRoutesEnabled": true,
+    "incidentsEnabled": true
+  }
+}
+```
+
+**Fonctionnalités intégrées dans /route/smart :**
+- **Hydro-Guard** : Alertes d'incidents (inondations, travaux) sur le trajet
+- **Routes locales** : Suggestions de raccourcis communautaires alternatifs
+- **Prédictions de trafic** : Estimation du temps de trajet en fonction des conditions météo et de l'heure
+- **Instructions enrichies** : Instructions de navigation avec alertes et suggestions
+
 ## Développement
 
 Chaque service a son propre `package.json` (pour Node.js) ou `requirements.txt` (pour Python) et peut être développé indépendamment.
