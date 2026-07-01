@@ -8,6 +8,7 @@ services:
     plan: starter
     region: frankfurt
     healthCheckPath: /api/health
+    ipAllowList: []
     preDeployCommand: "npx prisma migrate deploy"
     envVars:
       - key: NODE_ENV
@@ -44,6 +45,7 @@ services:
     plan: starter
     region: frankfurt
     healthCheckPath: /health
+    ipAllowList: []
     envVars:
       - key: ENVIRONMENT
         value: production

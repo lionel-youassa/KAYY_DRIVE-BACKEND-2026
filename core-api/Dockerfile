@@ -39,11 +39,12 @@ ENV NODE_ENV=production
 RUN apk add --no-cache openssl curl
 
 COPY package.json package-lock.json* ./
-RUN npm install --legacy-peer-deps --only=production
+RUN npm install --legacy-peer-deps --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3000
