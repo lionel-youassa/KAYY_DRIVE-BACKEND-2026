@@ -21,6 +21,7 @@ Ce dépôt contient les différents services qui composent l'architecture backen
 - **Core API (NestJS)**: API principale sur le port 4000
 - **IA Service (FastAPI)**: Service d'IA sur le port 9000
 - **Nginx**: Reverse proxy sur le port 80
+- **OSRM Backend**: Service de routage sur le port 5000
 
 ### Base de Données
 
@@ -59,17 +60,35 @@ Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toute
    PGADMIN_DEFAULT_PASSWORD=admin123
    ```
 
-3. **Démarrer les services avec Docker Compose :**
+3. **Générer les données OSRM (optionnel mais recommandé) :**
+   
+   Le service OSRM nécessite des données de routage pour fonctionner. Pour générer les données du Cameroun :
+   
+   **Sur Windows :**
+   ```bash
+   .\generate-osrm-data.bat
+   ```
+   
+   **Sur Linux/Mac :**
+   ```bash
+   chmod +x generate-osrm-data.sh
+   ./generate-osrm-data.sh
+   ```
+   
+   Cette commande télécharge les données OSM du Cameroun depuis Geofabrik et génère les fichiers OSRM nécessaires. Le processus peut prendre plusieurs minutes.
+
+4. **Démarrer les services avec Docker Compose :**
    ```bash
    docker-compose up --build
    ```
    Ceci construira les images Docker et démarrera tous les services définis dans `docker-compose.yml`.
 
-4. **Accéder aux services :**
+5. **Accéder aux services :**
    - **Core API (NestJS):** `http://localhost:4000`
    - **IA Service (FastAPI):** `http://localhost:9000`
    - **pgAdmin:** `http://localhost:5050`
    - **Nginx:** `http://localhost:80`
+   - **OSRM Backend:** `http://localhost:5000`
 
 ### Vérifier l'état des services
 
