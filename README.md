@@ -797,7 +797,7 @@ npm run seed
 Cela créera :
 - Un utilisateur admin avec l'email `admin@kayydrive.com`
 - Mot de passe par défaut : `Admin123!`
-- Des catégories par défaut (Transport, Sécurité, Services, Loisirs)
+- Des catégories par défaut (Domicile, Travail, École, Famille, Restaurant, Santé, Autre)
 
 **Important :** Changez le mot de passe de l'admin après la première connexion en production.
 

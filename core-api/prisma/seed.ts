@@ -28,20 +28,25 @@ async function main() {
   console.log('🔑 Mot de passe par défaut:', adminPassword);
   console.log('⚠️  Changez ce mot de passe en production!');
 
-  // Créer des catégories par défaut
+  // Créer des catégories par défaut (utilise les catégories définies dans CategoriesService)
   const categories = [
-    { nom: 'Transport', icone: '🚌', couleur: '#3B82F6', ordre: 1 },
-    { nom: 'Sécurité', icone: '🛡️', couleur: '#EF4444', ordre: 2 },
-    { nom: 'Services', icone: '🏢', couleur: '#10B981', ordre: 3 },
-    { nom: 'Loisirs', icone: '🎉', couleur: '#F59E0B', ordre: 4 },
+    { nom: 'Domicile', icone: 'home', couleur: '#4F46E5', ordre: 1 },
+    { nom: 'Travail', icone: 'briefcase', couleur: '#0EA5E9', ordre: 2 },
+    { nom: 'École', icone: 'graduation-cap', couleur: '#F59E0B', ordre: 3 },
+    { nom: 'Famille', icone: 'users', couleur: '#EC4899', ordre: 4 },
+    { nom: 'Restaurant', icone: 'utensils', couleur: '#EF4444', ordre: 5 },
+    { nom: 'Santé', icone: 'plus-square', couleur: '#10B981', ordre: 6 },
+    { nom: 'Autre', icone: 'map-pin', couleur: '#6B7280', ordre: 99 },
   ];
 
   for (const cat of categories) {
-    await prisma.categorie.upsert({
+    const existing = await prisma.categorie.findFirst({
       where: { nom: cat.nom },
-      update: {},
-      create: cat,
     });
+
+    if (!existing) {
+      await prisma.categorie.create({ data: cat });
+    }
   }
 
   console.log('✅ Catégories créées');
