@@ -4,9 +4,10 @@ import { IncidentsService } from './incidents.service';
 import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { PrismaModule } from '../prisma/prisma.module';
+import { StorageModule } from '../storage/storage.module';
 
 @Module({
-  imports: [AuthModule, NotificationsModule, PrismaModule],
+  imports: [AuthModule, NotificationsModule, PrismaModule, StorageModule],
   controllers: [IncidentsController],
   providers: [IncidentsService],
   exports: [IncidentsService],

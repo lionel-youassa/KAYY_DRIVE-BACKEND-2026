@@ -20,6 +20,7 @@ import { AdressesFavoritesModule } from './adresses-favorites/adresses-favorites
 import { OfflineModule } from './modules/offline/offline.module';
 import { TelemetryModule } from './modules/telemetry/telemetry.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     OfflineModule,
     TelemetryModule,
     DashboardModule,
+    StorageModule,
   ],
   controllers: [],
   providers: [RewardsService],

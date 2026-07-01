@@ -13,7 +13,7 @@ RUN apk add --no-cache openssl curl
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npm install --legacy-peer-deps && npx prisma generate && npm run start:dev"]
+CMD ["sh", "-c", "npm install --legacy-peer-deps && npx prisma generate && npx prisma db push && npx ts-node scripts/init-db.ts && npm run start:dev"]
 
 # --- Étape 2 : build ---
 FROM node:22-alpine AS builder

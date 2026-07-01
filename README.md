@@ -83,12 +83,64 @@ Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toute
    ```
    Ceci construira les images Docker et démarrera tous les services définis dans `docker-compose.yml`.
 
+   **Note :** Au premier démarrage, le conteneur `core-api` exécutera automatiquement :
+   - `prisma db push` pour créer les tables dans la base de données
+   - Le seed pour créer l'admin par défaut et les catégories (si aucun admin n'existe)
+
 5. **Accéder aux services :**
-   - **Core API (NestJS):** `http://localhost:4000`
-   - **IA Service (FastAPI):** `http://localhost:9000`
-   - **pgAdmin:** `http://localhost:5050`
+   - **Core API (NestJS):** `http://localhost:3001`
+   - **IA Service (FastAPI):** `http://localhost:9500`
+   - **Minio Console:** `http://localhost:9001`
+   - **Minio API:** `http://localhost:9000`
    - **Nginx:** `http://localhost:80`
    - **OSRM Backend:** `http://localhost:5000`
+
+### Minio (Stockage d'images)
+
+Le projet utilise Minio pour le stockage des images (incidents, publicités, etc.).
+
+**Accès à la console Minio :**
+- URL : `http://localhost:9001`
+- Utilisateur : `minioadmin`
+- Mot de passe : `minioadmin123`
+
+**Bucket par défaut :**
+- Nom : `kayydrive`
+- Créé automatiquement au démarrage du service
+
+**Configuration des variables d'environnement :**
+```bash
+MINIO_ENDPOINT=minio
+MINIO_PORT=9000
+MINIO_USE_SSL=false
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin123
+MINIO_BUCKET=kayydrive
+```
+
+**Endpoint d'upload d'images :**
+```
+POST /storage/upload
+Content-Type: multipart/form-data
+```
+
+**Exemple avec curl :**
+```bash
+curl -X POST http://localhost:4000/storage/upload \
+  -F "file=@/path/to/image.jpg" \
+  -F "folder=incidents"
+```
+
+**Réponse :**
+```json
+{
+  "url": "http://localhost:9000/kayydrive/incidents/1234567890-image.jpg"
+}
+```
+
+**Restrictions :**
+- Types autorisés : JPEG, PNG, WebP, GIF
+- Taille maximale : 5MB
 
 ### Vérifier l'état des services
 
@@ -800,6 +852,110 @@ Cela créera :
 - Des catégories par défaut (Domicile, Travail, École, Famille, Restaurant, Santé, Autre)
 
 **Important :** Changez le mot de passe de l'admin après la première connexion en production.
+
+## Tests Unitaires
+
+Le projet est configuré avec Jest pour les tests unitaires et d'intégration.
+
+### Structure des Tests
+
+```
+core-api/
+├── test/
+│   ├── setup.ts                    # Configuration globale des tests
+│   ├── helpers/
+│   │   └── test-helpers.ts         # Helpers pour créer des données de test
+│   └── mocks/
+│       └── prisma.mock.ts          # Mocks pour Prisma
+└── src/
+    ├── auth/
+    │   ├── auth.service.spec.ts    # Tests du service auth
+    │   └── auth.controller.spec.ts # Tests du controller auth
+    ├── categories/
+    │   └── categories.service.spec.ts
+    ├── dashboard/
+    │   └── dashboard.service.spec.ts
+    ├── incidents/
+    │   └── incidents.service.spec.ts
+    └── routes/
+        └── routes.service.spec.ts
+```
+
+### Exécuter les Tests
+
+**Tous les tests :**
+```bash
+cd core-api
+npm test
+```
+
+**Tests en mode watch :**
+```bash
+npm run test:watch
+```
+
+**Tests avec couverture de code :**
+```bash
+npm run test:cov
+```
+
+**Tests d'un fichier spécifique :**
+```bash
+npm test auth.service.spec.ts
+```
+
+### Écrire des Tests
+
+Chaque fichier de test suit cette structure :
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { ServiceName } from './service-name.service';
+import { PrismaService } from '../prisma/prisma.service';
+
+describe('ServiceName', () => {
+  let service: ServiceName;
+  let prismaService: PrismaService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ServiceName,
+        {
+          provide: PrismaService,
+          useValue: {
+            // Mock methods here
+          },
+        },
+      ],
+    }).compile();
+
+    service = module.get<ServiceName>(ServiceName);
+    prismaService = module.get<PrismaService>(PrismaService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  // TODO: Add more tests
+});
+```
+
+### Helpers de Test
+
+Des helpers sont disponibles dans `test/helpers/test-helpers.ts` pour créer facilement des données de test :
+
+- `createTestUser()` - Crée un utilisateur de test
+- `createTestAdmin()` - Crée un admin de test
+- `createTestCategory()` - Crée une catégorie de test
+- `createTestIncident()` - Crée un incident de test
+- `createTestShortcut()` - Crée un raccourci de test
+- `cleanupTestData()` - Nettoie toutes les données de test
 
 ## Dashboard Admin
 

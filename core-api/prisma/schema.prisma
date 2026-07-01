@@ -111,6 +111,7 @@ model Incident {
   confirmePar       String[]
   latitude          Float?
   longitude         Float?
+  imageUrl          String?
 
   rapporteur Utilisateur  @relation(fields: [idRapporteur], references: [id], onDelete: Cascade)
   segment    SegmentRoute? @relation(fields: [segmentId], references: [id], onDelete: Cascade)
@@ -124,6 +125,7 @@ model Publicite {
   dateDebut   DateTime
   dateFin     DateTime
   actif       Boolean  @default(true)
+  imageUrl    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -137,6 +139,7 @@ model Recompense {
   dateDebut   DateTime
   dateFin     DateTime
   actif       Boolean  @default(true)
+  imageUrl    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
