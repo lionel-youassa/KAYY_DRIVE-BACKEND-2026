@@ -801,6 +801,110 @@ Cela créera :
 
 **Important :** Changez le mot de passe de l'admin après la première connexion en production.
 
+## Tests Unitaires
+
+Le projet est configuré avec Jest pour les tests unitaires et d'intégration.
+
+### Structure des Tests
+
+```
+core-api/
+├── test/
+│   ├── setup.ts                    # Configuration globale des tests
+│   ├── helpers/
+│   │   └── test-helpers.ts         # Helpers pour créer des données de test
+│   └── mocks/
+│       └── prisma.mock.ts          # Mocks pour Prisma
+└── src/
+    ├── auth/
+    │   ├── auth.service.spec.ts    # Tests du service auth
+    │   └── auth.controller.spec.ts # Tests du controller auth
+    ├── categories/
+    │   └── categories.service.spec.ts
+    ├── dashboard/
+    │   └── dashboard.service.spec.ts
+    ├── incidents/
+    │   └── incidents.service.spec.ts
+    └── routes/
+        └── routes.service.spec.ts
+```
+
+### Exécuter les Tests
+
+**Tous les tests :**
+```bash
+cd core-api
+npm test
+```
+
+**Tests en mode watch :**
+```bash
+npm run test:watch
+```
+
+**Tests avec couverture de code :**
+```bash
+npm run test:cov
+```
+
+**Tests d'un fichier spécifique :**
+```bash
+npm test auth.service.spec.ts
+```
+
+### Écrire des Tests
+
+Chaque fichier de test suit cette structure :
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { ServiceName } from './service-name.service';
+import { PrismaService } from '../prisma/prisma.service';
+
+describe('ServiceName', () => {
+  let service: ServiceName;
+  let prismaService: PrismaService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ServiceName,
+        {
+          provide: PrismaService,
+          useValue: {
+            // Mock methods here
+          },
+        },
+      ],
+    }).compile();
+
+    service = module.get<ServiceName>(ServiceName);
+    prismaService = module.get<PrismaService>(PrismaService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  // TODO: Add more tests
+});
+```
+
+### Helpers de Test
+
+Des helpers sont disponibles dans `test/helpers/test-helpers.ts` pour créer facilement des données de test :
+
+- `createTestUser()` - Crée un utilisateur de test
+- `createTestAdmin()` - Crée un admin de test
+- `createTestCategory()` - Crée une catégorie de test
+- `createTestIncident()` - Crée un incident de test
+- `createTestShortcut()` - Crée un raccourci de test
+- `cleanupTestData()` - Nettoie toutes les données de test
+
 ## Dashboard Admin
 
 Le dashboard admin fournit des métriques et statistiques pour analyser l'efficacité de l'application KayyDrive dans la résolution des problèmes de navigation routière.
