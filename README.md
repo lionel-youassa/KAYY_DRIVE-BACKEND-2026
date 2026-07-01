@@ -627,6 +627,180 @@ endLng=11.502
 - **Prédictions de trafic** : Estimation du temps de trajet en fonction des conditions météo et de l'heure
 - **Instructions enrichies** : Instructions de navigation avec alertes et suggestions
 
+## Routes Admin
+
+Ces routes sont réservées aux administrateurs uniquement et nécessitent un token JWT avec le rôle `admin`.
+
+### POST /auth/promote
+Changer le rôle d'un utilisateur.
+
+**Headers :**
+```
+Authorization: Bearer <admin_token>
+```
+
+**Body :**
+```json
+{
+  "uid": "user-uuid",
+  "role": "admin"
+}
+```
+
+**Réponse :**
+```json
+{
+  "success": true,
+  "message": "Rôle mis à jour : admin"
+}
+```
+
+### POST /categories
+Créer une nouvelle catégorie.
+
+**Headers :**
+```
+Authorization: Bearer <admin_token>
+```
+
+**Body :**
+```json
+{
+  "nom": "Transport",
+  "icone": "🚌",
+  "couleur": "#3B82F6",
+  "ordre": 1
+}
+```
+
+**Réponse :**
+```json
+{
+  "success": true,
+  "categorie": {
+    "id": "uuid",
+    "nom": "Transport",
+    "icone": "🚌",
+    "couleur": "#3B82F6",
+    "ordre": 1
+  }
+}
+```
+
+### POST /ads
+Créer une publicité.
+
+**Headers :**
+```
+Authorization: Bearer <admin_token>
+```
+
+**Body :**
+```json
+{
+  "titre": "Promotion KayyDrive",
+  "description": "Offre spéciale pour les nouveaux utilisateurs",
+  "type": "banner",
+  "dateDebut": "2026-07-01T00:00:00Z",
+  "dateFin": "2026-07-31T23:59:59Z"
+}
+```
+
+**Réponse :**
+```json
+{
+  "id": "uuid",
+  "titre": "Promotion KayyDrive",
+  "description": "Offre spéciale pour les nouveaux utilisateurs",
+  "type": "banner",
+  "dateDebut": "2026-07-01T00:00:00Z",
+  "dateFin": "2026-07-31T23:59:59Z",
+  "actif": true
+}
+```
+
+### DELETE /ads/:id
+Supprimer une publicité.
+
+**Headers :**
+```
+Authorization: Bearer <admin_token>
+```
+
+**Réponse :**
+```json
+{
+  "success": true,
+  "message": "Publicité supprimée"
+}
+```
+
+### POST /rewards
+Créer une récompense.
+
+**Headers :**
+```
+Authorization: Bearer <admin_token>
+```
+
+**Body :**
+```json
+{
+  "titre": "Bonus de bienvenue",
+  "description": "100 points pour votre première inscription",
+  "points": 100,
+  "type": "inscription",
+  "dateDebut": "2026-07-01T00:00:00Z",
+  "dateFin": "2026-12-31T23:59:59Z"
+}
+```
+
+**Réponse :**
+```json
+{
+  "id": "uuid",
+  "titre": "Bonus de bienvenue",
+  "description": "100 points pour votre première inscription",
+  "points": 100,
+  "type": "inscription",
+  "dateDebut": "2026-07-01T00:00:00Z",
+  "dateFin": "2026-12-31T23:59:59Z",
+  "actif": true
+}
+```
+
+### DELETE /rewards/:id
+Supprimer une récompense.
+
+**Headers :**
+```
+Authorization: Bearer <admin_token>
+```
+
+**Réponse :**
+```json
+{
+  "success": true,
+  "message": "Récompense supprimée"
+}
+```
+
+## Création de l'administrateur initial
+
+Pour créer le premier administrateur, utilisez le script de seed :
+
+```bash
+cd core-api
+npm run seed
+```
+
+Cela créera :
+- Un utilisateur admin avec l'email `admin@kayydrive.com`
+- Mot de passe par défaut : `Admin123!`
+- Des catégories par défaut (Transport, Sécurité, Services, Loisirs)
+
+**Important :** Changez le mot de passe de l'admin après la première connexion en production.
+
 ## Développement
 
 Chaque service a son propre `package.json` (pour Node.js) ou `requirements.txt` (pour Python) et peut être développé indépendamment.
