@@ -89,10 +89,58 @@ Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toute
 
 5. **Accéder aux services :**
    - **Core API (NestJS):** `http://localhost:4000`
-   - **IA Service (FastAPI):** `http://localhost:9000`
-   - **pgAdmin:** `http://localhost:5050`
+   - **IA Service (FastAPI):** `http://localhost:9500`
+   - **Minio Console:** `http://localhost:9001`
+   - **Minio API:** `http://localhost:9000`
    - **Nginx:** `http://localhost:80`
    - **OSRM Backend:** `http://localhost:5000`
+
+### Minio (Stockage d'images)
+
+Le projet utilise Minio pour le stockage des images (incidents, publicités, etc.).
+
+**Accès à la console Minio :**
+- URL : `http://localhost:9001`
+- Utilisateur : `minioadmin`
+- Mot de passe : `minioadmin123`
+
+**Bucket par défaut :**
+- Nom : `kayydrive`
+- Créé automatiquement au démarrage du service
+
+**Configuration des variables d'environnement :**
+```bash
+MINIO_ENDPOINT=minio
+MINIO_PORT=9000
+MINIO_USE_SSL=false
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin123
+MINIO_BUCKET=kayydrive
+```
+
+**Endpoint d'upload d'images :**
+```
+POST /storage/upload
+Content-Type: multipart/form-data
+```
+
+**Exemple avec curl :**
+```bash
+curl -X POST http://localhost:4000/storage/upload \
+  -F "file=@/path/to/image.jpg" \
+  -F "folder=incidents"
+```
+
+**Réponse :**
+```json
+{
+  "url": "http://localhost:9000/kayydrive/incidents/1234567890-image.jpg"
+}
+```
+
+**Restrictions :**
+- Types autorisés : JPEG, PNG, WebP, GIF
+- Taille maximale : 5MB
 
 ### Vérifier l'état des services
 
