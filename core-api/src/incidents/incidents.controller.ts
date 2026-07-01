@@ -47,9 +47,9 @@ export class IncidentsController {
   @Post()
   @UseInterceptors(FileInterceptor('image'))
   async createIncident(
+    @CurrentUser() user: DecodedIdToken,
     @Body() dto: CreateIncidentDto,
     @UploadedFile() image?: Express.Multer.File,
-    @CurrentUser() user: DecodedIdToken,
   ) {
     let imageUrl: string | undefined;
     

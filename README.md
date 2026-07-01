@@ -88,7 +88,7 @@ Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toute
    - Le seed pour créer l'admin par défaut et les catégories (si aucun admin n'existe)
 
 5. **Accéder aux services :**
-   - **Core API (NestJS):** `http://localhost:4000`
+   - **Core API (NestJS):** `http://localhost:3001`
    - **IA Service (FastAPI):** `http://localhost:9500`
    - **Minio Console:** `http://localhost:9001`
    - **Minio API:** `http://localhost:9000`

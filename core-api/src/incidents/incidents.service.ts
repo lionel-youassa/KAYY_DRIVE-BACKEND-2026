@@ -50,6 +50,7 @@ export class IncidentsService {
     latitude: number;
     longitude: number;
     id_utilisateur_createur: string;
+    imageUrl?: string;
   }): Promise<Incident> {
     const now = new Date();
     const expiration = new Date(
@@ -69,6 +70,7 @@ export class IncidentsService {
         confirmePar: [data.id_utilisateur_createur],
         latitude: data.latitude,
         longitude: data.longitude,
+        imageUrl: data.imageUrl,
       },
     });
 
