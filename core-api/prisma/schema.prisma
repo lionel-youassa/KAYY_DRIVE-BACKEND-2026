@@ -139,6 +139,7 @@ model Recompense {
   dateDebut   DateTime
   dateFin     DateTime
   actif       Boolean  @default(true)
+  imageUrl    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
