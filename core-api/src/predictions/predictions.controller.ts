@@ -1,4 +1,12 @@
-import { BadRequestException, Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { PredictionsService } from './predictions.service';
 import { ItineraireDto } from './dto/itineraire.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';

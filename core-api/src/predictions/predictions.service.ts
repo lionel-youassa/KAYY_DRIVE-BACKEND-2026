@@ -13,7 +13,12 @@ export interface PredictionTrafic {
   nombreEchantillons: number;
 }
 
-function distanceEnMetres(lat1: number, lon1: number, lat2: number, lon2: number): number {
+function distanceEnMetres(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
   const R = 6371000;
   const toRad = (d: number) => (d * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
@@ -24,7 +29,9 @@ function distanceEnMetres(lat1: number, lon1: number, lat2: number, lon2: number
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function determinerConfiance(nombreEchantillons: number): 'faible' | 'moyenne' | 'haute' {
+function determinerConfiance(
+  nombreEchantillons: number,
+): 'faible' | 'moyenne' | 'haute' {
   if (nombreEchantillons >= 20) return 'haute';
   if (nombreEchantillons >= 5) return 'moyenne';
   return 'faible';
@@ -43,7 +50,9 @@ export class PredictionsService {
     const jourSemaine = dateCible.getDay();
     const heure = dateCible.getHours();
 
-    const ilYa60Jours = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+    const ilYa60Jours = new Date(
+      Date.now() - 60 * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
     const snapshot = await this.firebase.db
       .collection('trafic')
@@ -54,11 +63,17 @@ export class PredictionsService {
       .map((doc: FirebaseFirestore.QueryDocumentSnapshot) => doc.data())
       .filter((r: any) => {
         if (typeof r.vitesseMoyenne !== 'number') return false;
-        if (distanceEnMetres(latitude, longitude, r.latitude, r.longitude) > rayonMetres) {
+        if (
+          distanceEnMetres(latitude, longitude, r.latitude, r.longitude) >
+          rayonMetres
+        ) {
           return false;
         }
         const date = new Date(r.timestamp);
-        return date.getDay() === jourSemaine && Math.abs(date.getHours() - heure) <= 1;
+        return (
+          date.getDay() === jourSemaine &&
+          Math.abs(date.getHours() - heure) <= 1
+        );
       });
 
     if (echantillonsPertinents.length === 0) {
@@ -75,8 +90,10 @@ export class PredictionsService {
     }
 
     const vitesseMoyennePredite =
-      echantillonsPertinents.reduce((sum: number, r: any) => sum + r.vitesseMoyenne, 0) /
-      echantillonsPertinents.length;
+      echantillonsPertinents.reduce(
+        (sum: number, r: any) => sum + r.vitesseMoyenne,
+        0,
+      ) / echantillonsPertinents.length;
 
     return {
       latitude,
@@ -97,7 +114,11 @@ export class PredictionsService {
     const predictions: PredictionTrafic[] = [];
 
     for (const point of points) {
-      const prediction = await this.predireTraficPoint(point.latitude, point.longitude, dateCible);
+      const prediction = await this.predireTraficPoint(
+        point.latitude,
+        point.longitude,
+        dateCible,
+      );
       predictions.push(prediction);
     }
 

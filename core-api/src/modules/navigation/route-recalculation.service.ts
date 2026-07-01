@@ -5,7 +5,8 @@ import { Queue } from 'bullmq';
 export interface RouteRecalculationEvent {
   routeId: string;
   userId: string;
-  eventType: 'incident' | 'traffic_change' | 'weather_change' | 'local_route_added';
+  eventType:
+    'incident' | 'traffic_change' | 'weather_change' | 'local_route_added';
   eventData: any;
   currentRoute: any;
   timestamp: Date;
@@ -17,7 +18,8 @@ export class RouteRecalculationService {
   private readonly activeRoutes = new Map<string, any>(); // routeId -> route data
 
   constructor(
-    @InjectQueue('route-recalculation') private readonly recalculationQueue: Queue,
+    @InjectQueue('route-recalculation')
+    private readonly recalculationQueue: Queue,
   ) {}
 
   // Enregistrer une route active pour le suivi
@@ -27,7 +29,9 @@ export class RouteRecalculationService {
       routeData,
       registeredAt: new Date(),
     });
-    this.logger.log(`Route active enregistrée: ${routeId} pour utilisateur ${userId}`);
+    this.logger.log(
+      `Route active enregistrée: ${routeId} pour utilisateur ${userId}`,
+    );
   }
 
   // Désenregistrer une route active
@@ -38,7 +42,9 @@ export class RouteRecalculationService {
 
   // Déclencher un recalcul proactif suite à un événement
   async triggerRecalculation(event: RouteRecalculationEvent): Promise<void> {
-    this.logger.log(`Déclenchement recalcul proactif pour route ${event.routeId} - événement: ${event.eventType}`);
+    this.logger.log(
+      `Déclenchement recalcul proactif pour route ${event.routeId} - événement: ${event.eventType}`,
+    );
 
     // Vérifier si la route est toujours active
     const activeRoute = this.activeRoutes.get(event.routeId);
@@ -68,7 +74,11 @@ export class RouteRecalculationService {
     const impactedRoutes: string[] = [];
 
     for (const [routeId, routeData] of this.activeRoutes.entries()) {
-      const isImpacted = await this.isRouteImpacted(routeData.routeData, eventType, eventData);
+      const isImpacted = await this.isRouteImpacted(
+        routeData.routeData,
+        eventType,
+        eventData,
+      );
       if (isImpacted) {
         impactedRoutes.push(routeId);
       }
@@ -78,7 +88,11 @@ export class RouteRecalculationService {
   }
 
   // Logique de détermination d'impact
-  private async isRouteImpacted(routeData: any, eventType: string, eventData: any): Promise<boolean> {
+  private async isRouteImpacted(
+    routeData: any,
+    eventType: string,
+    eventData: any,
+  ): Promise<boolean> {
     switch (eventType) {
       case 'incident':
         // Vérifier si l'incident est proche du trajet
@@ -160,7 +174,12 @@ export class RouteRecalculationService {
   }
 
   // Calcul de distance entre deux points GPS
-  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  private calculateDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ): number {
     const R = 6371000; // Rayon de la Terre en mètres
     const toRad = (deg: number) => (deg * Math.PI) / 180;
     const dLat = toRad(lat2 - lat1);
@@ -175,11 +194,13 @@ export class RouteRecalculationService {
   getActiveRoutesStats(): any {
     return {
       total: this.activeRoutes.size,
-      routes: Array.from(this.activeRoutes.entries()).map(([routeId, data]) => ({
-        routeId,
-        userId: data.userId,
-        registeredAt: data.registeredAt,
-      })),
+      routes: Array.from(this.activeRoutes.entries()).map(
+        ([routeId, data]) => ({
+          routeId,
+          userId: data.userId,
+          registeredAt: data.registeredAt,
+        }),
+      ),
     };
   }
 }

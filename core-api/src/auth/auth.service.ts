@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
@@ -84,7 +89,10 @@ export class AuthService {
       throw new UnauthorizedException('Identifiants invalides');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, utilisateur.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      utilisateur.passwordHash,
+    );
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Identifiants invalides');
@@ -123,7 +131,10 @@ export class AuthService {
       return null;
     }
 
-    const isPasswordValid = await bcrypt.compare(password, utilisateur.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      utilisateur.passwordHash,
+    );
 
     if (!isPasswordValid) {
       return null;

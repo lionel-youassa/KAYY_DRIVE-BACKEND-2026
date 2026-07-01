@@ -7,7 +7,7 @@ export class ShortcutStatsDto {
   @ApiProperty({ description: 'Score de fiabilité moyen' })
   averageReliabilityScore: number;
 
-  @ApiProperty({ description: 'Taux d\'adoption estimé (%)' })
+  @ApiProperty({ description: "Taux d'adoption estimé (%)" })
   adoptionRate: number;
 
   @ApiProperty({ description: 'Top 5 des raccourcis les plus votés' })

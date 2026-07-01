@@ -19,7 +19,12 @@ export function niveauDepuisVitesse(vitesseKmh: number): NiveauTrafic {
   return 'bouchon';
 }
 
-function distanceEnMetres(lat1: number, lon1: number, lat2: number, lon2: number): number {
+function distanceEnMetres(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
   const R = 6371000;
   const toRad = (d: number) => (d * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
@@ -54,7 +59,11 @@ export class TraficService {
     latitude: number,
     longitude: number,
     rayonMetres = 1000,
-  ): Promise<{ niveau: NiveauTrafic; vitesseMoyenne: number; nombreReleves: number }> {
+  ): Promise<{
+    niveau: NiveauTrafic;
+    vitesseMoyenne: number;
+    nombreReleves: number;
+  }> {
     const ilYa15Minutes = new Date(Date.now() - 15 * 60 * 1000).toISOString();
 
     const snapshot = await this.firebase.db
@@ -63,11 +72,14 @@ export class TraficService {
       .get();
 
     const relevésProches = snapshot.docs
-      .map((doc: FirebaseFirestore.QueryDocumentSnapshot) => doc.data() as RelevéTrafic)
+      .map(
+        (doc: FirebaseFirestore.QueryDocumentSnapshot) =>
+          doc.data() as RelevéTrafic,
+      )
       .filter(
         (r: RelevéTrafic) =>
-          distanceEnMetres(latitude, longitude, r.latitude, r.longitude) <= rayonMetres &&
-          typeof r.vitesseMoyenne === 'number',
+          distanceEnMetres(latitude, longitude, r.latitude, r.longitude) <=
+            rayonMetres && typeof r.vitesseMoyenne === 'number',
       );
 
     if (relevésProches.length === 0) {
@@ -75,8 +87,10 @@ export class TraficService {
     }
 
     const vitesseMoyenne =
-      relevésProches.reduce((sum: number, r: RelevéTrafic) => sum + r.vitesseMoyenne, 0) /
-      relevésProches.length;
+      relevésProches.reduce(
+        (sum: number, r: RelevéTrafic) => sum + r.vitesseMoyenne,
+        0,
+      ) / relevésProches.length;
 
     return {
       niveau: niveauDepuisVitesse(vitesseMoyenne),

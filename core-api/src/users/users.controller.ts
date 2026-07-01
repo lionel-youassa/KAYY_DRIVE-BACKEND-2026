@@ -12,8 +12,15 @@ export class UsersController {
 
   // POST /users/position
   @Post('position')
-  async updatePosition(@Body() dto: UpdatePositionDto, @CurrentUser() user: DecodedIdToken) {
-    await this.usersService.mettreAJourPosition(user.uid, dto.latitude, dto.longitude);
+  async updatePosition(
+    @Body() dto: UpdatePositionDto,
+    @CurrentUser() user: DecodedIdToken,
+  ) {
+    await this.usersService.mettreAJourPosition(
+      user.uid,
+      dto.latitude,
+      dto.longitude,
+    );
     return { success: true };
   }
 

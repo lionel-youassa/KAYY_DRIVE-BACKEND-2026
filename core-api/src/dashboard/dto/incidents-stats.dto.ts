@@ -18,10 +18,10 @@ export class IncidentsStatsDto {
 }
 
 export class IncidentByTypeDto {
-  @ApiProperty({ description: 'Type d\'incident' })
+  @ApiProperty({ description: "Type d'incident" })
   type: string;
 
-  @ApiProperty({ description: 'Nombre d\'incidents' })
+  @ApiProperty({ description: "Nombre d'incidents" })
   count: number;
 
   @ApiProperty({ description: 'Pourcentage du total' })
@@ -32,6 +32,6 @@ export class DailyIncidentDto {
   @ApiProperty({ description: 'Date' })
   date: string;
 
-  @ApiProperty({ description: 'Nombre d\'incidents' })
+  @ApiProperty({ description: "Nombre d'incidents" })
   count: number;
 }

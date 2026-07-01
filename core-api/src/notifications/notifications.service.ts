@@ -87,7 +87,9 @@ export class NotificationsService {
             !resp.success &&
             resp.error?.code === 'messaging/registration-token-not-registered'
           ) {
-            this.supprimerTokenFCM(input.id_utilisateur, tokens[index]).catch(() => {});
+            this.supprimerTokenFCM(input.id_utilisateur, tokens[index]).catch(
+              () => {},
+            );
           }
         });
       } catch (error) {
@@ -111,11 +113,21 @@ export class NotificationsService {
     latitude: number,
     longitude: number,
     rayonMetres: number,
-    notif: { type: TypeNotification; titre: string; corps: string; data?: Record<string, string> },
+    notif: {
+      type: TypeNotification;
+      titre: string;
+      corps: string;
+      data?: Record<string, string>;
+    },
   ): Promise<number> {
     const positions = await this.prisma.positionUtilisateur.findMany();
 
-    function distanceEnMetres(lat1: number, lon1: number, lat2: number, lon2: number) {
+    function distanceEnMetres(
+      lat1: number,
+      lon1: number,
+      lat2: number,
+      lon2: number,
+    ) {
       const R = 6371000;
       const toRad = (d: number) => (d * Math.PI) / 180;
       const dLat = toRad(lat2 - lat1);
@@ -129,8 +141,14 @@ export class NotificationsService {
     let nombreNotifies = 0;
 
     for (const pos of positions) {
-      if (distanceEnMetres(latitude, longitude, pos.latitude, pos.longitude) <= rayonMetres) {
-        await this.envoyerNotification({ id_utilisateur: pos.utilisateurId, ...notif });
+      if (
+        distanceEnMetres(latitude, longitude, pos.latitude, pos.longitude) <=
+        rayonMetres
+      ) {
+        await this.envoyerNotification({
+          id_utilisateur: pos.utilisateurId,
+          ...notif,
+        });
         nombreNotifies++;
       }
     }

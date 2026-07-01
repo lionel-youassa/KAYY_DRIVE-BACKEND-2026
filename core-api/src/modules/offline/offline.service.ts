@@ -42,7 +42,10 @@ export class OfflineService {
   private readonly zones: Map<string, OfflineZone> = new Map();
 
   constructor(private readonly configService: ConfigService) {
-    this.offlineDir = this.configService.get<string>('OFFLINE_DIR', './data/offline');
+    this.offlineDir = this.configService.get<string>(
+      'OFFLINE_DIR',
+      './data/offline',
+    );
     this.initializeZones();
     this.ensureDirectoryExists();
   }
@@ -138,7 +141,10 @@ export class OfflineService {
     const mbtilesPath = join(this.offlineDir, `${zoneId}.mbtiles`);
 
     if (!existsSync(mbtilesPath)) {
-      throw new HttpException('Fichier MBTiles non disponible pour cette zone', HttpStatus.NOT_FOUND);
+      throw new HttpException(
+        'Fichier MBTiles non disponible pour cette zone',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     // Retourner le fichier pour téléchargement
@@ -163,7 +169,7 @@ export class OfflineService {
       // Dans une implémentation réelle, cela utiliserait:
       // - tile-join (Mapbox)
       // - ou un générateur personnalisé avec OSM data
-      
+
       await this.simulateMBTilesGeneration(zoneId);
 
       zone.status = 'available';
@@ -171,7 +177,7 @@ export class OfflineService {
       zone.size = 50000000; // 50MB simulé
 
       this.logger.log(`Génération MBTiles terminée pour zone: ${zoneId}`);
-      
+
       return {
         success: true,
         message: `Zone ${zoneId} générée avec succès`,
@@ -180,8 +186,13 @@ export class OfflineService {
       };
     } catch (error) {
       zone.status = 'error';
-      this.logger.error(`Erreur lors de la génération MBTiles pour ${zoneId}: ${error.message}`);
-      throw new HttpException('Erreur lors de la génération MBTiles', HttpStatus.INTERNAL_SERVER_ERROR);
+      this.logger.error(
+        `Erreur lors de la génération MBTiles pour ${zoneId}: ${error.message}`,
+      );
+      throw new HttpException(
+        'Erreur lors de la génération MBTiles',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 

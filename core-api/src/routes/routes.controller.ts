@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { RoutesService } from './routes.service';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { VoteRouteDto } from './dto/vote-route.dto';
@@ -13,7 +21,10 @@ export class RoutesController {
 
   // POST /routes
   @Post()
-  async create(@Body() dto: CreateRouteDto, @CurrentUser() user: DecodedIdToken) {
+  async create(
+    @Body() dto: CreateRouteDto,
+    @CurrentUser() user: DecodedIdToken,
+  ) {
     const raccourci = await this.routesService.createRaccourci({
       nom: dto.nom,
       description: dto.description || '',
@@ -32,7 +43,11 @@ export class RoutesController {
     @Body() dto: VoteRouteDto,
     @CurrentUser() user: DecodedIdToken,
   ) {
-    const result = await this.routesService.voterRaccourci(id, user.uid, dto.vote);
+    const result = await this.routesService.voterRaccourci(
+      id,
+      user.uid,
+      dto.vote,
+    );
     return { success: true, ...result };
   }
 
