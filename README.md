@@ -60,17 +60,7 @@ Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toute
    PGADMIN_DEFAULT_PASSWORD=admin123
    ```
 
-3. **Initialiser la base de données :**
-   
-   Avant de démarrer les services, il faut créer les tables dans la base de données :
-   
-   ```bash
-   docker-compose exec core-api npx prisma db push
-   ```
-   
-   Cette commande synchronise le schéma Prisma avec la base PostgreSQL.
-
-4. **Générer les données OSRM (optionnel mais recommandé) :**
+3. **Générer les données OSRM (optionnel mais recommandé) :**
    
    Le service OSRM nécessite des données de routage pour fonctionner. Pour générer les données du Cameroun :
    
@@ -87,13 +77,17 @@ Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toute
    
    Cette commande télécharge les données OSM du Cameroun depuis Geofabrik et génère les fichiers OSRM nécessaires. Le processus peut prendre plusieurs minutes.
 
-5. **Démarrer les services avec Docker Compose :**
+4. **Démarrer les services avec Docker Compose :**
    ```bash
    docker-compose up --build
    ```
    Ceci construira les images Docker et démarrera tous les services définis dans `docker-compose.yml`.
 
-6. **Accéder aux services :**
+   **Note :** Au premier démarrage, le conteneur `core-api` exécutera automatiquement :
+   - `prisma db push` pour créer les tables dans la base de données
+   - Le seed pour créer l'admin par défaut et les catégories (si aucun admin n'existe)
+
+5. **Accéder aux services :**
    - **Core API (NestJS):** `http://localhost:4000`
    - **IA Service (FastAPI):** `http://localhost:9000`
    - **pgAdmin:** `http://localhost:5050`
