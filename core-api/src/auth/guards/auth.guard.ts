@@ -4,7 +4,7 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AuthService } from '../auth.service';
+import { AuthGuard as PassportAuthGuard } from '@nestjs/passport';
 
 // ---------------------------------------------------------------------------
 // AuthGuard : équivalent du middleware requireAuth de l'ancienne version.
@@ -14,27 +14,15 @@ import { AuthService } from '../auth.service';
 // ---------------------------------------------------------------------------
 
 @Injectable()
-export class AuthGuard implements CanActivate {
-  constructor(private readonly authService: AuthService) {}
+export class AuthGuard extends PassportAuthGuard('jwt') {
+  canActivate(context: ExecutionContext) {
+    return super.canActivate(context);
+  }
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const authHeader = request.headers['authorization'];
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException(
-        'Token manquant. Utilisez le header Authorization: Bearer <token>',
-      );
+  handleRequest(err, user, info) {
+    if (err || !user) {
+      throw err || new UnauthorizedException('Token invalide ou expiré');
     }
-
-    const token = authHeader.split('Bearer ')[1];
-
-    try {
-      const decoded = await this.authService.verifyToken(token);
-      request.user = decoded;
-      return true;
-    } catch {
-      throw new UnauthorizedException('Token invalide ou expiré');
-    }
+    return user;
   }
 }

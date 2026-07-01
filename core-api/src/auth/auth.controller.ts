@@ -5,7 +5,7 @@ import { PromoteDto } from './dto/promote.dto';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import type { UserProfile } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
@@ -18,12 +18,18 @@ export class AuthController {
     return { success: true, user: profile };
   }
 
+  // POST /auth/login
+  @Post('login')
+  async login(@Body() body: { email: string; password: string }) {
+    const result = await this.authService.login(body.email, body.password);
+    return { success: true, ...result };
+  }
+
   // GET /auth/me
   @Get('me')
   @UseGuards(AuthGuard)
-  async me(@CurrentUser() user: DecodedIdToken) {
-    const profile = await this.authService.getUserProfile(user.uid);
-    return { user: profile };
+  async me(@CurrentUser() user: UserProfile) {
+    return { user };
   }
 
   // POST /auth/promote (admin uniquement)

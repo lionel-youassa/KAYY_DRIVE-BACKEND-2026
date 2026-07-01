@@ -26,6 +26,7 @@ model Utilisateur {
   id                String                  @id @default(uuid())
   pseudo            String
   email             String                  @unique
+  passwordHash      String?
   telephone         String?
   role              String                  @default("user")
   scoreReputation   Int                     @default(0)

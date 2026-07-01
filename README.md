@@ -27,8 +27,9 @@ Ce dépôt contient les différents services qui composent l'architecture backen
 Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toutes les opérations CRUD sont centralisées dans la base de données PostgreSQL.
 
 **Firebase est conservé uniquement pour :**
-- Authentification utilisateur (Firebase Auth)
 - Envoi de notifications push (Firebase Messaging)
+
+**L'authentification est entièrement gérée par PostgreSQL avec JWT.**
 
 ## Démarrage Rapide
 
@@ -53,6 +54,7 @@ Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toute
    REDIS_URL=redis://redis:6379
    OSRM_URL=http://osrm-backend:5000
    IA_SERVICE_URL=http://ia-service:8000
+   JWT_SECRET=your_jwt_secret_key_change_in_production
    PGADMIN_DEFAULT_EMAIL=admin@example.com
    PGADMIN_DEFAULT_PASSWORD=admin123
    ```
@@ -69,6 +71,22 @@ Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toute
    - **pgAdmin:** `http://localhost:5050`
    - **Nginx:** `http://localhost:80`
 
+### Vérifier l'état des services
+
+Pour vérifier que tous les services sont lancés et fonctionnent normalement :
+
+```bash
+# Vérifier les conteneurs Docker actifs
+docker ps
+
+# Vérifier les logs d'un service spécifique
+docker logs kayydrive-core-api-1
+docker logs kayydrive-postgres
+docker logs kayydrive-redis
+```
+
+Les services doivent afficher un statut "Up" et ne doivent pas avoir d'erreurs dans les logs.
+
 ### Configuration pgAdmin
 
 Pour accéder à pgAdmin :
@@ -82,6 +100,419 @@ Pour accéder à pgAdmin :
    - Base de données: `kayydrive_db`
    - Utilisateur: `kayydrive_user`
    - Mot de passe: `kayydrive_secure_password_2026`
+
+## Documentation API
+
+L'API principale est accessible sur `http://localhost:4000`. Toutes les routes protégées nécessitent un JWT dans le header `Authorization: Bearer <token>`.
+
+### Authentification
+
+#### POST /auth/register
+Inscription d'un nouvel utilisateur.
+
+**Body :**
+```json
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "nom": "John Doe",
+  "telephone": "+237123456789"
+}
+```
+
+**Réponse :**
+```json
+{
+  "success": true,
+  "user": {
+    "uid": "uuid",
+    "email": "user@example.com",
+    "nom": "John Doe",
+    "telephone": "+237123456789",
+    "role": "user",
+    "dateCreation": "2026-06-30T..."
+  }
+}
+```
+
+#### POST /auth/login
+Connexion d'un utilisateur.
+
+**Body :**
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+**Réponse :**
+```json
+{
+  "success": true,
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "uid": "uuid",
+    "email": "user@example.com",
+    "nom": "John Doe",
+    "role": "user"
+  }
+}
+```
+
+#### GET /auth/me
+Récupérer le profil de l'utilisateur connecté.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Réponse :**
+```json
+{
+  "user": {
+    "uid": "uuid",
+    "email": "user@example.com",
+    "nom": "John Doe",
+    "role": "user"
+  }
+}
+```
+
+#### POST /auth/promote (Admin uniquement)
+Changer le rôle d'un utilisateur.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Body :**
+```json
+{
+  "uid": "user-uuid",
+  "role": "admin"
+}
+```
+
+### Utilisateurs
+
+#### POST /users/position
+Mettre à jour la position de l'utilisateur.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Body :**
+```json
+{
+  "latitude": 3.8488,
+  "longitude": 11.5021
+}
+```
+
+#### DELETE /users/position
+Supprimer la position de l'utilisateur.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+### Catégories
+
+#### GET /categories
+Récupérer toutes les catégories.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+#### POST /categories (Admin uniquement)
+Créer une nouvelle catégorie.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Body :**
+```json
+{
+  "nom": "Transport",
+  "description": "Catégorie transport"
+}
+```
+
+### Incidents
+
+#### GET /incidents
+Récupérer les incidents proches d'une position.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Query params :**
+```
+latitude=3.8488
+longitude=11.5021
+rayon=5000
+```
+
+#### POST /incidents
+Signaler un nouvel incident.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Body :**
+```json
+{
+  "type": "inondation",
+  "description": "Route inondée",
+  "latitude": 3.8488,
+  "longitude": 11.5021
+}
+```
+
+#### POST /incidents/:id/confirmer
+Confirmer un incident.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Body :**
+```json
+{
+  "latitude": 3.8488,
+  "longitude": 11.5021
+}
+```
+
+### Routes
+
+#### POST /routes
+Créer un raccourci communautaire.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Body :**
+```json
+{
+  "nom": "Raccourci Yaoundé",
+  "description": "Raccourci rapide",
+  "pointDepart": { "latitude": 3.8488, "longitude": 11.5021 },
+  "pointArrivee": { "latitude": 3.8500, "longitude": 11.5100 },
+  "trace": [{ "latitude": 3.8490, "longitude": 11.5030 }]
+}
+```
+
+#### POST /routes/:id/voter
+Voter pour un raccourci.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Body :**
+```json
+{
+  "vote": "positif"
+}
+```
+
+#### GET /routes/suggestions
+Obtenir des suggestions de raccourcis.
+
+**Query params :**
+```
+departLat=3.8488
+departLng=11.5021
+arriveeLat=3.8500
+arriveeLng=11.5100
+```
+
+### Notifications
+
+#### GET /notifications
+Récupérer les notifications de l'utilisateur.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+#### POST /notifications/token
+Enregistrer un token FCM.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Body :**
+```json
+{
+  "token": "fcm_token_here"
+}
+```
+
+#### PATCH /notifications/:id/lue
+Marquer une notification comme lue.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+### Préférences
+
+#### GET /preferences
+Récupérer les préférences de l'utilisateur.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+#### PATCH /preferences
+Mettre à jour les préférences.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Body :**
+```json
+{
+  "eviterPeages": true,
+  "prioriserRoutesSecu": true,
+  "eviterZonesInondables": true,
+  "modeHorsLigneActif": false
+}
+```
+
+### Adresses Favorites
+
+#### GET /adresses-favorites
+Récupérer les adresses favorites.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+#### POST /adresses-favorites
+Ajouter une adresse favorite.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Body :**
+```json
+{
+  "nom": "Maison",
+  "adresse": "123 Rue Principale",
+  "latitude": 3.8488,
+  "longitude": 11.5021
+}
+```
+
+#### DELETE /adresses-favorites/:id
+Supprimer une adresse favorite.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+### Prédictions
+
+#### GET /predictions
+Prédire le trafic à un point donné.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Query params :**
+```
+latitude=3.8488
+longitude=11.5021
+horodatage=2026-06-30T12:00:00Z
+```
+
+#### POST /predictions/itineraire
+Prédire le trafic sur un itinéraire.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Body :**
+```json
+{
+  "points": [
+    { "latitude": 3.8488, "longitude": 11.5021 },
+    { "latitude": 3.8500, "longitude": 11.5100 }
+  ],
+  "horodatage": "2026-06-30T12:00:00Z"
+}
+```
+
+### Trafic
+
+#### GET /trafic
+Récupérer le trafic actuel.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Query params :**
+```
+latitude=3.8488
+longitude=11.5021
+rayon=5000
+```
+
+#### POST /trafic
+Enregistrer un relevé de trafic.
+
+**Headers :**
+```
+Authorization: Bearer <token>
+```
+
+**Body :**
+```json
+{
+  "latitude": 3.8488,
+  "longitude": 11.5021,
+  "niveau": "eleve",
+  "vitesseMoyenne": 15
+}
+```
 
 ## Développement
 
@@ -137,7 +568,7 @@ Les services suivants ont été migrés de Firebase vers Prisma :
 - **NotificationsService**: Données de notifications et tokens FCM
 - **IncidentsService**: CRUD des incidents
 - **RoutesService**: Raccourcis communautaires et votes
-- **AuthService**: Profils utilisateur
+- **AuthService**: Authentification complète (inscription, connexion, JWT)
 
 ## Contribution
 
@@ -148,3 +579,4 @@ Veuillez suivre les directives de contribution de l'équipe.
 - Le fichier `.env` contient des secrets et ne doit pas être commité
 - Utilisez `.env.example` comme template pour la configuration
 - Les mots de passe doivent être modifiés en production
+- Le JWT_SECRET doit être une chaîne aléatoire forte en production

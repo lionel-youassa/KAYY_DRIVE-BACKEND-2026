@@ -8,8 +8,8 @@ RUN npm install --legacy-peer-deps
 
 COPY . .
 
-# Install OpenSSL for Prisma compatibility
-RUN apk add --no-cache openssl
+# Install OpenSSL and curl for Prisma compatibility and health checks
+RUN apk add --no-cache openssl curl
 
 EXPOSE 3000
 

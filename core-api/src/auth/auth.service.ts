@@ -1,6 +1,7 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
-import { FirebaseService } from '../firebase/firebase.service';
+import * as bcrypt from 'bcrypt';
 
 export type UserRole = 'user' | 'admin';
 
@@ -13,15 +14,20 @@ export interface UserProfile {
   dateCreation: string;
 }
 
+export interface LoginResponse {
+  access_token: string;
+  user: UserProfile;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly firebase: FirebaseService,
+    private readonly jwtService: JwtService,
   ) {}
 
   // -------------------------------------------------------------------------
-  // Inscription : crée le compte Firebase Auth + profil Prisma + rôle par défaut
+  // Inscription : crée le compte PostgreSQL avec mot de passe hashé
   // -------------------------------------------------------------------------
   async createUser(input: {
     email: string;
@@ -31,58 +37,106 @@ export class AuthService {
   }): Promise<UserProfile> {
     const { email, password, nom, telephone } = input;
 
-    try {
-      const userRecord = await this.firebase.auth.createUser({
-        email,
-        password,
-        displayName: nom,
-      });
+    // Vérifier si l'email existe déjà
+    const existingUser = await this.prisma.utilisateur.findUnique({
+      where: { email },
+    });
 
-      await this.firebase.auth.setCustomUserClaims(userRecord.uid, { role: 'user' });
+    if (existingUser) {
+      throw new ConflictException('Cet email est déjà utilisé');
+    }
 
-      const utilisateur = await this.prisma.utilisateur.create({
-        data: {
-          id: userRecord.uid,
-          pseudo: nom,
-          email: email,
-          telephone: telephone,
-          role: 'user',
-          scoreReputation: 0,
-          dateCreation: new Date(),
-        },
-      });
+    // Hasher le mot de passe
+    const passwordHash = await bcrypt.hash(password, 10);
 
-      return {
+    // Créer l'utilisateur
+    const utilisateur = await this.prisma.utilisateur.create({
+      data: {
+        pseudo: nom,
+        email: email,
+        passwordHash: passwordHash,
+        telephone: telephone,
+        role: 'user',
+        scoreReputation: 0,
+        dateCreation: new Date(),
+      },
+    });
+
+    return {
+      uid: utilisateur.id,
+      email: utilisateur.email,
+      nom: utilisateur.pseudo,
+      telephone: utilisateur.telephone || undefined,
+      role: utilisateur.role as UserRole,
+      dateCreation: utilisateur.dateCreation.toISOString(),
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // Connexion : valide les identifiants et retourne un JWT
+  // -------------------------------------------------------------------------
+  async login(email: string, password: string): Promise<LoginResponse> {
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { email },
+    });
+
+    if (!utilisateur || !utilisateur.passwordHash) {
+      throw new UnauthorizedException('Identifiants invalides');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, utilisateur.passwordHash);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Identifiants invalides');
+    }
+
+    const payload = {
+      sub: utilisateur.id,
+      email: utilisateur.email,
+      role: utilisateur.role,
+    };
+
+    const access_token = this.jwtService.sign(payload);
+
+    return {
+      access_token,
+      user: {
         uid: utilisateur.id,
         email: utilisateur.email,
         nom: utilisateur.pseudo,
         telephone: utilisateur.telephone || undefined,
         role: utilisateur.role as UserRole,
         dateCreation: utilisateur.dateCreation.toISOString(),
-      };
-    } catch (error: any) {
-      if (error?.code === 'auth/email-already-exists') {
-        throw new ConflictException('Cet email est déjà utilisé');
-      }
-      if (error?.code === 'P2002') {
-        throw new ConflictException('Cet email est déjà utilisé');
-      }
-      throw error;
-    }
+      },
+    };
   }
 
   // -------------------------------------------------------------------------
-  // Vérification du token (utilisée par le Guard, voir auth.guard.ts)
+  // Validation utilisateur (pour stratégie locale)
   // -------------------------------------------------------------------------
-  async verifyToken(idToken: string) {
-    return this.firebase.auth.verifyIdToken(idToken);
+  async validateUser(email: string, password: string): Promise<any> {
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { email },
+    });
+
+    if (!utilisateur || !utilisateur.passwordHash) {
+      return null;
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, utilisateur.passwordHash);
+
+    if (!isPasswordValid) {
+      return null;
+    }
+
+    const { passwordHash, ...result } = utilisateur;
+    return result;
   }
 
   // -------------------------------------------------------------------------
   // Changement de rôle (réservé admin, voir RolesGuard)
   // -------------------------------------------------------------------------
   async setUserRole(uid: string, role: UserRole): Promise<void> {
-    await this.firebase.auth.setCustomUserClaims(uid, { role });
     await this.prisma.utilisateur.update({
       where: { id: uid },
       data: { role },

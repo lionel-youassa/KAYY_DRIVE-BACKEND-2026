@@ -33,9 +33,14 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
+  // Health check endpoint
+  app.getHttpAdapter().get('/health', (req, res) => {
+    res.status(200).send('OK');
+  });
+
   const port = process.env.PORT ?? 3000;
   await app.listen(port, '0.0.0.0');
 
-  console.log(`🚀 KayyDrive Core API is running on: http://localhost:${port}`);
+  console.log(` KayyDrive Core API is running on: http://localhost:${port}`);
 }
 bootstrap();

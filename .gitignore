@@ -13,6 +13,10 @@
 .env.local
 .env.*.local
 
+# Root level node_modules
+node_modules/
+package-lock.json
+
 # Core-api (NestJS) specific ignores
 /core-api/node_modules
 /core-api/dist
