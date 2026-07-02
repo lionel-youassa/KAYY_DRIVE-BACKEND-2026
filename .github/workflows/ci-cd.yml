@@ -31,8 +31,11 @@ jobs:
 
       - run: npm ci --legacy-peer-deps
 
-      - name: Lint
-        run: npx eslint "{src,test}/**/*.ts" --fix --max-warnings 300
+      - name: Format (Prettier)
+        run: npx prettier --write "{src,test}/**/*.ts"
+
+      - name: Lint (ESLint)
+        run: npx eslint "{src,test}/**/*.ts" --max-warnings 300
 
   # ──────────────────────────────────────────────
   # 2. Tests unitaires + couverture
