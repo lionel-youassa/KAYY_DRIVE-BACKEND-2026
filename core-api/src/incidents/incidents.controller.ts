@@ -52,7 +52,7 @@ export class IncidentsController {
     @UploadedFile() image?: Express.Multer.File,
   ) {
     let imageUrl: string | undefined;
-    
+
     if (image) {
       imageUrl = await this.storageService.uploadFile(image, 'incidents');
     }
