@@ -24,7 +24,7 @@ KayyDrive est une application de navigation intelligente pour le Cameroun, compo
 ┌──────────────────┐  ┌──────────────────┐
 │   Core-API       │  │   IA-Service     │
 │   (NestJS)       │  │   (FastAPI)      │
-│   Port 4000      │  │   Port 9000      │
+│   Port 3001      │  │   Port 9500      │
 └──────┬───────────┘  └──────┬───────────┘
        │                    │
        │                    │
@@ -40,6 +40,13 @@ KayyDrive est une application de navigation intelligente pour le Cameroun, compo
 │                  Redis - Port 6379                           │
 │              BullMQ (Queue de tâches)                       │
 └─────────────────────────────────────────────────────────────┘
+       │
+       │
+       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  Minio - Ports 9000-9001                    │
+│              Stockage d'images (S3-compatible)              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## Services et Versions
@@ -50,7 +57,7 @@ KayyDrive est une application de navigation intelligente pour le Cameroun, compo
 **Framework :** NestJS 11.0.1  
 **Runtime :** Node.js 22  
 **Port interne :** 3000  
-**Port externe :** 4000  
+**Port externe :** 3001  
 
 **Dépendances principales :**
 - `@nestjs/common` ^11.0.1
@@ -179,9 +186,23 @@ KayyDrive est une application de navigation intelligente pour le Cameroun, compo
   - `POST /adresses-favorites` - Ajouter adresse favorite
   - `DELETE /adresses-favorites/:id` - Supprimer adresse favorite
 
-#### TelemetryModule
-- **Service :** MapMatchingService
-- **Fonction :** Map-matching avec PostGIS
+#### DashboardModule
+- **Contrôleur :** DashboardController
+- **Service :** DashboardService
+- **Routes :**
+  - `GET /dashboard/overview` - Vue d'ensemble
+  - `GET /dashboard/shortcuts` - Raccourcis communautaires
+  - `GET /dashboard/incidents` - Statistiques incidents
+  - `GET /dashboard/safe-drive` - Statistiques Safe-Drive
+  - `GET /dashboard/engagement` - Engagement utilisateurs
+  - `GET /dashboard/performance` - Performance système
+  - `GET /dashboard/all` - Toutes les statistiques
+
+#### StorageModule
+- **Contrôleur :** StorageController
+- **Service :** StorageService
+- **Routes :**
+  - `POST /storage/upload` - Upload d'images
 
 ### 2. IA-Service (FastAPI)
 
@@ -189,7 +210,7 @@ KayyDrive est une application de navigation intelligente pour le Cameroun, compo
 **Framework :** FastAPI 0.104.1  
 **Runtime :** Python 3.9  
 **Port interne :** 8000  
-**Port externe :** 9000  
+**Port externe :** 9500  
 
 **Dépendances principales :**
 - `fastapi` 0.104.1
@@ -255,6 +276,7 @@ KayyDrive est une application de navigation intelligente pour le Cameroun, compo
 - `ia-service` - API FastAPI
 - `postgres` - PostgreSQL avec PostGIS
 - `redis` - Redis pour BullMQ
+- `minio` - Stockage d'images S3-compatible
 - `nginx` - Reverse Proxy
 
 **Réseaux :**
@@ -264,6 +286,7 @@ KayyDrive est une application de navigation intelligente pour le Cameroun, compo
 - `postgres-data` - Données PostgreSQL persistantes
 - `redis-data` - Données Redis persistantes
 - `core-api-node-modules` - Node modules pour hot-reload
+- `minio-data` - Données Minio persistantes
 
 ### Fichiers d'environnement
 
@@ -277,7 +300,14 @@ REDIS_URL=redis://redis:6379
 PORT=3000
 NODE_ENV=development
 OSRM_URL=http://osrm-backend:5000
-IA_SERVICE_URL=http://ia-service:8000
+IA_SERVICE_URL=http://ia-service:9500
+MINIO_ENDPOINT=minio
+MINIO_PORT=9000
+MINIO_USE_SSL=false
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin123
+MINIO_BUCKET=kayydrive
+JWT_SECRET=your_jwt_secret_key
 FIREBASE_ADMIN_CONFIG=
 PYTHON_ENV=development
 GEMINI_API_KEY=<votre_clé>
@@ -376,10 +406,14 @@ redis-server
 ### Directement (Ports exposés)
 
 **Core-API :**
-- `http://localhost:4000/*`
+- `http://localhost:3001/*`
 
 **IA-Service :**
-- `http://localhost:9000/*`
+- `http://localhost:9500/*`
+
+**Minio :**
+- Console : `http://localhost:9001`
+- API : `http://localhost:9000`
 
 **PostgreSQL :**
 - `localhost:5432`
