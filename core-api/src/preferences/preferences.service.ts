@@ -29,6 +29,15 @@ export class PreferencesService {
   constructor(private readonly firebase: FirebaseService) {}
 
   async getPreferences(uid: string): Promise<PreferencesUtilisateur> {
+    if (!this.firebase.db) {
+      console.warn('⚠️ Firebase non initialisé - retour de préférences par défaut');
+      return {
+        id_utilisateur: uid,
+        ...PREFERENCES_PAR_DEFAUT,
+        dateMiseAJour: new Date().toISOString(),
+      };
+    }
+
     const doc = await this.firebase.db.collection('preferences').doc(uid).get();
 
     if (!doc.exists) {
@@ -56,6 +65,11 @@ export class PreferencesService {
       id_utilisateur: uid,
       dateMiseAJour: new Date().toISOString(),
     };
+
+    if (!this.firebase.db) {
+      console.warn('⚠️ Firebase non initialisé - mise à jour ignorée');
+      return nouvelles;
+    }
 
     await this.firebase.db.collection('preferences').doc(uid).set(nouvelles);
     return nouvelles;

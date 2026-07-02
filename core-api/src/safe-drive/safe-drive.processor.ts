@@ -26,6 +26,11 @@ export class SafeDriveProcessor extends WorkerHost {
     const { id_utilisateur, latitude, longitude, intensite, timestamp } =
       job.data;
 
+    if (!this.firebase.db) {
+      this.logger.warn('⚠️ Firebase non initialisé - job ignoré');
+      return { traite: false };
+    }
+
     // 1. Enregistrement systématique de la lecture brute
     await this.firebase.db.collection('trafic').add({
       type: 'lecture_accelerometre',

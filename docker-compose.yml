@@ -16,9 +16,16 @@ services:
       - REDIS_URL=${REDIS_URL}
       - OSRM_URL=${OSRM_URL}
       - IA_SERVICE_URL=${IA_SERVICE_URL}
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_USE_SSL=false
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - MINIO_BUCKET=kayydrive
     depends_on:
       - postgres
       - redis
+      - minio
     networks:
       - kayydrive-network
 
@@ -74,8 +81,6 @@ services:
   redis:
     image: redis:7-alpine
     container_name: kayydrive-redis
-    ports:
-      - "6379:6379"
     volumes:
       - redis-data:/data
     networks:

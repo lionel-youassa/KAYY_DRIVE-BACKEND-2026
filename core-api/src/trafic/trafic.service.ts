@@ -45,6 +45,16 @@ export class TraficService {
     vitesseMoyenne: number;
     id_utilisateur: string;
   }): Promise<RelevéTrafic> {
+    if (!this.firebase.db) {
+      console.warn('⚠️ Firebase non initialisé - relevé de trafic non enregistré');
+      return {
+        ...data,
+        niveau: niveauDepuisVitesse(data.vitesseMoyenne),
+        timestamp: new Date().toISOString(),
+        id: 'simulated-id',
+      };
+    }
+
     const relevé: RelevéTrafic = {
       ...data,
       niveau: niveauDepuisVitesse(data.vitesseMoyenne),
@@ -64,6 +74,11 @@ export class TraficService {
     vitesseMoyenne: number;
     nombreReleves: number;
   }> {
+    if (!this.firebase.db) {
+      console.warn('⚠️ Firebase non initialisé - retour de trafic simulé');
+      return { niveau: 'fluide', vitesseMoyenne: 0, nombreReleves: 0 };
+    }
+
     const ilYa15Minutes = new Date(Date.now() - 15 * 60 * 1000).toISOString();
 
     const snapshot = await this.firebase.db

@@ -92,19 +92,29 @@ export class NavigationService {
       const midLng = (start[0] + end[0]) / 2;
 
       // Récupération du trafic à ce point
-      const trafic = await this.traficService.getTraficActuel(midLat, midLng, 500);
+      try {
+        const trafic = await this.traficService.getTraficActuel(midLat, midLng, 500);
 
-      // Conversion du niveau en code couleur
-      let niveauCouleur = 'vert'; // fluide
-      if (trafic.niveau === 'dense') niveauCouleur = 'orange';
-      if (trafic.niveau === 'bouchon') niveauCouleur = 'rouge';
+        // Conversion du niveau en code couleur
+        let niveauCouleur = 'vert'; // fluide
+        if (trafic.niveau === 'dense') niveauCouleur = 'orange';
+        if (trafic.niveau === 'bouchon') niveauCouleur = 'rouge';
 
-      segments.push({
-        start,
-        end,
-        niveau: niveauCouleur,
-        vitesse: trafic.vitesseMoyenne,
-      });
+        segments.push({
+          start,
+          end,
+          niveau: niveauCouleur,
+          vitesse: trafic.vitesseMoyenne,
+        });
+      } catch (error) {
+        this.logger.warn(`Erreur lors de la récupération du trafic pour le segment: ${error.message}`);
+        segments.push({
+          start,
+          end,
+          niveau: 'vert',
+          vitesse: 0,
+        });
+      }
     }
 
     return segments;
@@ -277,6 +287,8 @@ export class NavigationService {
       try {
         const iaUrl = `${this.iaServiceUrl}/ia/traffic`;
         const iaPayload = {
+          latitude: startLat,
+          longitude: startLng,
           timestamp: new Date(),
           meteo: 'soleil', // Pourrait être dynamique
         };

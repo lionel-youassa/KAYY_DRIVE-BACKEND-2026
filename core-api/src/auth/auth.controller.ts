@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Patch, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { PromoteDto } from './dto/promote.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -30,6 +31,14 @@ export class AuthController {
   @UseGuards(AuthGuard)
   async me(@CurrentUser() user: UserProfile) {
     return { user };
+  }
+
+  // PATCH /auth/me
+  @Patch('me')
+  @UseGuards(AuthGuard)
+  async updateProfile(@CurrentUser() user: UserProfile, @Body() updateData: UpdateProfileDto) {
+    const updatedProfile = await this.authService.updateProfile(user.uid, updateData);
+    return { success: true, user: updatedProfile };
   }
 
   // POST /auth/promote (admin uniquement)
