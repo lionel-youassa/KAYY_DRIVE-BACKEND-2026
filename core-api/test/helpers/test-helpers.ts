@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
  */
 export async function createTestUser(overrides: Partial<any> = {}) {
   const passwordHash = await bcrypt.hash('TestPassword123!', 10);
-  
+
   return prisma.utilisateur.create({
     data: {
       email: overrides.email || `test-${Date.now()}@example.com`,
@@ -26,7 +26,7 @@ export async function createTestUser(overrides: Partial<any> = {}) {
  */
 export async function createTestAdmin(overrides: Partial<any> = {}) {
   const passwordHash = await bcrypt.hash('AdminPassword123!', 10);
-  
+
   return prisma.utilisateur.create({
     data: {
       email: overrides.email || `admin-${Date.now()}@example.com`,
@@ -59,7 +59,7 @@ export async function createTestCategory(overrides: Partial<any> = {}) {
  */
 export async function createTestIncident(overrides: Partial<any> = {}) {
   const user = overrides.idRapporteur || (await createTestUser());
-  
+
   return prisma.incident.create({
     data: {
       type: overrides.type || 'INONDATION',
@@ -78,15 +78,15 @@ export async function createTestIncident(overrides: Partial<any> = {}) {
  */
 export async function createTestShortcut(overrides: Partial<any> = {}) {
   const user = overrides.idUtilisateurCreateur || (await createTestUser());
-  
+
   return prisma.raccourciCommunautaire.create({
     data: {
       nom: overrides.nom || `TestShortcut${Date.now()}`,
       description: overrides.description || 'Test shortcut',
       pointDepartLat: overrides.pointDepartLat || 3.8488,
       pointDepartLng: overrides.pointDepartLng || 11.5021,
-      pointArriveeLat: overrides.pointArriveeLat || 3.8500,
-      pointArriveeLng: overrides.pointArriveeLng || 11.5050,
+      pointArriveeLat: overrides.pointArriveeLat || 3.85,
+      pointArriveeLng: overrides.pointArriveeLng || 11.505,
       trace: overrides.trace || { type: 'LineString', coordinates: [] },
       idUtilisateurCreateur: typeof user === 'string' ? user : user.id,
       ...overrides,
@@ -105,7 +105,9 @@ export async function cleanupTestData() {
   for (const { tablename } of tablenames) {
     if (tablename !== '_prisma_migrations') {
       try {
-        await prisma.$executeRawUnsafe(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`);
+        await prisma.$executeRawUnsafe(
+          `TRUNCATE TABLE "public"."${tablename}" CASCADE;`,
+        );
       } catch (error) {
         // Ignore errors for tables that might not exist
       }
