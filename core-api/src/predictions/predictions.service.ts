@@ -51,7 +51,9 @@ export class PredictionsService {
     const heure = dateCible.getHours();
 
     if (!this.firebase.db) {
-      console.warn('⚠️ Firebase non initialisé - retour de prediction par défaut');
+      console.warn(
+        '⚠️ Firebase non initialisé - retour de prediction par défaut',
+      );
       return {
         latitude,
         longitude,

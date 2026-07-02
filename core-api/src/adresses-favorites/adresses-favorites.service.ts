@@ -22,7 +22,9 @@ export class AdressesFavoritesService {
     id_utilisateur: string;
   }): Promise<string> {
     if (!this.firebase.db) {
-      console.warn('⚠️ Firebase non initialisé - adresse favorite non enregistrée');
+      console.warn(
+        '⚠️ Firebase non initialisé - adresse favorite non enregistrée',
+      );
       return 'simulated-id';
     }
 

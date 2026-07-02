@@ -46,7 +46,9 @@ export class TraficService {
     id_utilisateur: string;
   }): Promise<RelevéTrafic> {
     if (!this.firebase.db) {
-      console.warn('⚠️ Firebase non initialisé - relevé de trafic non enregistré');
+      console.warn(
+        '⚠️ Firebase non initialisé - relevé de trafic non enregistré',
+      );
       return {
         ...data,
         niveau: niveauDepuisVitesse(data.vitesseMoyenne),

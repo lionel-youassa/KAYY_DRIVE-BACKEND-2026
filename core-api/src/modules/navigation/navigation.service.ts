@@ -56,7 +56,7 @@ export class NavigationService {
 
       if (response.data.code !== 'Ok') {
         this.logger.warn(
-          `Snap-to-road OSRM: ${response.data.message || "Impossible de recaler les coordonnées"}`,
+          `Snap-to-road OSRM: ${response.data.message || 'Impossible de recaler les coordonnées'}`,
         );
         return null;
       }
@@ -79,21 +79,32 @@ export class NavigationService {
    */
   private async getTraficParTroncon(
     coordinates: number[][],
-  ): Promise<Array<{ start: number[]; end: number[]; niveau: string; vitesse: number }>> {
-    const segments: Array<{ start: number[]; end: number[]; niveau: string; vitesse: number }> = [];
+  ): Promise<
+    Array<{ start: number[]; end: number[]; niveau: string; vitesse: number }>
+  > {
+    const segments: Array<{
+      start: number[];
+      end: number[];
+      niveau: string;
+      vitesse: number;
+    }> = [];
     const step = Math.max(1, Math.floor(coordinates.length / 10)); // Max 10 segments
 
     for (let i = 0; i < coordinates.length - 1; i += step) {
       const start = coordinates[i];
       const end = coordinates[Math.min(i + step, coordinates.length - 1)];
-      
+
       // Calcul du point médian du segment
       const midLat = (start[1] + end[1]) / 2;
       const midLng = (start[0] + end[0]) / 2;
 
       // Récupération du trafic à ce point
       try {
-        const trafic = await this.traficService.getTraficActuel(midLat, midLng, 500);
+        const trafic = await this.traficService.getTraficActuel(
+          midLat,
+          midLng,
+          500,
+        );
 
         // Conversion du niveau en code couleur
         let niveauCouleur = 'vert'; // fluide
@@ -107,7 +118,9 @@ export class NavigationService {
           vitesse: trafic.vitesseMoyenne,
         });
       } catch (error) {
-        this.logger.warn(`Erreur lors de la récupération du trafic pour le segment: ${error.message}`);
+        this.logger.warn(
+          `Erreur lors de la récupération du trafic pour le segment: ${error.message}`,
+        );
         segments.push({
           start,
           end,
