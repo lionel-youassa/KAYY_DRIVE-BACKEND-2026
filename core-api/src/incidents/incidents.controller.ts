@@ -7,7 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { IncidentsService } from './incidents.service';
+import IncidentsService from './incidents.service';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { ConfirmIncidentDto } from './dto/confirm-incident.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';

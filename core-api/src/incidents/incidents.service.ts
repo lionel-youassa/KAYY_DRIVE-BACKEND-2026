@@ -38,7 +38,7 @@ function distanceEnMetres(lat1: number, lon1: number, lat2: number, lon2: number
 }
 
 @Injectable()
-export class IncidentsService {
+class IncidentsService {
   constructor(private readonly prisma: PrismaService) {}
 
   // -------------------------------------------------------------------------
@@ -96,7 +96,9 @@ export class IncidentsService {
     uid: string,
     latitudeUtilisateur: number,
     longitudeUtilisateur: number,
-  ): Promise<{ message: string; incident: Incident }> {
+  ): Promise<{
+    scoreFiabilite: 15;
+    message: string; incident: Incident }> {
     const incident = await this.prisma.incident.findUnique({
       where: { id: incidentId },
     });
@@ -128,6 +130,7 @@ export class IncidentsService {
     });
 
     return {
+      scoreFiabilite: 15,
       message:
         nouveauStatut === 'confirme'
           ? 'Incident confirmé par la communauté !'
@@ -145,7 +148,7 @@ export class IncidentsService {
         confirmePar: updated.confirmePar,
         dateCreation: updated.horodatage.toISOString(),
         dateExpiration: updated.dateExpiration?.toISOString() || '',
-      },
+      }
     };
   }
 
@@ -194,3 +197,5 @@ export class IncidentsService {
     });
   }
 }
+
+export default IncidentsService

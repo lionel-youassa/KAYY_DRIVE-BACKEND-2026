@@ -39,6 +39,9 @@ function distanceEnMetres(a: PointGPS, b: PointGPS): number {
 
 @Injectable()
 export class RoutesService {
+  getSuggestionsRaccourcis(getSuggestionsRaccourcis: any) {
+      throw new Error("Method not implemented.");
+  }
   constructor(private readonly prisma: PrismaService) {}
 
   // -------------------------------------------------------------------------
@@ -94,7 +97,9 @@ export class RoutesService {
     raccourciId: string,
     uid: string,
     vote: 'positif' | 'negatif',
-  ): Promise<{ message: string; raccourci: RaccourciCommunautaire }> {
+  ): Promise<{
+      scoreFiabilite(scoreFiabilite: any): unknown; message: string; raccourci: RaccourciCommunautaire
+  }> {
     const raccourci = await this.prisma.raccourciCommunautaire.findUnique({
       where: { id: raccourciId },
       include: { votes: true },
@@ -173,9 +178,7 @@ export class RoutesService {
   // Suggestions pour un trajet donné
   // -------------------------------------------------------------------------
   async suggererRaccourcis(
-    depart: PointGPS,
-    arrivee: PointGPS,
-    rayonMetres = 1000,
+      p0: number, p1: number, p2: number, p3: number, depart: PointGPS, arrivee: PointGPS, rayonMetres = 1000,
   ): Promise<RaccourciCommunautaire[]> {
     const raccourcis = await this.prisma.raccourciCommunautaire.findMany({
       where: { statut: 'valide' },

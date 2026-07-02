@@ -3,6 +3,14 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src', '<rootDir>/test'],
   testMatch: ['**/*.spec.ts', '**/*.e2e-spec.ts'],
+  transform: {
+    '^.+\\.(t|j)s$': 'ts-jest',
+  },
+  // Force Jest à compiler firebase-admin et ses dépendances ESM (comme jose)
+  transformIgnorePatterns: [
+    'node_modules/(?!(firebase-admin|jose|jwks-rsa)/)',
+  ],
+  moduleDirectories: ['node_modules', '<rootDir>/src'],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/main.ts',
