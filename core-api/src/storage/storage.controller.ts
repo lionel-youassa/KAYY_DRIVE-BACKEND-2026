@@ -1,4 +1,10 @@
-import { Controller, Post, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StorageService } from './storage.service';
 import { ApiTags, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
@@ -35,9 +41,16 @@ export class StorageController {
       throw new BadRequestException('Aucun fichier fourni');
     }
 
-    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const allowedMimeTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+    ];
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('Type de fichier non autorisé. Seuls les images sont acceptées.');
+      throw new BadRequestException(
+        'Type de fichier non autorisé. Seuls les images sont acceptées.',
+      );
     }
 
     const maxSize = 5 * 1024 * 1024; // 5MB

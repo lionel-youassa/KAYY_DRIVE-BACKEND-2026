@@ -27,7 +27,9 @@ export class StorageService {
         this.logger.log(`Bucket ${this.bucketName} créé avec succès`);
       }
     } catch (error) {
-      this.logger.error(`Erreur lors de la création du bucket: ${error.message}`);
+      this.logger.error(
+        `Erreur lors de la création du bucket: ${error.message}`,
+      );
     }
   }
 
@@ -36,7 +38,7 @@ export class StorageService {
     folder: string = 'uploads',
   ): Promise<string> {
     const fileName = `${folder}/${Date.now()}-${file.originalname}`;
-    
+
     await this.minioClient.putObject(
       this.bucketName,
       fileName,
@@ -54,7 +56,9 @@ export class StorageService {
     try {
       await this.minioClient.removeObject(this.bucketName, objectName);
     } catch (error) {
-      this.logger.error(`Erreur lors de la suppression du fichier: ${error.message}`);
+      this.logger.error(
+        `Erreur lors de la suppression du fichier: ${error.message}`,
+      );
     }
   }
 
@@ -62,7 +66,7 @@ export class StorageService {
     const endPoint = this.configService.get('MINIO_ENDPOINT') || 'localhost';
     const port = this.configService.get('MINIO_PORT') || '9000';
     const useSSL = this.configService.get('MINIO_USE_SSL') === 'true';
-    
+
     return `${useSSL ? 'https' : 'http'}://${endPoint}:${port}/${this.bucketName}/${objectName}`;
   }
 
