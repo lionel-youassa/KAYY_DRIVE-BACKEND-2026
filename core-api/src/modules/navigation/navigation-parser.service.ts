@@ -29,6 +29,7 @@ export class NavigationParserService {
 
   /**
    * Parse la réponse brute d'OSRM pour extraire des instructions lisibles
+   * Amélioré avec des étapes textuelles précises incluant les noms de rues
    */
   parseInstructions(osrmData: any): any[] {
     if (!osrmData.routes || osrmData.routes.length === 0) return [];
@@ -37,23 +38,30 @@ export class NavigationParserService {
     const route = osrmData.routes[0];
 
     route.legs.forEach((leg) => {
-      leg.steps.forEach((step) => {
+      leg.steps.forEach((step, index) => {
         const distance = this.formatDistance(step.distance);
         const maneuverType = step.maneuver.type;
         const modifier = step.maneuver.modifier;
         const streetName = step.name || 'Rue inconnue';
+        const nextStreetName = leg.steps[index + 1]?.name || '';
 
         let text = '';
 
-        // Construction de la phrase de guidage
+        // Construction de la phrase de guidage améliorée
         if (maneuverType === 'depart') {
-          text = `Partez de ${streetName}`;
+          text = `Départ de ${streetName}`;
         } else if (maneuverType === 'arrive') {
-          text = `Vous êtes arrivé à ${streetName}`;
+          text = `Arrivée à ${streetName}`;
         } else {
           const action = this.translations[maneuverType] || maneuverType;
           const direction = this.translations[modifier] || modifier || '';
-          text = `Dans ${distance}, ${action} ${direction} vers ${streetName}`;
+          
+          // Instructions plus précises avec nom de rue de destination
+          if (nextStreetName && nextStreetName !== streetName) {
+            text = `Dans ${distance}, ${action} ${direction} vers ${nextStreetName}`;
+          } else {
+            text = `Dans ${distance}, ${action} ${direction} sur ${streetName}`;
+          }
         }
 
         instructions.push({
@@ -61,6 +69,9 @@ export class NavigationParserService {
           distance: step.distance,
           duration: step.duration,
           location: step.maneuver.location,
+          type: maneuverType,
+          streetName: streetName,
+          instructionIndex: index,
         });
       });
     });

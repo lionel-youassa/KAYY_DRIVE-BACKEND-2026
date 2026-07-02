@@ -35,6 +35,64 @@ export class NavigationService {
     );
   }
 
+  /**
+   * Snap-to-road : Recale les coordonnées GPS sur la route la plus proche
+   * Utilise l'endpoint OSRM /match pour éviter que le point ne tremble
+   */
+  async snapToRoad(coordinates: number[][]): Promise<any> {
+    const coordsString = coordinates
+      .map((coord) => `${coord[0]},${coord[1]}`)
+      .join(';');
+
+    const url = `${this.osrmUrl}/matching/v1/driving/${coordsString}?geometries=geojson&overview=full`;
+
+    try {
+      this.logger.log(`Snap-to-road OSRM: ${url}`);
+      const response: AxiosResponse<any> = await firstValueFrom(
+        this.httpService.get(url),
+      );
+
+      if (response.data.code !== 'Ok') {
+        this.logger.warn(
+          `Snap-to-road OSRM: ${response.data.message || "Impossible de recaler les coordonnées"}`,
+        );
+        return null;
+      }
+
+      return {
+        snappedCoordinates: response.data.matchings[0].geometry.coordinates,
+        confidence: response.data.matchings[0].confidence,
+        distance: response.data.matchings[0].distance,
+        duration: response.data.matchings[0].duration,
+      };
+    } catch (error) {
+      this.logger.error(`Erreur snap-to-road: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Recalcule automatique l'itinéraire si l'utilisateur s'éloigne du tracé
+   * Appelé par le frontend quand l'utilisateur est à plus de 50m du tracé
+   */
+  async reroute(
+    currentLat: number,
+    currentLng: number,
+    endLat: number,
+    endLng: number,
+  ): Promise<any> {
+    this.logger.log(
+      `Recalcule d'itinéraire depuis [${currentLat},${currentLng}] vers [${endLat},${endLng}]`,
+    );
+
+    return this.getSmartRoute({
+      startLat: currentLat,
+      startLng: currentLng,
+      endLat: endLat,
+      endLng: endLng,
+    });
+  }
+
   async getBasicRoute(query: GetRouteDto): Promise<any> {
     const startLatStr = query.startLat.toString();
     const startLngStr = query.startLng.toString();

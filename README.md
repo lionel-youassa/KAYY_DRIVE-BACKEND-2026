@@ -686,6 +686,57 @@ endLng=11.502
 - **Routes locales** : Suggestions de raccourcis communautaires alternatifs
 - **Prédictions de trafic** : Estimation du temps de trajet en fonction des conditions météo et de l'heure
 - **Instructions enrichies** : Instructions de navigation avec alertes et suggestions
+- **Maneuvers précis** : Instructions textuelles avec noms de rues pour le guidage vocal
+
+### POST /route/reroute
+Recalcule automatique l'itinéraire si l'utilisateur s'éloigne du tracé (plus de 50m).
+
+**Body :**
+```json
+{
+  "currentLat": 3.8488,
+  "currentLng": 11.5021,
+  "endLat": 3.8500,
+  "endLng": 11.5100
+}
+```
+
+**Réponse :**
+```json
+{
+  "duration": 2100,
+  "distance": 15000,
+  "geometry": { "type": "LineString", "coordinates": [...] },
+  "instructions": [...],
+  "suggestedLocalRoutes": [...],
+  "incidentsOnRoute": [...],
+  "trafficPrediction": {...}
+}
+```
+
+### POST /route/snap-to-road
+Recale les coordonnées GPS sur la route la plus proche pour éviter que le point ne tremble.
+
+**Body :**
+```json
+{
+  "coordinates": [
+    [11.5021, 3.8488],
+    [11.5030, 3.8490],
+    [11.5100, 3.8500]
+  ]
+}
+```
+
+**Réponse :**
+```json
+{
+  "snappedCoordinates": [[11.5022, 3.8489], [11.5031, 3.8491], [11.5101, 3.8501]],
+  "confidence": 0.95,
+  "distance": 15000,
+  "duration": 2100
+}
+```
 
 ## Routes Admin
 

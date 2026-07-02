@@ -218,6 +218,14 @@ src/<module>/
 | GET | `/offline/zones/:zoneId/download` | AuthGuard |
 | POST | `/offline/zones/:zoneId/generate` | AuthGuard + AdminGuard |
 
+### Navigation
+| Méthode | Route | Protection |
+|---|---|---|
+| GET | `/route/basic?startLat=&startLng=&endLat=&endLng=` | Publique |
+| GET | `/route/smart?startLat=&startLng=&endLat=&endLng=` | Publique |
+| POST | `/route/reroute` | Publique |
+| POST | `/route/snap-to-road` | Publique |
+
 ### Storage
 | Méthode | Route | Protection |
 |---|---|---|

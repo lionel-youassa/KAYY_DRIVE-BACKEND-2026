@@ -74,7 +74,7 @@ export class MapMatchingService {
         point.latitude,
       );
 
-      if (!result || result.length === 0) {
+      if (!result || !Array.isArray(result) || result.length === 0) {
         this.logger.warn(
           `Aucun segment trouvé pour le point [${point.latitude}, ${point.longitude}]`,
         );
@@ -209,7 +209,7 @@ export class MapMatchingService {
         radiusMeters,
       );
 
-      return results.map((segment) => ({
+      return (results as any[]).map((segment) => ({
         id: segment.id,
         vitesseMoyenne: segment.vitesse_moyenne,
         estOfficiel: segment.est_officiel,
