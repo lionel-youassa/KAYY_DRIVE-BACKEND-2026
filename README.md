@@ -4,6 +4,14 @@ Bienvenue dans le monorepo de KayyDrive, une application de navigation routière
 
 Ce dépôt contient les différents services qui composent l'architecture backend de KayyDrive.
 
+## 📚 Documentation
+
+Pour plus d'informations détaillées, consultez :
+
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Architecture détaillée du projet, services, versions et modules
+- **[DOCKER_SETUP.md](DOCKER_SETUP.md)** - Configuration Docker, déploiement et dépannage des conteneurs
+- **[core-api/README.md](core-api/README.md)** - Documentation complète de l'API NestJS (routes, tests, stockage)
+
 ## Structure du Projet
 
 - `core-api/`: Le service principal (NestJS) géré par Lionel, Cindy et Atouga. Il orchestre la navigation, gère les requêtes API et interagit avec les autres microservices.

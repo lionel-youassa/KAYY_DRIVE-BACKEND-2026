@@ -7,12 +7,13 @@ Cette architecture Docker permet de déployer tous les services KayyDrive dans d
 ## Architecture
 
 ```
-Frontend → Nginx (80) → Core-API (4000)
-                        → IA-Service (8000)
+Frontend → Nginx (80) → Core-API (3001)
+                        → IA-Service (9500)
                         → OSRM (5000)
 
 Core-API ↔ PostgreSQL (5432)
 Core-API ↔ Redis (6379)
+Core-API ↔ Minio (9000-9001)
 IA-Service ↔ PostgreSQL (5432)
 ```
 
@@ -20,12 +21,13 @@ IA-Service ↔ PostgreSQL (5432)
 
 ### 1. Core-API (NestJS)
 - **Port interne**: 3000
-- **Port externe**: 4000
-- **Dépendances**: PostgreSQL, Redis
+- **Port externe**: 3001
+- **Dépendances**: PostgreSQL, Redis, Minio
 - **Routes API**: `/api/*`
 
 ### 2. IA-Service (FastAPI)
-- **Port**: 8000
+- **Port interne**: 8000
+- **Port externe**: 9500
 - **Dépendances**: PostgreSQL
 - **Routes API**: `/ia/*`
 
@@ -45,7 +47,15 @@ IA-Service ↔ PostgreSQL (5432)
 - **Image**: redis:7-alpine
 - **Usage**: BullMQ queues
 
-### 6. Nginx (Reverse Proxy)
+### 6. Minio
+- **Ports**: 9000 (API), 9001 (Console)
+- **Image**: minio/minio:latest
+- **Usage**: Stockage d'images S3-compatible
+- **Bucket par défaut**: kayydrive
+- **Accès console**: http://localhost:9001
+- **Identifiants**: minioadmin / minioadmin123
+
+### 7. Nginx (Reverse Proxy)
 - **Port**: 80
 - **Image**: nginx:alpine
 - **Rôle**: Point d'entrée unique, CORS, rate limiting
