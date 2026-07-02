@@ -6,11 +6,13 @@ import { NavigationService } from './navigation.service';
 import { NavigationParserService } from './navigation-parser.service';
 import { RoutesModule } from '../../routes/routes.module';
 import { RouteRecalculationService } from './route-recalculation.service';
+import { TraficModule } from '../../trafic/trafic.module';
 
 @Module({
   imports: [
     HttpModule,
     RoutesModule,
+    TraficModule,
     BullModule.registerQueue({
       name: 'route-recalculation',
     }),

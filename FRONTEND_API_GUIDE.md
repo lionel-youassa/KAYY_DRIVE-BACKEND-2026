@@ -27,6 +27,7 @@ Ce document décrit tous les endpoints de l'API KayyDrive pour l'intégration fr
 15. [Dashboard (Admin)](#dashboard-admin)
 16. [Offline](#offline)
 17. [Storage](#storage)
+18. [Geocoding](#geocoding)
 
 ---
 
@@ -117,11 +118,58 @@ Authorization: Bearer <firebase-token>
   "user": {
     "uid": "user-uuid",
     "email": "user@example.com",
-    "displayName": "John Doe",
+    "nom": "John Doe",
+    "telephone": "+237123456789",
     "role": "user"
   }
 }
 ```
+
+---
+
+### PATCH /auth/me
+Mettre à jour le profil de l'utilisateur connecté.
+
+**URL :** `http://localhost:3001/auth/me`
+
+**Méthode :** PATCH
+
+**Protection :** AuthGuard
+
+**Headers :**
+```
+Authorization: Bearer <firebase-token>
+```
+
+**Body :**
+```json
+{
+  "nom": "John Doe Updated",
+  "email": "newemail@example.com",
+  "telephone": "+237987654321",
+  "password": "newpassword123"
+}
+```
+
+**Réponse :**
+```json
+{
+  "success": true,
+  "user": {
+    "uid": "user-uuid",
+    "email": "newemail@example.com",
+    "nom": "John Doe Updated",
+    "telephone": "+237987654321",
+    "role": "user"
+  }
+}
+```
+
+**Notes :**
+- Tous les champs sont optionnels
+- Le mot de passe sera hashé automatiquement
+- L'email doit être unique (vérification effectuée)
+- Le champ `nom` correspond au `pseudo` dans la base de données
 
 ---
 
@@ -1863,6 +1911,50 @@ try {
   );
 }
 ```
+
+---
+
+## Geocoding
+
+### GET /geocode/search
+Recherche de lieux avec autocomplétion (type Google Maps) via OpenStreetMap Nominatim.
+
+**URL :** `http://localhost:3001/geocode/search`
+
+**Méthode :** GET
+
+**Protection :** Publique
+
+**Query params :**
+```
+q=Akwa
+```
+
+**Réponse :**
+```json
+[
+  {
+    "id": "0",
+    "nom": "Akwa",
+    "adresse": "Akwa, Douala, Cameroun",
+    "latitude": 4.051,
+    "longitude": 9.767
+  },
+  {
+    "id": "1",
+    "nom": "Akwa Nord",
+    "adresse": "Akwa Nord, Douala, Cameroun",
+    "latitude": 4.052,
+    "longitude": 9.768
+  }
+]
+```
+
+**Notes :**
+- La recherche est limitée à 5 résultats
+- Les résultats sont filtrés par pays Cameroun
+- Minimum 2 caractères requis pour la recherche
+- Utilisé pour l'autocomplétion dans les champs de départ/destination
 
 ---
 

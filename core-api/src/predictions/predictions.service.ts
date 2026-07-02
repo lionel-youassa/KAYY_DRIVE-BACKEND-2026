@@ -50,6 +50,20 @@ export class PredictionsService {
     const jourSemaine = dateCible.getDay();
     const heure = dateCible.getHours();
 
+    if (!this.firebase.db) {
+      console.warn('⚠️ Firebase non initialisé - retour de prediction par défaut');
+      return {
+        latitude,
+        longitude,
+        jourSemaine,
+        heure,
+        niveauPredit: 'fluide',
+        vitesseMoyennePredite: 0,
+        confiance: 'faible',
+        nombreEchantillons: 0,
+      };
+    }
+
     const ilYa60Jours = new Date(
       Date.now() - 60 * 24 * 60 * 60 * 1000,
     ).toISOString();

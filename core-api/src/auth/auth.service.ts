@@ -175,4 +175,63 @@ export class AuthService {
       dateCreation: utilisateur.dateCreation.toISOString(),
     };
   }
+
+  // -------------------------------------------------------------------------
+  // Mise à jour du profil utilisateur
+  // -------------------------------------------------------------------------
+  async updateProfile(uid: string, updateData: {
+    nom?: string;
+    email?: string;
+    telephone?: string;
+    password?: string;
+  }): Promise<UserProfile> {
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { id: uid },
+    });
+
+    if (!utilisateur) {
+      throw new NotFoundException('Profil introuvable');
+    }
+
+    const updatePayload: any = {};
+
+    if (updateData.nom) {
+      updatePayload.pseudo = updateData.nom;
+    }
+
+    if (updateData.email) {
+      // Vérifier si l'email est déjà utilisé par un autre utilisateur
+      const existingUser = await this.prisma.utilisateur.findUnique({
+        where: { email: updateData.email },
+      });
+
+      if (existingUser && existingUser.id !== uid) {
+        throw new ConflictException('Cet email est déjà utilisé');
+      }
+
+      updatePayload.email = updateData.email;
+    }
+
+    if (updateData.telephone !== undefined) {
+      updatePayload.telephone = updateData.telephone;
+    }
+
+    if (updateData.password) {
+      updatePayload.passwordHash = await bcrypt.hash(updateData.password, 10);
+    }
+
+    const updatedUser = await this.prisma.utilisateur.update({
+      where: { id: uid },
+      data: updatePayload,
+    });
+
+    return {
+      uid: updatedUser.id,
+      email: updatedUser.email,
+      nom: updatedUser.pseudo,
+      telephone: updatedUser.telephone || undefined,
+      role: updatedUser.role as UserRole,
+      dateCreation: updatedUser.dateCreation.toISOString(),
+    };
+  }
 }

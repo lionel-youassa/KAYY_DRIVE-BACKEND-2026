@@ -21,6 +21,7 @@ import { OfflineModule } from './modules/offline/offline.module';
 import { TelemetryModule } from './modules/telemetry/telemetry.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { StorageModule } from './storage/storage.module';
+import { GeocodingModule } from './geocoding/geocoding.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { StorageModule } from './storage/storage.module';
     TelemetryModule,
     DashboardModule,
     StorageModule,
+    GeocodingModule,
   ],
   controllers: [],
   providers: [RewardsService],
