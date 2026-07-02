@@ -12,6 +12,7 @@ import { GetRouteDto } from './dto/get-route.dto';
 import { NavigationParserService } from './navigation-parser.service';
 import { RoutesService, PointGPS } from '../../routes/routes.service';
 import { AxiosResponse } from 'axios';
+import { TraficService } from '../../trafic/trafic.service';
 
 @Injectable()
 export class NavigationService {
@@ -24,6 +25,7 @@ export class NavigationService {
     private readonly configService: ConfigService,
     private readonly parserService: NavigationParserService,
     private readonly routesService: RoutesService,
+    private readonly traficService: TraficService,
   ) {
     this.osrmUrl = this.configService.get<string>(
       'OSRM_URL',
@@ -69,6 +71,43 @@ export class NavigationService {
       this.logger.error(`Erreur snap-to-road: ${error.message}`);
       return null;
     }
+  }
+
+  /**
+   * Calcule le trafic par tronçon de route
+   * Retourne un tableau de segments avec leur niveau de trafic
+   */
+  private async getTraficParTroncon(
+    coordinates: number[][],
+  ): Promise<Array<{ start: number[]; end: number[]; niveau: string; vitesse: number }>> {
+    const segments: Array<{ start: number[]; end: number[]; niveau: string; vitesse: number }> = [];
+    const step = Math.max(1, Math.floor(coordinates.length / 10)); // Max 10 segments
+
+    for (let i = 0; i < coordinates.length - 1; i += step) {
+      const start = coordinates[i];
+      const end = coordinates[Math.min(i + step, coordinates.length - 1)];
+      
+      // Calcul du point médian du segment
+      const midLat = (start[1] + end[1]) / 2;
+      const midLng = (start[0] + end[0]) / 2;
+
+      // Récupération du trafic à ce point
+      const trafic = await this.traficService.getTraficActuel(midLat, midLng, 500);
+
+      // Conversion du niveau en code couleur
+      let niveauCouleur = 'vert'; // fluide
+      if (trafic.niveau === 'dense') niveauCouleur = 'orange';
+      if (trafic.niveau === 'bouchon') niveauCouleur = 'rouge';
+
+      segments.push({
+        start,
+        end,
+        niveau: niveauCouleur,
+        vitesse: trafic.vitesseMoyenne,
+      });
+    }
+
+    return segments;
   }
 
   /**
@@ -159,12 +198,18 @@ export class NavigationService {
       }
       // --- Fin de la logique d'injection/suggestion ---
 
+      // Calcul du trafic par tronçon pour colorer le tracé
+      const traficParTroncon = await this.getTraficParTroncon(
+        response.data.routes[0].geometry.coordinates,
+      );
+
       return {
         duration: response.data.routes[0].duration,
         distance: response.data.routes[0].distance,
         geometry: response.data.routes[0].geometry,
         instructions: finalInstructions, // Instructions enrichies
         suggestedLocalRoutes: suggestedLocalRoutes, // Routes locales suggérées
+        traficParTroncon: traficParTroncon, // Segments colorés par trafic
       };
     } catch (error) {
       this.logger.error(`Erreur OSRM: ${error.message}`);
@@ -310,6 +355,11 @@ export class NavigationService {
           ? baseDuration + trafficPrediction.temps_estime_minutes * 60
           : baseDuration;
 
+      // 6. Calcul du trafic par tronçon pour colorer le tracé
+      const traficParTroncon = await this.getTraficParTroncon(
+        osrmResponse.data.routes[0].geometry.coordinates,
+      );
+
       return {
         duration: adjustedDuration,
         distance: baseDistance,
@@ -318,6 +368,7 @@ export class NavigationService {
         suggestedLocalRoutes: relevantLocalRoutes,
         incidentsOnRoute: incidentsOnRoute,
         trafficPrediction: trafficPrediction,
+        traficParTroncon: traficParTroncon, // Nouveau: segments colorés par trafic
         smartFeatures: {
           trafficEnabled: trafficPrediction !== null,
           localRoutesEnabled: relevantLocalRoutes.length > 0,

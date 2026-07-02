@@ -253,11 +253,59 @@ endLng=11.502
     "niveau_trafic": "moyen",
     "temps_estime_minutes": 35
   },
+  "traficParTroncon": [
+    {
+      "start": [11.5021, 3.8488],
+      "end": [11.5030, 3.8490],
+      "niveau": "vert",
+      "vitesse": 35
+    },
+    {
+      "start": [11.5030, 3.8490],
+      "end": [11.5100, 3.8500],
+      "niveau": "orange",
+      "vitesse": 15
+    }
+  ],
   "smartFeatures": {
     "trafficEnabled": true,
     "localRoutesEnabled": true,
     "incidentsEnabled": true
   }
+}
+```
+
+**Champ traficParTroncon :**
+- `start`: Coordonnées de début du segment [longitude, latitude]
+- `end`: Coordonnées de fin du segment [longitude, latitude]
+- `niveau`: Code couleur du trafic - "vert" (fluide), "orange" (modéré), "rouge" (bouchon)
+- `vitesse`: Vitesse moyenne en km/h sur ce segment
+
+**Utilisation pour colorer le tracé :**
+```dart
+// Colorer chaque segment selon le niveau de trafic
+for (var segment in route['traficParTroncon']) {
+  Color segmentColor;
+  switch (segment['niveau']) {
+    case 'vert':
+      segmentColor = Colors.green;
+      break;
+    case 'orange':
+      segmentColor = Colors.orange;
+      break;
+    case 'rouge':
+      segmentColor = Colors.red;
+      break;
+    default:
+      segmentColor = Colors.green;
+  }
+  
+  // Dessiner le segment avec la couleur appropriée
+  drawSegment(
+    segment['start'],
+    segment['end'],
+    color: segmentColor,
+  );
 }
 ```
 
