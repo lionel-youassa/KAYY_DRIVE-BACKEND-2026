@@ -229,11 +229,12 @@ Connexion d'un utilisateur.
 ```json
 {
   "success": true,
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "uid": "uuid",
     "email": "user@example.com",
     "nom": "John Doe",
+    "prenom": "",
     "role": "user"
   }
 }
@@ -254,6 +255,7 @@ Authorization: Bearer <token>
     "uid": "uuid",
     "email": "user@example.com",
     "nom": "John Doe",
+    "prenom": "",
     "role": "user"
   }
 }
@@ -788,7 +790,8 @@ Authorization: Bearer <admin_token>
 ```json
 {
   "success": true,
-  "categorie": {
+  "message": "Catégorie créée avec succès",
+  "category": {
     "id": "uuid",
     "nom": "Transport",
     "icone": "🚌",
@@ -820,13 +823,17 @@ Authorization: Bearer <admin_token>
 **Réponse :**
 ```json
 {
-  "id": "uuid",
-  "titre": "Promotion KayyDrive",
-  "description": "Offre spéciale pour les nouveaux utilisateurs",
-  "type": "banner",
-  "dateDebut": "2026-07-01T00:00:00Z",
-  "dateFin": "2026-07-31T23:59:59Z",
-  "actif": true
+  "success": true,
+  "message": "Publicité créée avec succès",
+  "ad": {
+    "id": "uuid",
+    "titre": "Promotion KayyDrive",
+    "description": "Offre spéciale pour les nouveaux utilisateurs",
+    "type": "banner",
+    "dateDebut": "2026-07-01T00:00:00Z",
+    "dateFin": "2026-07-31T23:59:59Z",
+    "actif": true
+  }
 }
 ```
 
@@ -869,14 +876,18 @@ Authorization: Bearer <admin_token>
 **Réponse :**
 ```json
 {
-  "id": "uuid",
-  "titre": "Bonus de bienvenue",
-  "description": "100 points pour votre première inscription",
-  "points": 100,
-  "type": "inscription",
-  "dateDebut": "2026-07-01T00:00:00Z",
-  "dateFin": "2026-12-31T23:59:59Z",
-  "actif": true
+  "success": true,
+  "message": "Récompense créée avec succès",
+  "reward": {
+    "id": "uuid",
+    "titre": "Bonus de bienvenue",
+    "description": "100 points pour votre première inscription",
+    "points": 100,
+    "type": "inscription",
+    "dateDebut": "2026-07-01T00:00:00Z",
+    "dateFin": "2026-12-31T23:59:59Z",
+    "actif": true
+  }
 }
 ```
 
@@ -1033,12 +1044,25 @@ Authorization: Bearer <admin_token>
 **Réponse :**
 ```json
 {
-  "overview": { ... },
-  "shortcuts": { ... },
-  "incidents": { ... },
-  "safeDrive": { ... },
-  "engagement": { ... },
-  "performance": { ... }
+  "overview": {
+    "totalUsers": 1500,
+    "activeUsers": 850,
+    "totalIncidents": 120,
+    "totalRoutes": 45
+  },
+  "incidents": {
+    "confirmedIncidents": 85,
+    "incidentsByType": {
+      "accident": 40,
+      "inondation": 25,
+      "travaux": 20
+    }
+  },
+  "performance": {
+    "averageResponseTime": 150,
+    "uptime": 99.5,
+    "errorRate": 0.5
+  }
 }
 ```
 
