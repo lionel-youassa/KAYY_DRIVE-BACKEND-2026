@@ -20,7 +20,7 @@ export class CategoriesController {
   @Post()
   @UseGuards(AdminGuard)
   async create(@Body() dto: CreateCategorieDto) {
-    const categorie = await this.categoriesService.createCategorie(dto);
-    return { success: true, categorie };
+    const category = await this.categoriesService.createCategorie(dto);
+    return { success: true, message: 'Catégorie créée avec succès', category };
   }
 }

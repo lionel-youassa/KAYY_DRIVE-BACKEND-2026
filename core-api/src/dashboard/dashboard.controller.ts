@@ -97,13 +97,18 @@ export class DashboardController {
         this.dashboardService.getSystemPerformance(),
       ]);
 
+    // Format compatible frontend
     return {
       overview,
-      shortcuts,
-      incidents,
-      safeDrive,
-      engagement,
-      performance,
+      incidents: {
+        confirmedIncidents: incidents.confirmedIncidents,
+        incidentsByType: incidents.incidentsByType,
+      },
+      performance: {
+        averageResponseTime: performance.averageResponseTime,
+        uptime: performance.uptime,
+        errorRate: performance.errorRate,
+      },
     };
   }
 }

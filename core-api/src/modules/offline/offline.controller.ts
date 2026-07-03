@@ -14,7 +14,8 @@ export class OfflineController {
 
   @Get('zones')
   async getAvailableZones() {
-    return this.offlineService.getAvailableZones();
+    const zones = await this.offlineService.getAvailableZones();
+    return { zones };
   }
 
   @Get('zones/:zoneId/metadata')
