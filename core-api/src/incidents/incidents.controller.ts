@@ -82,7 +82,7 @@ export class IncidentsController {
       })
       .catch((err) => console.error('Erreur notification incident:', err));
 
-    return { success: true, incident };
+    return { success: true, message: 'Incident signalé avec succès', incident };
   }
 
   // POST /incidents/:id/confirmer
