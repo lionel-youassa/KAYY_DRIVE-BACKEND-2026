@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
-import { FirebaseService } from '../firebase/firebase.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { SecousseData, SAFE_DRIVE_QUEUE } from './safe-drive.service';
 
 // Seuil au-delà duquel on considère qu'il y a un évènement anormal
@@ -18,7 +18,7 @@ const SEUIL_INTENSITE_ANORMALE = 15;
 export class SafeDriveProcessor extends WorkerHost {
   private readonly logger = new Logger(SafeDriveProcessor.name);
 
-  constructor(private readonly firebase: FirebaseService) {
+  constructor(private readonly prisma: PrismaService) {
     super();
   }
 
@@ -26,35 +26,35 @@ export class SafeDriveProcessor extends WorkerHost {
     const { id_utilisateur, latitude, longitude, intensite, timestamp } =
       job.data;
 
-    if (!this.firebase.db) {
-      this.logger.warn('⚠️ Firebase non initialisé - job ignoré');
-      return { traite: false };
-    }
-
     // 1. Enregistrement systématique de la lecture brute
-    await this.firebase.db.collection('trafic').add({
-      type: 'lecture_accelerometre',
-      id_utilisateur,
-      latitude,
-      longitude,
-      intensite,
-      timestamp,
+    await this.prisma.secousseData.create({
+      data: {
+        id_utilisateur,
+        latitude,
+        longitude,
+        intensite,
+        timestamp: new Date(timestamp),
+        traite: true,
+      },
     });
 
     // 2. Création d'un incident si l'intensité dépasse le seuil
     if (intensite >= SEUIL_INTENSITE_ANORMALE) {
-      await this.firebase.db.collection('incidents').add({
-        type: 'accident',
-        description: `Secousse anormale détectée (intensité: ${intensite})`,
-        latitude,
-        longitude,
-        id_utilisateur_createur: id_utilisateur,
-        statut: 'non_confirme',
-        nombreConfirmations: 1,
-        confirmePar: [id_utilisateur],
-        dateCreation: new Date().toISOString(),
-        dateExpiration: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
-        source: 'safe-drive-auto',
+      await this.prisma.incident.create({
+        data: {
+          type: 'TRAFIC',
+          description: `Secousse anormale détectée (intensité: ${intensite})`,
+          latitude,
+          longitude,
+          idRapporteur: id_utilisateur,
+          id_utilisateur_createur: id_utilisateur,
+          statut: 'non_confirme',
+          nombreConfirmations: 1,
+          confirmePar: [id_utilisateur],
+          horodatage: new Date(),
+          dateExpiration: new Date(Date.now() + 3 * 60 * 60 * 1000),
+          detecteAuto: true,
+        },
       });
     }
 

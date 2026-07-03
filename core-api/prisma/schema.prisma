@@ -41,6 +41,8 @@ model Utilisateur {
   notifications     Notification[]
   tokensFCM         TokenFCM[]
   adressesFavorites AdresseFavorite[]
+  relevesTrafic     ReleveTrafic[]
+  secousses         SecousseData[]
 }
 
 model PreferencesUtilisateur {
@@ -99,7 +101,7 @@ model Incident {
   type              TypeIncident
   description       String?
   horodatage        DateTime     @default(now())
-  nombreValidations Int          @default(0)
+  nombreConfirmations Int        @default(0)
   statut            String       @default("non_confirme")
   idRapporteur      String
   segmentId         String?
@@ -110,6 +112,7 @@ model Incident {
   detecteAuto       Boolean?
   dateExpiration    DateTime?
   confirmePar       String[]
+  id_utilisateur_createur String
   latitude          Float?
   longitude         Float?
   imageUrl          String?
@@ -236,4 +239,31 @@ model AdresseFavorite {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+}
+
+model ReleveTrafic {
+  id            String   @id @default(uuid())
+  latitude      Float
+  longitude     Float
+  vitesseMoyenne Float
+  niveau        String
+  id_utilisateur String
+  timestamp     DateTime @default(now())
+  utilisateur   Utilisateur @relation(fields: [id_utilisateur], references: [id], onDelete: Cascade)
+
+  @@index([latitude, longitude])
+  @@index([timestamp])
+}
+
+model SecousseData {
+  id            String   @id @default(uuid())
+  id_utilisateur String
+  latitude      Float
+  longitude     Float
+  intensite     Float
+  timestamp     DateTime @default(now())
+  traite        Boolean  @default(false)
+  utilisateur   Utilisateur @relation(fields: [id_utilisateur], references: [id], onDelete: Cascade)
+
+  @@index([timestamp])
 }

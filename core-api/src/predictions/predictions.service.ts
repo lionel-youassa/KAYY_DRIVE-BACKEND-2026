@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { FirebaseService } from '../firebase/firebase.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { NiveauTrafic, niveauDepuisVitesse } from '../trafic/trafic.service';
 
 export interface PredictionTrafic {
@@ -39,7 +39,7 @@ function determinerConfiance(
 
 @Injectable()
 export class PredictionsService {
-  constructor(private readonly firebase: FirebaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async predireTraficPoint(
     latitude: number,
@@ -50,45 +50,32 @@ export class PredictionsService {
     const jourSemaine = dateCible.getDay();
     const heure = dateCible.getHours();
 
-    if (!this.firebase.db) {
-      console.warn('⚠️ Firebase non initialisé - retour de prediction par défaut');
-      return {
-        latitude,
-        longitude,
-        jourSemaine,
-        heure,
-        niveauPredit: 'fluide',
-        vitesseMoyennePredite: 0,
-        confidence: 'faible',
-        nombreEchantillons: 0,
-      };
-    }
-
     const ilYa60Jours = new Date(
       Date.now() - 60 * 24 * 60 * 60 * 1000,
-    ).toISOString();
+    );
 
-    const snapshot = await this.firebase.db
-      .collection('trafic')
-      .where('timestamp', '>', ilYa60Jours)
-      .get();
+    const relevés = await this.prisma.releveTrafic.findMany({
+      where: {
+        timestamp: {
+          gte: ilYa60Jours,
+        },
+      },
+    });
 
-    const echantillonsPertinents = snapshot.docs
-      .map((doc: FirebaseFirestore.QueryDocumentSnapshot) => doc.data())
-      .filter((r: any) => {
-        if (typeof r.vitesseMoyenne !== 'number') return false;
-        if (
-          distanceEnMetres(latitude, longitude, r.latitude, r.longitude) >
-          rayonMetres
-        ) {
-          return false;
-        }
-        const date = new Date(r.timestamp);
-        return (
-          date.getDay() === jourSemaine &&
-          Math.abs(date.getHours() - heure) <= 1
-        );
-      });
+    const echantillonsPertinents = relevés.filter((r) => {
+      if (typeof r.vitesseMoyenne !== 'number') return false;
+      if (
+        distanceEnMetres(latitude, longitude, r.latitude, r.longitude) >
+        rayonMetres
+      ) {
+        return false;
+      }
+      const date = r.timestamp;
+      return (
+        date.getDay() === jourSemaine &&
+        Math.abs(date.getHours() - heure) <= 1
+      );
+    });
 
     if (echantillonsPertinents.length === 0) {
       return {
@@ -105,7 +92,7 @@ export class PredictionsService {
 
     const vitesseMoyennePredite =
       echantillonsPertinents.reduce(
-        (sum: number, r: any) => sum + r.vitesseMoyenne,
+        (sum: number, r) => sum + r.vitesseMoyenne,
         0,
       ) / echantillonsPertinents.length;
 

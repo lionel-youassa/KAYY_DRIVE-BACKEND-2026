@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { FirebaseService } from '../firebase/firebase.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface PreferencesUtilisateur {
   id_utilisateur: string;
@@ -26,11 +26,14 @@ const PREFERENCES_PAR_DEFAUT: Omit<
 
 @Injectable()
 export class PreferencesService {
-  constructor(private readonly firebase: FirebaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async getPreferences(uid: string): Promise<PreferencesUtilisateur> {
-    if (!this.firebase.db) {
-      console.warn('⚠️ Firebase non initialisé - retour de préférences par défaut');
+    const preferences = await this.prisma.preferencesUtilisateur.findUnique({
+      where: { utilisateurId: uid },
+    });
+
+    if (!preferences) {
       return {
         id_utilisateur: uid,
         ...PREFERENCES_PAR_DEFAUT,
@@ -38,17 +41,16 @@ export class PreferencesService {
       };
     }
 
-    const doc = await this.firebase.db.collection('preferences').doc(uid).get();
-
-    if (!doc.exists) {
-      return {
-        id_utilisateur: uid,
-        ...PREFERENCES_PAR_DEFAUT,
-        dateMiseAJour: new Date().toISOString(),
-      };
-    }
-
-    return doc.data() as PreferencesUtilisateur;
+    return {
+      id_utilisateur: preferences.utilisateurId,
+      modeDeplacement: 'voiture',
+      notificationsIncidents: preferences.prioriserRoutesSecu,
+      notificationsRaccourcis: true,
+      eviterZonesRisque: preferences.eviterZonesInondables,
+      unite: 'km',
+      langue: 'fr',
+      dateMiseAJour: new Date().toISOString(),
+    };
   }
 
   async updatePreferences(
@@ -66,12 +68,22 @@ export class PreferencesService {
       dateMiseAJour: new Date().toISOString(),
     };
 
-    if (!this.firebase.db) {
-      console.warn('⚠️ Firebase non initialisé - mise à jour ignorée');
-      return nouvelles;
-    }
+    await this.prisma.preferencesUtilisateur.upsert({
+      where: { utilisateurId: uid },
+      update: {
+        eviterPeages: updates.modeDeplacement === 'transport_commun',
+        prioriserRoutesSecu: updates.notificationsIncidents ?? true,
+        eviterZonesInondables: updates.eviterZonesRisque ?? true,
+      },
+      create: {
+        utilisateurId: uid,
+        eviterPeages: updates.modeDeplacement === 'transport_commun',
+        prioriserRoutesSecu: updates.notificationsIncidents ?? true,
+        eviterZonesInondables: updates.eviterZonesRisque ?? true,
+        modeHorsLigneActif: false,
+      },
+    });
 
-    await this.firebase.db.collection('preferences').doc(uid).set(nouvelles);
     return nouvelles;
   }
 }

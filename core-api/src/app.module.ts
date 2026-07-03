@@ -5,7 +5,6 @@ import { NavigationModule } from './modules/navigation/navigation.module';
 import { AdsModule } from './modules/ads/ads.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RewardsService } from './modules/rewards/rewards.service';
-import { FirebaseModule } from './firebase/firebase.module';
 import { AuthModule } from './auth/auth.module';
 import { IncidentsModule } from './incidents/incidents.module';
 import { RoutesModule } from './routes/routes.module';
@@ -34,7 +33,6 @@ import { GeocodingModule } from './geocoding/geocoding.module';
     PrismaModule,
     NavigationModule,
     AdsModule,
-    FirebaseModule,
     AuthModule,
     IncidentsModule,
     RoutesModule,
