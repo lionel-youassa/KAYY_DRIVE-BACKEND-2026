@@ -9,7 +9,7 @@ export interface PredictionTrafic {
   heure: number;
   niveauPredit: NiveauTrafic;
   vitesseMoyennePredite: number;
-  confiance: 'faible' | 'moyenne' | 'haute';
+  confidence: 'faible' | 'moyenne' | 'haute';
   nombreEchantillons: number;
 }
 
@@ -59,7 +59,7 @@ export class PredictionsService {
         heure,
         niveauPredit: 'fluide',
         vitesseMoyennePredite: 0,
-        confiance: 'faible',
+        confidence: 'faible',
         nombreEchantillons: 0,
       };
     }
@@ -98,7 +98,7 @@ export class PredictionsService {
         heure,
         niveauPredit: 'fluide',
         vitesseMoyennePredite: 0,
-        confiance: 'faible',
+        confidence: 'faible',
         nombreEchantillons: 0,
       };
     }
@@ -116,7 +116,7 @@ export class PredictionsService {
       heure,
       niveauPredit: niveauDepuisVitesse(vitesseMoyennePredite),
       vitesseMoyennePredite: Math.round(vitesseMoyennePredite),
-      confiance: determinerConfiance(echantillonsPertinents.length),
+      confidence: determinerConfiance(echantillonsPertinents.length),
       nombreEchantillons: echantillonsPertinents.length,
     };
   }

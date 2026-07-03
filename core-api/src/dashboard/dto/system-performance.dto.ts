@@ -18,4 +18,13 @@ export class SystemPerformanceDto {
 
   @ApiProperty({ description: 'Notifications FCM actives' })
   activeFcmTokens: number;
+
+  @ApiProperty({ description: 'Temps de réponse moyen (ms)' })
+  averageResponseTime: number;
+
+  @ApiProperty({ description: 'Disponibilité du système (%)' })
+  uptime: number;
+
+  @ApiProperty({ description: 'Taux d\'erreur (%)' })
+  errorRate: number;
 }

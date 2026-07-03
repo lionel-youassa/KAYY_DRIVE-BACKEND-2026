@@ -14,13 +14,14 @@ export interface UserProfile {
   uid: string;
   email: string;
   nom: string;
+  prenom: string;
   telephone?: string;
   role: UserRole;
   dateCreation: string;
 }
 
 export interface LoginResponse {
-  access_token: string;
+  token: string;
   user: UserProfile;
 }
 

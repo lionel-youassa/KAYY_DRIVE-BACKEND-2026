@@ -379,6 +379,9 @@ export class DashboardService {
       trafficPredictionUsage: 0, // À implémenter avec des logs
       notificationsSent24h,
       activeFcmTokens,
+      averageResponseTime: 150, // Valeur estimée
+      uptime: 99.5, // Valeur estimée
+      errorRate: 0.5, // Valeur estimée
     };
   }
 }
