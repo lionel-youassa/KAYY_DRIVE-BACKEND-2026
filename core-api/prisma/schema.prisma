@@ -25,6 +25,7 @@ enum TypeIncident {
 model Utilisateur {
   id                String                  @id @default(uuid())
   pseudo            String
+  prenom            String?                 @default("")
   email             String                  @unique
   passwordHash      String?
   telephone         String?
