@@ -71,6 +71,7 @@ export class AuthService {
       uid: utilisateur.id,
       email: utilisateur.email,
       nom: utilisateur.pseudo,
+      prenom: '', // Champ vide pour compatibilité frontend
       telephone: utilisateur.telephone || undefined,
       role: utilisateur.role as UserRole,
       dateCreation: utilisateur.dateCreation.toISOString(),
@@ -104,14 +105,15 @@ export class AuthService {
       role: utilisateur.role,
     };
 
-    const access_token = this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload);
 
     return {
-      access_token,
+      token,
       user: {
         uid: utilisateur.id,
         email: utilisateur.email,
         nom: utilisateur.pseudo,
+        prenom: '', // Champ vide pour compatibilité frontend
         telephone: utilisateur.telephone || undefined,
         role: utilisateur.role as UserRole,
         dateCreation: utilisateur.dateCreation.toISOString(),
@@ -170,6 +172,7 @@ export class AuthService {
       uid: utilisateur.id,
       email: utilisateur.email,
       nom: utilisateur.pseudo,
+      prenom: '', // Champ vide pour compatibilité frontend
       telephone: utilisateur.telephone || undefined,
       role: utilisateur.role as UserRole,
       dateCreation: utilisateur.dateCreation.toISOString(),
@@ -229,6 +232,7 @@ export class AuthService {
       uid: updatedUser.id,
       email: updatedUser.email,
       nom: updatedUser.pseudo,
+      prenom: '', // Champ vide pour compatibilité frontend
       telephone: updatedUser.telephone || undefined,
       role: updatedUser.role as UserRole,
       dateCreation: updatedUser.dateCreation.toISOString(),

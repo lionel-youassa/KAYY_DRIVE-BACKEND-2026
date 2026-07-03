@@ -186,6 +186,37 @@ export class RoutesService {
   }
 
   // -------------------------------------------------------------------------
+  // Récupérer tous les raccourcis
+  // -------------------------------------------------------------------------
+  async getAllRaccourcis(): Promise<RaccourciCommunautaire[]> {
+    const raccourcis = await this.prisma.raccourciCommunautaire.findMany({
+      where: { statut: 'valide' },
+    });
+
+    return raccourcis.map((r) => ({
+      id: r.id,
+      nom: r.nom,
+      description: r.description,
+      pointDepart: {
+        latitude: r.pointDepartLat,
+        longitude: r.pointDepartLng,
+      },
+      pointArrivee: {
+        latitude: r.pointArriveeLat,
+        longitude: r.pointArriveeLng,
+      },
+      trace: r.trace as unknown as PointGPS[],
+      id_utilisateur_createur: r.idUtilisateurCreateur,
+      votesPositifs: r.votesPositifs,
+      votesNegatifs: r.votesNegatifs,
+      votants: {},
+      scoreFiabilite: r.scoreFiabilite,
+      statut: r.statut as 'propose' | 'valide' | 'rejete',
+      dateCreation: r.dateCreation.toISOString(),
+    }));
+  }
+
+  // -------------------------------------------------------------------------
   // Suggestions pour un trajet donné
   // -------------------------------------------------------------------------
   async suggererRaccourcis(

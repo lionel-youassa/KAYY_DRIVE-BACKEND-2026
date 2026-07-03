@@ -22,7 +22,17 @@ export class TraficController {
       parseFloat(longitude),
       rayon ? parseFloat(rayon) : undefined,
     );
-    return { trafic };
+    // Format de réponse compatible frontend
+    return {
+      segments: [
+        {
+          roadName: 'Route actuelle',
+          congestionLevel: trafic.niveau === 'bouchon' ? 'high' : trafic.niveau === 'dense' ? 'moderate' : 'low',
+          averageSpeed: trafic.vitesseMoyenne,
+          geometry: 'encoded_polyline_string',
+        },
+      ],
+    };
   }
 
   // POST /trafic

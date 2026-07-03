@@ -42,4 +42,11 @@ export class NotificationsController {
     await this.notificationsService.marquerCommeLue(id);
     return { success: true };
   }
+
+  // POST /notifications/:id/lue (alias pour compatibilité frontend)
+  @Post(':id/lue')
+  async marquerLuePost(@Param('id') id: string) {
+    await this.notificationsService.marquerCommeLue(id);
+    return { success: true };
+  }
 }

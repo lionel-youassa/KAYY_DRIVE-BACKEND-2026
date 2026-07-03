@@ -48,6 +48,28 @@ export class PredictionsController {
       dto.points,
       dateCible,
     );
-    return { predictions };
+
+    // Format de réponse compatible frontend
+    const totalDuration = predictions.reduce(
+      (sum, p) => sum + (p.vitesseMoyennePredite > 0 ? 60 / p.vitesseMoyennePredite : 0),
+      0,
+    );
+    const avgConfidence = predictions.length > 0
+      ? predictions.reduce((sum, p) => sum + (p.confidence === 'haute' ? 0.9 : p.confidence === 'moyenne' ? 0.6 : 0.3), 0) / predictions.length
+      : 0.5;
+
+    const trafficHotspots = predictions
+      .filter(p => p.niveauPredit === 'bouchon' || p.niveauPredit === 'dense')
+      .map(p => ({
+        location: { lat: p.latitude, lon: p.longitude },
+        severity: p.niveauPredit === 'bouchon' ? 'high' : 'moderate',
+        expectedDelay: p.niveauPredit === 'bouchon' ? 30 : 15,
+      }));
+
+    return {
+      predictedDuration: Math.round(totalDuration * 60),
+      confidence: Math.round(avgConfidence * 100) / 100,
+      trafficHotspots,
+    };
   }
 }
