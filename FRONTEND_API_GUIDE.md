@@ -4,7 +4,7 @@ Ce document décrit tous les endpoints de l'API KayyDrive pour l'intégration fr
 
 **Base URL :** `http://localhost:3001`
 
-**Authentication :** La plupart des routes nécessitent un token Firebase dans le header `Authorization: Bearer <token>`
+**Authentication :** La plupart des routes nécessitent un token JWT dans le header `Authorization: Bearer <token>`
 
 ---
 
@@ -87,7 +87,7 @@ Connexion d'un utilisateur.
 ```json
 {
   "success": true,
-  "token": "firebase-token",
+  "token": "jwt-token",
   "user": {
     "uid": "user-uuid",
     "email": "user@example.com",
@@ -109,7 +109,7 @@ Récupérer le profil de l'utilisateur connecté.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -139,7 +139,7 @@ Mettre à jour le profil de l'utilisateur connecté.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -440,7 +440,7 @@ Récupérer les incidents proches d'une position.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Query params :**
@@ -481,7 +481,7 @@ Signaler un nouvel incident.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 Content-Type: multipart/form-data
 ```
 
@@ -522,7 +522,7 @@ Confirmer un incident existant.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -557,7 +557,7 @@ Créer un nouveau raccourci communautaire.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -607,7 +607,7 @@ Voter pour un raccourci.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -639,7 +639,7 @@ Récupérer toutes les routes locales (raccourcis).
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -670,7 +670,7 @@ Obtenir des suggestions de raccourcis pour un trajet.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Query params :**
@@ -711,7 +711,7 @@ Enregistrer une secousse (détection de qualité de route).
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -746,7 +746,7 @@ Récupérer le trafic actuel dans une zone.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Query params :**
@@ -783,7 +783,7 @@ Enregistrer un relevé de trafic.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -824,7 +824,7 @@ Prédire le trafic à un point donné à une date future.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Query params :**
@@ -858,7 +858,7 @@ Prédire le trafic sur un itinéraire complet.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -902,7 +902,7 @@ Récupérer les notifications de l'utilisateur.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -933,7 +933,7 @@ Enregistrer un token FCM pour les push notifications.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -963,7 +963,7 @@ Marquer une notification comme lue.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -986,7 +986,7 @@ Marquer une notification comme lue (alias pour compatibilité).
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1011,7 +1011,7 @@ Récupérer toutes les catégories.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1085,7 +1085,7 @@ Récupérer les préférences de l'utilisateur.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1113,7 +1113,7 @@ Mettre à jour les préférences de l'utilisateur.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -1154,7 +1154,7 @@ Mettre à jour la position de l'utilisateur.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -1185,7 +1185,7 @@ Supprimer la position de l'utilisateur.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1210,7 +1210,7 @@ Récupérer les adresses favorites de l'utilisateur.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1241,7 +1241,7 @@ Ajouter une adresse favorite.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -1275,7 +1275,7 @@ Supprimer une adresse favorite.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1300,7 +1300,7 @@ Récupérer toutes les publicités actives.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1405,7 +1405,7 @@ Récupérer toutes les récompenses actives.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1711,7 +1711,7 @@ Récupérer les zones disponibles pour le mode hors-ligne.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1741,7 +1741,7 @@ Récupérer les métadonnées d'une zone hors-ligne.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1768,7 +1768,7 @@ Télécharger une zone hors-ligne.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1818,7 +1818,7 @@ Uploader une image.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 Content-Type: multipart/form-data
 ```
 

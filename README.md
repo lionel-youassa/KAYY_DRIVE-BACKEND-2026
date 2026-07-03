@@ -35,8 +35,13 @@ Pour plus d'informations détaillées, consultez :
 
 Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toutes les opérations CRUD sont centralisées dans la base de données PostgreSQL.
 
-**Firebase est conservé uniquement pour :**
-- Envoi de notifications push (Firebase Messaging)
+**Firebase a été complètement supprimé du backend.** Toutes les données sont maintenant stockées et gérées via PostgreSQL, y compris :
+- Relevés de trafic
+- Prédictions de trafic
+- Préférences utilisateur
+- Adresses favorites
+- Données Safe-Drive (secousses)
+- Notifications (tokens FCM stockés en PostgreSQL)
 
 **L'authentification est entièrement gérée par PostgreSQL avec JWT.**
 
