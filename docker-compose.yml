@@ -34,7 +34,7 @@ services:
       context: ./ia-service
       dockerfile: Dockerfile
     ports:
-      - "9500:8000"
+      - "9820:8000"
     volumes:
       - ./ia-service/app:/app/app
     env_file:

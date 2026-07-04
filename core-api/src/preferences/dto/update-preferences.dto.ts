@@ -1,27 +1,24 @@
-import { IsBoolean, IsIn, IsOptional } from 'class-validator';
+import { IsBoolean, IsOptional } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdatePreferencesDto {
-  @IsOptional()
-  @IsIn(['voiture', 'moto', 'pied', 'transport_commun'])
-  modeDeplacement?: 'voiture' | 'moto' | 'pied' | 'transport_commun';
-
+  @ApiProperty({ description: 'Éviter les routes à péage', required: false })
   @IsOptional()
   @IsBoolean()
-  notificationsIncidents?: boolean;
+  eviterPeages?: boolean;
 
+  @ApiProperty({ description: 'Prioriser les routes sécurisées', required: false })
   @IsOptional()
   @IsBoolean()
-  notificationsRaccourcis?: boolean;
+  prioriserRoutesSecu?: boolean;
 
+  @ApiProperty({ description: 'Éviter les zones inondables', required: false })
   @IsOptional()
   @IsBoolean()
-  eviterZonesRisque?: boolean;
+  eviterZonesInondables?: boolean;
 
+  @ApiProperty({ description: 'Mode hors-ligne actif', required: false })
   @IsOptional()
-  @IsIn(['km', 'miles'])
-  unite?: 'km' | 'miles';
-
-  @IsOptional()
-  @IsIn(['fr', 'en'])
-  langue?: 'fr' | 'en';
+  @IsBoolean()
+  modeHorsLigneActif?: boolean;
 }

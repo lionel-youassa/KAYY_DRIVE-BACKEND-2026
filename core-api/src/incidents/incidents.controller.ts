@@ -51,10 +51,14 @@ export class IncidentsController {
     @Body() dto: CreateIncidentDto,
     @UploadedFile() image?: Express.Multer.File,
   ) {
-    let imageUrl: string | undefined;
+    console.log('DEBUG CREATE INCIDENT - DTO:', dto);
+    console.log('DEBUG CREATE INCIDENT - Uploaded file:', image);
+
+    let imageUrl = dto.imageUrl;
 
     if (image) {
       imageUrl = await this.storageService.uploadFile(image, 'incidents');
+      console.log('DEBUG CREATE INCIDENT - Image uploaded to storage, URL:', imageUrl);
     }
 
     const incident = await this.incidentsService.createIncident({

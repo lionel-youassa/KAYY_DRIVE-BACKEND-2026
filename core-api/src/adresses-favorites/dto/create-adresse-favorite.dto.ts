@@ -4,6 +4,9 @@ export class CreateAdresseFavoriteDto {
   @IsString()
   nom!: string;
 
+  @IsString()
+  adresse!: string;
+
   @IsNumber()
   latitude!: number;
 

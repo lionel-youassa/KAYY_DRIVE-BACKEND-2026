@@ -1,4 +1,4 @@
-import { IsNumber, IsNotEmpty, Max, Min } from 'class-validator';
+import { IsNumber, IsNotEmpty, Max, Min, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -9,7 +9,7 @@ export class GetRouteDto {
   @IsNotEmpty()
   @Min(-90)
   @Max(90)
-  startLat: number;
+  startLat!: number;
 
   @ApiProperty({ example: 9.767, description: 'Longitude de départ' })
   @Type(() => Number)
@@ -17,7 +17,7 @@ export class GetRouteDto {
   @IsNotEmpty()
   @Min(-180)
   @Max(180)
-  startLng: number;
+  startLng!: number;
 
   @ApiProperty({ example: 3.848, description: 'Latitude de destination' })
   @Type(() => Number)
@@ -25,7 +25,7 @@ export class GetRouteDto {
   @IsNotEmpty()
   @Min(-90)
   @Max(90)
-  endLat: number;
+  endLat!: number;
 
   @ApiProperty({ example: 11.502, description: 'Longitude de destination' })
   @Type(() => Number)
@@ -33,5 +33,10 @@ export class GetRouteDto {
   @IsNotEmpty()
   @Min(-180)
   @Max(180)
-  endLng: number;
+  endLng!: number;
+
+  @ApiProperty({ example: 'vehicle', description: 'Mode de navigation: vehicle ou pedestrian', required: false })
+  @IsOptional()
+  @IsString()
+  mode?: string;
 }

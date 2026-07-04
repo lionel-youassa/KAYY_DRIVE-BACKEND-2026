@@ -70,6 +70,6 @@ export class RoutesController {
       { latitude: parseFloat(departLat), longitude: parseFloat(departLng) },
       { latitude: parseFloat(arriveeLat), longitude: parseFloat(arriveeLng) },
     );
-    return { raccourcis };
+    return { suggestions: raccourcis, raccourcis };
   }
 }

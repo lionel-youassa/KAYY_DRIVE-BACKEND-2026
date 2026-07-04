@@ -461,7 +461,11 @@ rayon=5000
       "latitude": 3.8490,
       "longitude": 11.5030,
       "statut": "confirme",
-      "nombreValidations": 5,
+      "nombreConfirmations": 5,
+      "confirmePar": ["uuid1", "uuid2"],
+      "id_utilisateur_createur": "uuid",
+      "dateCreation": "2024-01-01T10:00:00Z",
+      "dateExpiration": "2024-01-01T14:00:00Z",
       "imageUrl": "https://minio-url/image.jpg"
     }
   ]
@@ -498,12 +502,19 @@ longitude: 11.5021
 ```json
 {
   "success": true,
+  "message": "Incident signalé avec succès",
   "incident": {
     "id": "incident-uuid",
     "type": "inondation",
     "description": "Route inondée",
     "latitude": 3.8488,
     "longitude": 11.5021,
+    "statut": "non_confirme",
+    "nombreConfirmations": 1,
+    "confirmePar": ["uuid"],
+    "id_utilisateur_createur": "uuid",
+    "dateCreation": "2024-01-01T10:00:00Z",
+    "dateExpiration": "2024-01-01T14:00:00Z",
     "imageUrl": "https://minio-url/image.jpg"
   }
 }
@@ -537,8 +548,21 @@ Authorization: Bearer <jwt-token>
 ```json
 {
   "success": true,
-  "message": "Incident confirmé",
-  "nombreValidations": 6
+  "message": "Incident confirmé par la communauté !",
+  "incident": {
+    "id": "uuid",
+    "type": "inondation",
+    "description": "Description de l'incident",
+    "latitude": 3.8488,
+    "longitude": 11.5021,
+    "statut": "confirme",
+    "nombreConfirmations": 3,
+    "confirmePar": ["uuid1", "uuid2", "uuid3"],
+    "id_utilisateur_createur": "uuid",
+    "dateCreation": "2024-01-01T10:00:00Z",
+    "dateExpiration": "2024-01-01T14:00:00Z",
+    "imageUrl": "https://minio-url/incidents/image.jpg"
+  }
 }
 ```
 

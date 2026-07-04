@@ -66,9 +66,23 @@ export class PredictionsController {
         expectedDelay: p.niveauPredit === 'bouchon' ? 30 : 15,
       }));
 
+    const confidenceVal = Math.round(avgConfidence * 100) / 100;
+    const avgSpeed = predictions.length > 0
+      ? predictions.reduce((sum, p) => sum + p.vitesseMoyennePredite, 0) / predictions.length
+      : 40;
+
+    let niveau_trafic = 'modere';
+    if (avgSpeed >= 35) niveau_trafic = 'fluide';
+    else if (avgSpeed >= 20) niveau_trafic = 'modere';
+    else if (avgSpeed >= 10) niveau_trafic = 'dense';
+    else niveau_trafic = 'bloque';
+
     return {
+      niveau_trafic,
+      temps_estime_minutes: Math.round(totalDuration * 10) / 10,
+      confiance: confidenceVal,
       predictedDuration: Math.round(totalDuration * 60),
-      confidence: Math.round(avgConfidence * 100) / 100,
+      confidence: confidenceVal,
       trafficHotspots,
     };
   }

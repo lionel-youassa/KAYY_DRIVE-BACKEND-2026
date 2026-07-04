@@ -152,6 +152,7 @@ export class NavigationService {
     const startLng = parseFloat(startLngStr);
     const endLat = parseFloat(endLatStr);
     const endLng = parseFloat(endLngStr);
+    const isPedestrian = query.mode === 'pedestrian';
 
     if (isNaN(startLat) || isNaN(startLng) || isNaN(endLat) || isNaN(endLng)) {
       throw new HttpException(
@@ -163,7 +164,7 @@ export class NavigationService {
     const url = `${this.osrmUrl}/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson&steps=true`;
 
     try {
-      this.logger.log(`Appel OSRM (Cameroun): ${url}`);
+      this.logger.log(`Appel OSRM (Cameroun, mode: ${query.mode || 'driving'}): ${url}`);
       const response: AxiosResponse<any> = await firstValueFrom(
         this.httpService.get(url),
       );
@@ -194,8 +195,6 @@ export class NavigationService {
       const suggestedLocalRoutes: any[] = [];
 
       if (relevantLocalRoutes.length > 0) {
-        // Pour cette première itération, nous allons juste ajouter une instruction de suggestion
-        // et lister les routes locales pertinentes.
         finalInstructions.push({
           text: `Attention: ${relevantLocalRoutes.length} route(s) locale(s) alternative(s) ou raccourci(s) disponible(s).`,
           distance: 0,
@@ -203,18 +202,27 @@ export class NavigationService {
           location: response.data.routes[0].geometry.coordinates[0], // Au début de la route
         });
 
-        // On ajoute les routes locales suggérées à une section dédiée de la réponse
         suggestedLocalRoutes.push(...relevantLocalRoutes);
       }
-      // --- Fin de la logique d'injection/suggestion ---
 
       // Calcul du trafic par tronçon pour colorer le tracé
-      const traficParTroncon = await this.getTraficParTroncon(
-        response.data.routes[0].geometry.coordinates,
-      );
+      const coordinates = response.data.routes[0].geometry.coordinates;
+      const traficParTroncon = isPedestrian
+        ? coordinates.slice(0, -1).map((coord, idx) => ({
+            start: coord,
+            end: coordinates[idx + 1],
+            niveau: 'vert',
+            vitesse: 5,
+          }))
+        : await this.getTraficParTroncon(coordinates);
+
+      const baseDuration = response.data.routes[0].duration;
+      const finalDuration = isPedestrian
+        ? Math.round(response.data.routes[0].distance / 1.3888)
+        : baseDuration;
 
       return {
-        duration: response.data.routes[0].duration,
+        duration: finalDuration,
         distance: response.data.routes[0].distance,
         geometry: response.data.routes[0].geometry,
         instructions: finalInstructions, // Instructions enrichies
@@ -241,6 +249,7 @@ export class NavigationService {
     const startLng = parseFloat(startLngStr);
     const endLat = parseFloat(endLatStr);
     const endLng = parseFloat(endLngStr);
+    const isPedestrian = query.mode === 'pedestrian';
 
     if (isNaN(startLat) || isNaN(startLng) || isNaN(endLat) || isNaN(endLng)) {
       throw new HttpException(
@@ -250,7 +259,7 @@ export class NavigationService {
     }
 
     this.logger.log(
-      `Calcul d'itinéraire intelligent entre [${startLat},${startLng}] et [${endLat},${endLng}]`,
+      `Calcul d'itinéraire intelligent (mode: ${query.mode || 'driving'}) entre [${startLat},${startLng}] et [${endLat},${endLng}]`,
     );
 
     try {
@@ -270,8 +279,10 @@ export class NavigationService {
       const osrmInstructions = this.parserService.parseInstructions(
         osrmResponse.data,
       );
-      const baseDuration = osrmResponse.data.routes[0].duration;
       const baseDistance = osrmResponse.data.routes[0].distance;
+      const baseDuration = isPedestrian
+        ? Math.round(baseDistance / 1.3888)
+        : osrmResponse.data.routes[0].duration;
 
       // 2. Récupération des routes locales pertinentes via le service de Cindy
       const startCoords: PointGPS = { latitude: startLat, longitude: startLng };
@@ -282,36 +293,36 @@ export class NavigationService {
         1000,
       );
 
-      // 3. Appel au service IA pour la prédiction de trafic
+      // 3. Appel au service IA pour la prédiction de trafic (seulement pour véhicule)
       let trafficPrediction: any = null;
-      try {
-        const iaUrl = `${this.iaServiceUrl}/ia/traffic`;
-        const iaPayload = {
-          latitude: startLat,
-          longitude: startLng,
-          timestamp: new Date(),
-          meteo: 'soleil', // Pourrait être dynamique
-        };
-        const iaResponse: AxiosResponse<any> = await firstValueFrom(
-          this.httpService.post(iaUrl, iaPayload),
-        );
-        trafficPrediction = iaResponse.data;
-        this.logger.log(
-          `Prédiction trafic: ${JSON.stringify(trafficPrediction)}`,
-        );
-      } catch (iaError) {
-        this.logger.warn(`Service IA indisponible: ${iaError.message}`);
-        trafficPrediction = {
-          niveau_trafic: 'inconnu',
-          temps_estime_minutes: Math.round(baseDuration / 60),
-        };
+      if (!isPedestrian) {
+        try {
+          const iaUrl = `${this.iaServiceUrl}/ia/traffic`;
+          const iaPayload = {
+            latitude: startLat,
+            longitude: startLng,
+            timestamp: new Date(),
+            meteo: 'soleil', // Pourrait être dynamique
+          };
+          const iaResponse: AxiosResponse<any> = await firstValueFrom(
+            this.httpService.post(iaUrl, iaPayload),
+          );
+          trafficPrediction = iaResponse.data;
+          this.logger.log(
+            `Prédiction trafic: ${JSON.stringify(trafficPrediction)}`,
+          );
+        } catch (iaError) {
+          this.logger.warn(`Service IA indisponible: ${iaError.message}`);
+          trafficPrediction = {
+            niveau_trafic: 'inconnu',
+            temps_estime_minutes: Math.round(baseDuration / 60),
+          };
+        }
       }
 
       // 4. Récupération des incidents sur le trajet (Hydro-Guard)
       let incidentsOnRoute: any[] = [];
       try {
-        // Pour l'instant, on simule la récupération des incidents
-        // Plus tard, on utilisera le service incidents pour filtrer par proximité du trajet
         this.logger.log('Récupération des incidents sur le trajet (simulée)');
         incidentsOnRoute = [
           {
@@ -368,9 +379,15 @@ export class NavigationService {
           : baseDuration;
 
       // 6. Calcul du trafic par tronçon pour colorer le tracé
-      const traficParTroncon = await this.getTraficParTroncon(
-        osrmResponse.data.routes[0].geometry.coordinates,
-      );
+      const coordinates = osrmResponse.data.routes[0].geometry.coordinates;
+      const traficParTroncon = isPedestrian
+        ? coordinates.slice(0, -1).map((coord, idx) => ({
+            start: coord,
+            end: coordinates[idx + 1],
+            niveau: 'vert',
+            vitesse: 5,
+          }))
+        : await this.getTraficParTroncon(coordinates);
 
       return {
         duration: adjustedDuration,
@@ -380,7 +397,7 @@ export class NavigationService {
         suggestedLocalRoutes: relevantLocalRoutes,
         incidentsOnRoute: incidentsOnRoute,
         trafficPrediction: trafficPrediction,
-        traficParTroncon: traficParTroncon, // Nouveau: segments colorés par trafic
+        traficParTroncon: traficParTroncon,
         smartFeatures: {
           trafficEnabled: trafficPrediction !== null,
           localRoutesEnabled: relevantLocalRoutes.length > 0,

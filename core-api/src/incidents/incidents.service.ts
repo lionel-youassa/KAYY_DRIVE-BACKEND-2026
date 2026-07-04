@@ -5,7 +5,12 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-export type IncidentType = 'inondation' | 'travaux' | 'accident';
+export type IncidentType =
+  | 'inondation'
+  | 'travaux'
+  | 'accident'
+  | 'bouchon'
+  | 'route_degradee';
 export type IncidentStatut = 'non_confirme' | 'confirme' | 'resolu' | 'expire';
 
 export interface Incident {
@@ -20,6 +25,7 @@ export interface Incident {
   confirmePar: string[];
   dateCreation: string;
   dateExpiration: string;
+  imageUrl?: string;
 }
 
 const RAYON_VALIDATION_METRES = 500;
@@ -28,6 +34,8 @@ const DUREE_VIE_HEURES: Record<IncidentType, number> = {
   inondation: 6,
   travaux: 48,
   accident: 3,
+  bouchon: 2,
+  route_degradee: 72,
 };
 
 function distanceEnMetres(
@@ -71,7 +79,7 @@ export class IncidentsService {
         type:
           data.type === 'inondation'
             ? 'INONDATION'
-            : data.type === 'travaux'
+            : data.type === 'travaux' || data.type === 'route_degradee'
               ? 'QUALITE_ROUTE'
               : 'TRAFIC',
         description: data.description,
@@ -105,6 +113,7 @@ export class IncidentsService {
       confirmePar: incident.confirmePar,
       dateCreation: incident.horodatage.toISOString(),
       dateExpiration: incident.dateExpiration?.toISOString() || '',
+      imageUrl: incident.imageUrl || undefined,
     };
   }
 
@@ -169,6 +178,7 @@ export class IncidentsService {
         confirmePar: updated.confirmePar,
         dateCreation: updated.horodatage.toISOString(),
         dateExpiration: updated.dateExpiration?.toISOString() || '',
+        imageUrl: updated.imageUrl || undefined,
       },
     };
   }
@@ -218,6 +228,7 @@ export class IncidentsService {
         confirmePar: incident.confirmePar,
         dateCreation: incident.horodatage.toISOString(),
         dateExpiration: incident.dateExpiration?.toISOString() || '',
+        imageUrl: incident.imageUrl || undefined,
       }));
   }
 

@@ -2,26 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface PreferencesUtilisateur {
-  id_utilisateur: string;
-  modeDeplacement: 'voiture' | 'moto' | 'pied' | 'transport_commun';
-  notificationsIncidents: boolean;
-  notificationsRaccourcis: boolean;
-  eviterZonesRisque: boolean;
-  unite: 'km' | 'miles';
-  langue: 'fr' | 'en';
-  dateMiseAJour: string;
+  eviterPeages: boolean;
+  prioriserRoutesSecu: boolean;
+  eviterZonesInondables: boolean;
+  modeHorsLigneActif: boolean;
 }
 
-const PREFERENCES_PAR_DEFAUT: Omit<
-  PreferencesUtilisateur,
-  'id_utilisateur' | 'dateMiseAJour'
-> = {
-  modeDeplacement: 'voiture',
-  notificationsIncidents: true,
-  notificationsRaccourcis: true,
-  eviterZonesRisque: true,
-  unite: 'km',
-  langue: 'fr',
+const PREFERENCES_PAR_DEFAUT: PreferencesUtilisateur = {
+  eviterPeages: false,
+  prioriserRoutesSecu: true,
+  eviterZonesInondables: true,
+  modeHorsLigneActif: false,
 };
 
 @Injectable()
@@ -34,56 +25,38 @@ export class PreferencesService {
     });
 
     if (!preferences) {
-      return {
-        id_utilisateur: uid,
-        ...PREFERENCES_PAR_DEFAUT,
-        dateMiseAJour: new Date().toISOString(),
-      };
+      return PREFERENCES_PAR_DEFAUT;
     }
 
     return {
-      id_utilisateur: preferences.utilisateurId,
-      modeDeplacement: 'voiture',
-      notificationsIncidents: preferences.prioriserRoutesSecu,
-      notificationsRaccourcis: true,
-      eviterZonesRisque: preferences.eviterZonesInondables,
-      unite: 'km',
-      langue: 'fr',
-      dateMiseAJour: new Date().toISOString(),
+      eviterPeages: preferences.eviterPeages,
+      prioriserRoutesSecu: preferences.prioriserRoutesSecu,
+      eviterZonesInondables: preferences.eviterZonesInondables,
+      modeHorsLigneActif: preferences.modeHorsLigneActif,
     };
   }
 
   async updatePreferences(
     uid: string,
-    updates: Partial<
-      Omit<PreferencesUtilisateur, 'id_utilisateur' | 'dateMiseAJour'>
-    >,
+    updates: Partial<PreferencesUtilisateur>,
   ): Promise<PreferencesUtilisateur> {
-    const actuelles = await this.getPreferences(uid);
-
-    const nouvelles: PreferencesUtilisateur = {
-      ...actuelles,
-      ...updates,
-      id_utilisateur: uid,
-      dateMiseAJour: new Date().toISOString(),
-    };
-
-    await this.prisma.preferencesUtilisateur.upsert({
+    const preferences = await this.prisma.preferencesUtilisateur.upsert({
       where: { utilisateurId: uid },
-      update: {
-        eviterPeages: updates.modeDeplacement === 'transport_commun',
-        prioriserRoutesSecu: updates.notificationsIncidents ?? true,
-        eviterZonesInondables: updates.eviterZonesRisque ?? true,
-      },
+      update: updates,
       create: {
         utilisateurId: uid,
-        eviterPeages: updates.modeDeplacement === 'transport_commun',
-        prioriserRoutesSecu: updates.notificationsIncidents ?? true,
-        eviterZonesInondables: updates.eviterZonesRisque ?? true,
-        modeHorsLigneActif: false,
+        eviterPeages: updates.eviterPeages ?? PREFERENCES_PAR_DEFAUT.eviterPeages,
+        prioriserRoutesSecu: updates.prioriserRoutesSecu ?? PREFERENCES_PAR_DEFAUT.prioriserRoutesSecu,
+        eviterZonesInondables: updates.eviterZonesInondables ?? PREFERENCES_PAR_DEFAUT.eviterZonesInondables,
+        modeHorsLigneActif: updates.modeHorsLigneActif ?? PREFERENCES_PAR_DEFAUT.modeHorsLigneActif,
       },
     });
 
-    return nouvelles;
+    return {
+      eviterPeages: preferences.eviterPeages,
+      prioriserRoutesSecu: preferences.prioriserRoutesSecu,
+      eviterZonesInondables: preferences.eviterZonesInondables,
+      modeHorsLigneActif: preferences.modeHorsLigneActif,
+    };
   }
 }

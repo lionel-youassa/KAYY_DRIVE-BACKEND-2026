@@ -24,7 +24,7 @@ KayyDrive est une application de navigation intelligente pour le Cameroun, compo
 ┌──────────────────┐  ┌──────────────────┐
 │   Core-API       │  │   IA-Service     │
 │   (NestJS)       │  │   (FastAPI)      │
-│   Port 3001      │  │   Port 9500      │
+│   Port 3001      │  │   Port 9820      │
 └──────┬───────────┘  └──────┬───────────┘
        │                    │
        │                    │
@@ -210,7 +210,7 @@ KayyDrive est une application de navigation intelligente pour le Cameroun, compo
 **Framework :** FastAPI 0.104.1  
 **Runtime :** Python 3.9  
 **Port interne :** 8000  
-**Port externe :** 9500  
+**Port externe :** 9820  
 
 **Dépendances principales :**
 - `fastapi` 0.104.1
@@ -300,7 +300,7 @@ REDIS_URL=redis://redis:6379
 PORT=3000
 NODE_ENV=development
 OSRM_URL=http://osrm-backend:5000
-IA_SERVICE_URL=http://ia-service:9500
+IA_SERVICE_URL=http://ia-service:8000
 MINIO_ENDPOINT=minio
 MINIO_PORT=9000
 MINIO_USE_SSL=false
@@ -409,7 +409,7 @@ redis-server
 - `http://localhost:3001/*`
 
 **IA-Service :**
-- `http://localhost:9500/*`
+- `http://localhost:9820/*`
 
 **Minio :**
 - Console : `http://localhost:9001`

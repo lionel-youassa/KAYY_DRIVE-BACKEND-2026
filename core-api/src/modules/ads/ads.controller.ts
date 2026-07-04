@@ -30,10 +30,14 @@ export class AdsController {
     @Body() data: any,
     @UploadedFile() image?: Express.Multer.File,
   ) {
+    console.log('DEBUG CREATE AD - Body data:', data);
+    console.log('DEBUG CREATE AD - Uploaded file:', image);
+
     let imageUrl: string | undefined;
 
     if (image) {
       imageUrl = await this.storageService.uploadFile(image, 'ads');
+      console.log('DEBUG CREATE AD - Image uploaded to storage, URL:', imageUrl);
     }
 
     const ad = await this.adsService.createAdvertising({ ...data, imageUrl });

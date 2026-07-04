@@ -42,8 +42,7 @@ export class RewardsController {
 
   @Get()
   async getAllRewards() {
-    const rewards = await this.rewardsService.getAllRewards();
-    return { rewards };
+    return await this.rewardsService.getAllRewards();
   }
 
   @Delete(':id')

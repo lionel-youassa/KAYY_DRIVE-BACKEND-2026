@@ -97,12 +97,39 @@ export class DashboardController {
         this.dashboardService.getSystemPerformance(),
       ]);
 
+    const totalIncidentsVal = (incidents.confirmedIncidents || 0) + (incidents.pendingIncidents || 0);
+    const formattedOverview = {
+      totalUsers: overview.totalUsers,
+      activeUsers: overview.activeUsers24h,
+      totalIncidents: totalIncidentsVal,
+      totalRoutes: overview.totalShortcuts,
+    };
+
+    const incidentsByTypeMap = {
+      inondation: 0,
+      travaux: 0,
+      accident: 0,
+    };
+
+    if (incidents.incidentsByType) {
+      for (const item of incidents.incidentsByType) {
+        const typeKey = item.type.toLowerCase();
+        if (typeKey === 'inondation') {
+          incidentsByTypeMap.inondation = item.count;
+        } else if (typeKey === 'qualite_route' || typeKey === 'travaux') {
+          incidentsByTypeMap.travaux = item.count;
+        } else if (typeKey === 'trafic' || typeKey === 'accident') {
+          incidentsByTypeMap.accident = item.count;
+        }
+      }
+    }
+
     // Format compatible frontend
     return {
-      overview,
+      overview: formattedOverview,
       incidents: {
         confirmedIncidents: incidents.confirmedIncidents,
-        incidentsByType: incidents.incidentsByType,
+        incidentsByType: incidentsByTypeMap,
       },
       performance: {
         averageResponseTime: performance.averageResponseTime,

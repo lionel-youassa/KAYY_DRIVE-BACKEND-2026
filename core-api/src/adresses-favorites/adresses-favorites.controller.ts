@@ -35,11 +35,21 @@ export class AdressesFavoritesController {
     @Body() dto: CreateAdresseFavoriteDto,
     @CurrentUser() user: DecodedIdToken,
   ) {
-    const id = await this.adressesFavoritesService.createAdresseFavorite({
+    const created = await this.adressesFavoritesService.createAdresseFavorite({
       ...dto,
       id_utilisateur: user.uid,
     });
-    return { success: true, id };
+    return {
+      success: true,
+      adresse: {
+        uid: created.id,
+        nom: created.nom,
+        adresse: created.adresse,
+        latitude: created.latitude,
+        longitude: created.longitude,
+        categorie: created.categorie,
+      },
+    };
   }
 
   // DELETE /adresses-favorites/:id

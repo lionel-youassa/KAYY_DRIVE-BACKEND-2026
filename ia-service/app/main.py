@@ -143,3 +143,56 @@ def predict_traffic_batch(batch: BatchPredictionInput):
         ))
 
     return BatchPredictionOutput(resultats=resultats, total=len(resultats))
+
+
+from pydantic import BaseModel
+
+class ChatRequest(BaseModel):
+    message: str
+
+
+@app.post("/chat", tags=["IA"])
+def chat(request: ChatRequest):
+    """
+    Chatbot assistant de navigation intelligent.
+    """
+    message_text = request.message.lower()
+    api_key = os.getenv("GEMINI_API_KEY")
+    
+    if api_key:
+        import json
+        import urllib.request
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+            payload = {
+                "contents": [{
+                    "parts": [{
+                        "text": f"Tu es un assistant de navigation intelligent pour l'application KayyDrive à Douala et Yaoundé au Cameroun. Réponds de manière concise (maximum 3 phrases) au message de l'utilisateur : {request.message}"
+                    }]
+                }]
+            }
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode('utf-8'),
+                headers={'Content-Type': 'application/json'}
+            )
+            with urllib.request.urlopen(req, timeout=5) as response:
+                res_data = json.loads(response.read().decode('utf-8'))
+                reply = res_data['candidates'][0]['content']['parts'][0]['text']
+                return {"reponse": reply, "response": reply}
+        except Exception as e:
+            print(f"Erreur Gemini API: {e}")
+            
+    # Rule-based local fallback
+    if "bonjour" in message_text or "salut" in message_text:
+        reply = "Bonjour ! Je suis votre assistant de navigation KayyDrive. Comment puis-je vous aider pour vos trajets à Douala ou Yaoundé ?"
+    elif "akwa" in message_text:
+        reply = "Pour aller à Akwa, le chemin le plus rapide est généralement de passer par l'Avenue de Gaulle ou le Boulevard de la Liberté. Évitez le Rond-Point Deido aux heures de pointe."
+    elif "bastos" in message_text:
+        reply = "Le quartier Bastos à Yaoundé est facilement accessible par le Boulevard du 20 mai. L'itinéraire intelligent peut vous aider à contourner les ralentissements fréquents au niveau du rond-point."
+    elif "trafic" in message_text or "embouteillage" in message_text or "bouchon" in message_text:
+        reply = "Des perturbations mineures sont signalées vers Akwa et Deido. Je vous recommande d'utiliser le calcul d'itinéraire intelligent (Smart Route) pour les éviter."
+    else:
+        reply = "Je suis votre assistant KAYY Drive. Je vous recommande d'entrer vos points de départ et de destination pour calculer un itinéraire intelligent sans incidents."
+        
+    return {"reponse": reply, "response": reply}

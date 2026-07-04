@@ -5,6 +5,7 @@ import {
   UploadedFile,
   BadRequestException,
   UseGuards,
+  Body,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StorageService } from './storage.service';
@@ -38,7 +39,7 @@ export class StorageController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadImage(
     @UploadedFile() file: Express.Multer.File,
-    @UploadedFile() folder?: string,
+    @Body('folder') folder?: string,
   ) {
     if (!file) {
       throw new BadRequestException('Aucun fichier fourni');
