@@ -150,49 +150,36 @@ from pydantic import BaseModel
 class ChatRequest(BaseModel):
     message: str
 
-
 @app.post("/chat", tags=["IA"])
-def chat(request: ChatRequest):
-    """
-    Chatbot assistant de navigation intelligent.
-    """
-    message_text = request.message.lower()
-    api_key = os.getenv("GEMINI_API_KEY")
-    
-    if api_key:
-        import json
-        import urllib.request
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-            payload = {
-                "contents": [{
-                    "parts": [{
-                        "text": f"Tu es un assistant de navigation intelligent pour l'application KayyDrive à Douala et Yaoundé au Cameroun. Réponds de manière concise (maximum 3 phrases) au message de l'utilisateur : {request.message}"
-                    }]
-                }]
-            }
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode('utf-8'),
-                headers={'Content-Type': 'application/json'}
-            )
-            with urllib.request.urlopen(req, timeout=5) as response:
-                res_data = json.loads(response.read().decode('utf-8'))
-                reply = res_data['candidates'][0]['content']['parts'][0]['text']
-                return {"reponse": reply, "response": reply}
-        except Exception as e:
-            print(f"Erreur Gemini API: {e}")
-            
-    # Rule-based local fallback
-    if "bonjour" in message_text or "salut" in message_text:
-        reply = "Bonjour ! Je suis votre assistant de navigation KayyDrive. Comment puis-je vous aider pour vos trajets à Douala ou Yaoundé ?"
-    elif "akwa" in message_text:
-        reply = "Pour aller à Akwa, le chemin le plus rapide est généralement de passer par l'Avenue de Gaulle ou le Boulevard de la Liberté. Évitez le Rond-Point Deido aux heures de pointe."
-    elif "bastos" in message_text:
-        reply = "Le quartier Bastos à Yaoundé est facilement accessible par le Boulevard du 20 mai. L'itinéraire intelligent peut vous aider à contourner les ralentissements fréquents au niveau du rond-point."
-    elif "trafic" in message_text or "embouteillage" in message_text or "bouchon" in message_text:
-        reply = "Des perturbations mineures sont signalées vers Akwa et Deido. Je vous recommande d'utiliser le calcul d'itinéraire intelligent (Smart Route) pour les éviter."
-    else:
-        reply = "Je suis votre assistant KAYY Drive. Je vous recommande d'entrer vos points de départ et de destination pour calculer un itinéraire intelligent sans incidents."
-        
-    return {"reponse": reply, "response": reply}
+@app.post("/ia/chat", tags=["IA"])
+async def chat(request: ChatRequest):
+    try:
+        from google import genai as google_genai
+        client = google_genai.Client(
+            api_key=os.getenv("GEMINI_API_KEY")
+        )
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=(
+                'Tu es un assistant de navigation intelligent pour KAYY Drive a Douala au Cameroun. '
+                'Tu reponds UNIQUEMENT en francais, en 2-3 phrases maximum. '
+                'Tu peux aider avec : '
+                'le trafic sur les axes routiers de Douala, '
+                'les itineraires alternatifs pour eviter les bouchons, '
+                'les incidents signales (nids-de-poule, inondations, accidents), '
+                'les conseils de conduite, '
+                'la meteo et son impact sur la circulation a Douala '
+                '(pluie = routes glissantes et risques d\'inondation notamment a Bassa et Ndokoti), '
+                'les heures de pointe (7h-9h matin et 17h-19h soir), '
+                'les quartiers et axes principaux de Douala (Akwa, Bonanjo, Deido, Bassa, Yassa, Makepe). '
+                'Si la question est hors navigation, ramene poliment vers ton domaine.\n\n'
+                f'Utilisateur: {request.message}'
+            ),
+        )
+        return {"reponse": response.text, "statut": "ok"}
+    except Exception as e:
+        return {
+            "reponse": "Je suis temporairement indisponible.",
+            "statut": "erreur",
+            "detail": str(e)
+        }
