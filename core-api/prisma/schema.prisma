@@ -116,6 +116,9 @@ model Incident {
   latitude          Float?
   longitude         Float?
   imageUrl          String?
+  quartier          String?
+  ville             String?
+  region            String?
 
   rapporteur Utilisateur  @relation(fields: [idRapporteur], references: [id], onDelete: Cascade)
   segment    SegmentRoute? @relation(fields: [segmentId], references: [id], onDelete: Cascade)

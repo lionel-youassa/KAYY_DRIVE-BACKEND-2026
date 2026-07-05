@@ -28,17 +28,19 @@ export class IncidentsController {
     private readonly storageService: StorageService,
   ) {}
 
-  // GET /incidents?latitude=&longitude=&rayon=
+  // GET /incidents?latitude=&longitude=&rayon=&filterType=
   @Get()
   async getIncidents(
     @Query('latitude') latitude: string,
     @Query('longitude') longitude: string,
     @Query('rayon') rayon?: string,
+    @Query('filterType') filterType?: string,
   ) {
     const incidents = await this.incidentsService.getIncidentsProches(
       parseFloat(latitude),
       parseFloat(longitude),
       rayon ? parseFloat(rayon) : undefined,
+      filterType,
     );
     return { incidents };
   }

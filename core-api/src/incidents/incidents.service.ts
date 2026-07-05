@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { GeocodingService } from '../geocoding/geocoding.service';
 
 export type IncidentType =
   | 'inondation'
@@ -56,7 +57,10 @@ function distanceEnMetres(
 
 @Injectable()
 export class IncidentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly geocodingService: GeocodingService,
+  ) {}
 
   // -------------------------------------------------------------------------
   // 8.1 : Création d'un signalement
@@ -73,6 +77,9 @@ export class IncidentsService {
     const expiration = new Date(
       now.getTime() + DUREE_VIE_HEURES[data.type] * 60 * 60 * 1000,
     );
+
+    // Résolution géocodage inverse des coordonnées de l'incident
+    const zoneInfo = await this.geocodingService.reverse(data.latitude, data.longitude);
 
     const incident = await this.prisma.incident.create({
       data: {
@@ -93,6 +100,9 @@ export class IncidentsService {
         latitude: data.latitude,
         longitude: data.longitude,
         imageUrl: data.imageUrl,
+        quartier: zoneInfo.quartier || null,
+        ville: zoneInfo.ville || null,
+        region: zoneInfo.region || null,
       },
     });
 
@@ -190,7 +200,19 @@ export class IncidentsService {
     latitude: number,
     longitude: number,
     rayonMetres = 5000,
+    filterType?: string,
   ): Promise<Incident[]> {
+    let filterQuartier: string | undefined;
+    let filterVille: string | undefined;
+    let filterRegion: string | undefined;
+
+    if (filterType === 'quartier' || filterType === 'ville' || filterType === 'region') {
+      const userGeo = await this.geocodingService.reverse(latitude, longitude);
+      filterQuartier = userGeo.quartier;
+      filterVille = userGeo.ville;
+      filterRegion = userGeo.region;
+    }
+
     const incidents = await this.prisma.incident.findMany({
       where: {
         dateExpiration: {
@@ -200,17 +222,35 @@ export class IncidentsService {
     });
 
     return incidents
-      .filter(
-        (incident) =>
-          incident.latitude &&
-          incident.longitude &&
+      .filter((incident) => {
+        if (!incident.latitude || !incident.longitude) return false;
+
+        // Si filtrage spécifique
+        if (filterType === 'quartier' && filterQuartier && incident.quartier) {
+          return incident.quartier.toLowerCase() === filterQuartier.toLowerCase();
+        }
+        if (filterType === 'ville' && filterVille && incident.ville) {
+          return incident.ville.toLowerCase() === filterVille.toLowerCase();
+        }
+        if (filterType === 'region' && filterRegion && incident.region) {
+          return incident.region.toLowerCase() === filterRegion.toLowerCase();
+        }
+
+        // Sinon, repli par défaut sur la distance géographique (rayon)
+        let currentRayon = rayonMetres;
+        if (filterType === 'quartier') currentRayon = 3000;
+        else if (filterType === 'ville') currentRayon = 15000;
+        else if (filterType === 'region') currentRayon = 50000;
+
+        return (
           distanceEnMetres(
             latitude,
             longitude,
             incident.latitude,
             incident.longitude,
-          ) <= rayonMetres,
-      )
+          ) <= currentRayon
+        );
+      })
       .map((incident) => ({
         id: incident.id,
         type:
@@ -229,6 +269,9 @@ export class IncidentsService {
         dateCreation: incident.horodatage.toISOString(),
         dateExpiration: incident.dateExpiration?.toISOString() || '',
         imageUrl: incident.imageUrl || undefined,
+        quartier: incident.quartier || undefined,
+        ville: incident.ville || undefined,
+        region: incident.region || undefined,
       }));
   }
 

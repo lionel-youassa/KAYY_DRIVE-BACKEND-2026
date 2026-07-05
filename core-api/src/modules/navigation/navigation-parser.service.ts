@@ -49,18 +49,18 @@ export class NavigationParserService {
 
         // Construction de la phrase de guidage améliorée
         if (maneuverType === 'depart') {
-          text = `Départ de ${streetName}`;
+          text = `Prenez ${streetName}`;
         } else if (maneuverType === 'arrive') {
           text = `Arrivée à ${streetName}`;
         } else {
           const action = this.translations[maneuverType] || maneuverType;
           const direction = this.translations[modifier] || modifier || '';
           
-          // Instructions plus précises avec nom de rue de destination
+          // Instructions plus précises avec nom de rue de destination (sans la distance statique préfixée)
           if (nextStreetName && nextStreetName !== streetName) {
-            text = `Dans ${distance}, ${action} ${direction} vers ${nextStreetName}`;
+            text = `${action} ${direction} vers ${nextStreetName}`;
           } else {
-            text = `Dans ${distance}, ${action} ${direction} sur ${streetName}`;
+            text = `${action} ${direction} sur ${streetName}`;
           }
         }
 

@@ -46,4 +46,35 @@ export class GeocodingService {
       return [];
     }
   }
+
+  async reverse(latitude: number, longitude: number): Promise<{ quartier?: string; ville?: string; region?: string }> {
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`;
+      this.logger.log(`Reverse geocoding: [${latitude}, ${longitude}]`);
+
+      const response = await firstValueFrom(
+        this.httpService.get(url, {
+          headers: {
+            'User-Agent': 'KayyDrive/1.0',
+          },
+        }),
+      );
+
+      const address = response.data?.address;
+      if (!address) return {};
+
+      const quartier = address.suburb || address.neighbourhood || address.quarter || address.residential || address.townland || '';
+      const ville = address.city || address.town || address.village || address.municipality || '';
+      const region = address.state || address.region || address.province || '';
+
+      return {
+        quartier: quartier ? quartier.trim() : undefined,
+        ville: ville ? ville.trim() : undefined,
+        region: region ? region.trim() : undefined,
+      };
+    } catch (error) {
+      this.logger.error(`Error reverse geocoding [${latitude}, ${longitude}]: ${error.message}`);
+      return {};
+    }
+  }
 }

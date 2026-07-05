@@ -84,6 +84,11 @@ export class PredictionsController {
       predictedDuration: Math.round(totalDuration * 60),
       confidence: confidenceVal,
       trafficHotspots,
+      predictions: predictions.map(p => ({
+        latitude: p.latitude,
+        longitude: p.longitude,
+        niveauPredit: p.niveauPredit,
+      })),
     };
   }
 }

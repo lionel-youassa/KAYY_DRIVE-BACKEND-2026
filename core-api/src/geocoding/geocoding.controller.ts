@@ -35,4 +35,27 @@ export class GeocodingController {
       );
     }
   }
+
+  @Get('reverse')
+  async reverse(@Query('lat') lat: string, @Query('lon') lon: string, @Query('lng') lng: string) {
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lon || lng);
+
+    if (isNaN(latitude) || isNaN(longitude)) {
+      throw new HttpException(
+        'Latitude and Longitude must be valid numbers',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    try {
+      const address = await this.geocodingService.reverse(latitude, longitude);
+      return address;
+    } catch (error) {
+      throw new HttpException(
+        'Error performing reverse geocoding',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

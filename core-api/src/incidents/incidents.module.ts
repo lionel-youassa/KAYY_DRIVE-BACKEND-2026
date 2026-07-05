@@ -5,9 +5,10 @@ import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { StorageModule } from '../storage/storage.module';
+import { GeocodingModule } from '../geocoding/geocoding.module';
 
 @Module({
-  imports: [AuthModule, NotificationsModule, PrismaModule, StorageModule],
+  imports: [AuthModule, NotificationsModule, PrismaModule, StorageModule, GeocodingModule],
   controllers: [IncidentsController],
   providers: [IncidentsService],
   exports: [IncidentsService],
