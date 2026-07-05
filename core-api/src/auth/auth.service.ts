@@ -79,6 +79,13 @@ export class AuthService {
     };
   }
 
+  async checkUserExists(email: string): Promise<boolean> {
+    const user = await this.prisma.utilisateur.findUnique({
+      where: { email },
+    });
+    return !!user;
+  }
+
   // -------------------------------------------------------------------------
   // Connexion : valide les identifiants et retourne un JWT
   // -------------------------------------------------------------------------

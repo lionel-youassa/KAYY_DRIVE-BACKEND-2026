@@ -28,6 +28,7 @@ export class GeocodingService {
           headers: {
             'User-Agent': 'KayyDrive/1.0',
           },
+          timeout: 2500, // Limiter à 2.5 secondes pour éviter le blocage
         }),
       );
 
@@ -57,6 +58,7 @@ export class GeocodingService {
           headers: {
             'User-Agent': 'KayyDrive/1.0',
           },
+          timeout: 2500, // Limiter à 2.5 secondes pour éviter le blocage
         }),
       );
 
