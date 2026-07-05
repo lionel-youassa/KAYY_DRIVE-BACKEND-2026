@@ -49,6 +49,8 @@ export class PredictionsController {
       dateCible,
     );
 
+    const comfort = await this.predictionsService.calculerComfortItineraire(dto.points);
+
     // Format de réponse compatible frontend
     const totalDuration = predictions.reduce(
       (sum, p) => sum + (p.vitesseMoyennePredite > 0 ? 60 / p.vitesseMoyennePredite : 0),
@@ -84,6 +86,11 @@ export class PredictionsController {
       predictedDuration: Math.round(totalDuration * 60),
       confidence: confidenceVal,
       trafficHotspots,
+      comfortScore: comfort.comfortScore,
+      comfortLevel: comfort.comfortLevel,
+      recommendation: comfort.recommendation,
+      hasFlood: comfort.hasFlood,
+      hasDegraded: comfort.hasDegraded,
       predictions: predictions.map(p => ({
         latitude: p.latitude,
         longitude: p.longitude,

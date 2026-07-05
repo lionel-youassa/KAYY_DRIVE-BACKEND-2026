@@ -39,4 +39,9 @@ export class GetRouteDto {
   @IsOptional()
   @IsString()
   mode?: string;
+
+  @ApiProperty({ example: 'confort', description: 'Profil de routage: confort ou rapide', required: false })
+  @IsOptional()
+  @IsString()
+  routingMode?: 'confort' | 'rapide';
 }

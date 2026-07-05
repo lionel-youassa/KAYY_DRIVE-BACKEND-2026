@@ -125,4 +125,71 @@ export class PredictionsService {
 
     return predictions;
   }
+
+  async calculerComfortItineraire(points: { latitude: number; longitude: number }[]): Promise<{ comfortScore: number; comfortLevel: string; recommendation: string; hasFlood: boolean; hasDegraded: boolean }> {
+    const activeIncidents = await this.prisma.incident.findMany({
+      where: {
+        dateExpiration: { gt: new Date() },
+        statut: { not: 'resolu' },
+      },
+    });
+
+    const recentShocks = await this.prisma.secousseData.findMany({
+      where: {
+        intensite: { gte: 8.0 },
+        timestamp: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+      },
+    });
+
+    let floodCount = 0;
+    let degradedCount = 0;
+
+    for (const point of points) {
+      const lat = point.latitude;
+      const lng = point.longitude;
+
+      const hasFlood = activeIncidents.some(inc => 
+        inc.type === 'INONDATION' && 
+        distanceEnMetres(lat, lng, inc.latitude!, inc.longitude!) <= 150
+      );
+      if (hasFlood) floodCount++;
+
+      const hasDegradedIncident = activeIncidents.some(inc => 
+        inc.type === 'QUALITE_ROUTE' && 
+        distanceEnMetres(lat, lng, inc.latitude!, inc.longitude!) <= 150
+      );
+      const hasDegradedShock = recentShocks.some(shock => 
+        distanceEnMetres(lat, lng, shock.latitude, shock.longitude) <= 150
+      );
+
+      if (hasDegradedIncident || hasDegradedShock) degradedCount++;
+    }
+
+    let comfortScore = 100 - (floodCount * 40) - (degradedCount * 20);
+    comfortScore = Math.max(0, Math.min(100, comfortScore));
+
+    let comfortLevel = 'excellent';
+    let recommendation = 'Itinéraire sûr, aucun incident majeur détecté.';
+    if (comfortScore >= 80) {
+      comfortLevel = 'excellent';
+      recommendation = 'Itinéraire sûr, chaussée en bon état.';
+    } else if (comfortScore >= 60) {
+      comfortLevel = 'bon';
+      recommendation = 'Itinéraire globalement bon, légers ralentissements ou dégradations.';
+    } else if (comfortScore >= 40) {
+      comfortLevel = 'moyen';
+      recommendation = 'Itinéraire moyennement dégradé, soyez vigilant.';
+    } else {
+      comfortLevel = 'mauvais';
+      recommendation = 'Itinéraire très dégradé ou inondation détectée, évitez ce trajet si possible !';
+    }
+
+    return {
+      comfortScore,
+      comfortLevel,
+      recommendation,
+      hasFlood: floodCount > 0,
+      hasDegraded: degradedCount > 0,
+    };
+  }
 }

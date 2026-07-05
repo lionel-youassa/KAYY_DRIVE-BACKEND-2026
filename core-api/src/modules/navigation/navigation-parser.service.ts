@@ -31,11 +31,11 @@ export class NavigationParserService {
    * Parse la réponse brute d'OSRM pour extraire des instructions lisibles
    * Amélioré avec des étapes textuelles précises incluant les noms de rues
    */
-  parseInstructions(osrmData: any): any[] {
-    if (!osrmData.routes || osrmData.routes.length === 0) return [];
+  parseInstructions(osrmData: any, routeIndex = 0): any[] {
+    if (!osrmData.routes || osrmData.routes.length <= routeIndex) return [];
 
     const instructions: any[] = [];
-    const route = osrmData.routes[0];
+    const route = osrmData.routes[routeIndex];
 
     route.legs.forEach((leg) => {
       leg.steps.forEach((step, index) => {
