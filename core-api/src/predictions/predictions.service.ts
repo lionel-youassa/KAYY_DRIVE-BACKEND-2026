@@ -141,6 +141,9 @@ export class PredictionsService {
       },
     });
 
+    // Filtrer les incidents avec coordonnées valides
+    const geoIncidents = activeIncidents.filter(inc => inc.latitude != null && inc.longitude != null);
+
     let floodCount = 0;
     let degradedCount = 0;
 
@@ -148,13 +151,13 @@ export class PredictionsService {
       const lat = point.latitude;
       const lng = point.longitude;
 
-      const hasFlood = activeIncidents.some(inc => 
+      const hasFlood = geoIncidents.some(inc => 
         inc.type === 'INONDATION' && 
         distanceEnMetres(lat, lng, inc.latitude!, inc.longitude!) <= 150
       );
       if (hasFlood) floodCount++;
 
-      const hasDegradedIncident = activeIncidents.some(inc => 
+      const hasDegradedIncident = geoIncidents.some(inc => 
         inc.type === 'QUALITE_ROUTE' && 
         distanceEnMetres(lat, lng, inc.latitude!, inc.longitude!) <= 150
       );
