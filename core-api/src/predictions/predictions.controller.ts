@@ -96,6 +96,9 @@ export class PredictionsController {
         longitude: p.longitude,
         niveauPredit: p.niveauPredit,
       })),
+      confort() {
+
+      }
     };
   }
 }

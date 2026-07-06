@@ -6,6 +6,7 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+  historiqueTrafic: any;
   constructor() {
     super({
       datasources: {

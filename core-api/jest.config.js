@@ -12,9 +12,13 @@ module.exports = {
   ],
   coverageDirectory: '<rootDir>/coverage',
   coverageReporters: ['text', 'lcov', 'html'],
+
+  // MODIFICATION ICI :
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^jose$': require.resolve('jose'), // Force Jest à utiliser la version compilée de jose
   },
+
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   testTimeout: 10000,
 };

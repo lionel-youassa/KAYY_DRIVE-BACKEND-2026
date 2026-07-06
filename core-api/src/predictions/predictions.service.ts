@@ -126,7 +126,15 @@ export class PredictionsService {
     return predictions;
   }
 
-  async calculerComfortItineraire(points: { latitude: number; longitude: number }[]): Promise<{ comfortScore: number; comfortLevel: string; recommendation: string; hasFlood: boolean; hasDegraded: boolean }> {
+  async calculerComfortItineraire(points: { latitude: number; longitude: number }[]): Promise<{
+      niveauConfort(niveauConfort: any): unknown;
+      scoreConfort(scoreConfort: any): unknown;
+      comfortScore: number;
+      comfortLevel: string;
+      recommendation: string;
+      hasFlood: boolean;
+      hasDegraded: boolean
+  }> {
     const activeIncidents = await this.prisma.incident.findMany({
       where: {
         dateExpiration: { gt: new Date() },

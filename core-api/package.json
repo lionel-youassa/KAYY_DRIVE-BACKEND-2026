@@ -23,7 +23,7 @@
     "create:first-admin": "ts-node -r tsconfig-paths/register scripts/create-first-admin.ts"
   },
   "dependencies": {
-    "@nestjs/axios": "^3.0.0",
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
@@ -31,10 +31,10 @@
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.27",
-    "@nestjs/swagger": "^7.0.0",
+    "@nestjs/swagger": "^11.4.5",
     "@prisma/adapter-pg": "^5.0.0",
     "@prisma/client": "^5.0.0",
-    "axios": "^1.6.0",
+    "axios": "^1.7.9",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.79.2",
     "class-transformer": "^0.5.1",
@@ -63,6 +63,7 @@
     "@types/node": "^24.0.0",
     "@types/pg": "^8.20.0",
     "@types/supertest": "^7.0.0",
+    "dotenv": "^17.4.2",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
@@ -78,22 +79,5 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   }
 }
