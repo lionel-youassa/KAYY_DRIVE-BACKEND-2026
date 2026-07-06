@@ -3,7 +3,7 @@ services:
   - type: web
     name: kayydrive-core-api
     runtime: docker
-    dockerfilePath: ./core-api/Dockerfile
+    dockerfilePath: ./Dockerfile
     dockerContext: ./core-api
     plan: starter
     region: frankfurt
@@ -40,7 +40,7 @@ services:
   - type: web
     name: kayydrive-ia-service
     runtime: docker
-    dockerfilePath: ./ia-service/Dockerfile
+    dockerfilePath: ./Dockerfile
     dockerContext: ./ia-service
     plan: starter
     region: frankfurt
