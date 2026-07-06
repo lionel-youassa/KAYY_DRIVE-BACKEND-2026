@@ -138,17 +138,18 @@ model Publicite {
 }
 
 model Recompense {
-  id          String   @id @default(uuid())
-  titre       String
-  description String?
-  points      Int      @default(0)
-  type        String
-  dateDebut   DateTime
-  dateFin     DateTime
-  actif       Boolean  @default(true)
-  imageUrl    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(uuid())
+  titre            String
+  description      String?
+  points           Int      @default(0)
+  type             String
+  dateDebut        DateTime
+  dateFin          DateTime
+  actif            Boolean  @default(true)
+  imageUrl         String?
+  participationMin Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 // Modèles pour centraliser les données Firebase

@@ -11,6 +11,7 @@ export class RewardsService {
       const formattedData = {
         ...data,
         points: data.points ? parseInt(data.points, 10) : 0,
+        participationMin: data.participationMin ? parseInt(data.participationMin, 10) : 0,
         dateDebut: data.dateDebut ? new Date(data.dateDebut) : new Date(),
         dateFin: data.dateFin ? new Date(data.dateFin) : new Date(),
       };
@@ -59,6 +60,53 @@ export class RewardsService {
         'Impossible de supprimer la récompense',
         HttpStatus.NOT_FOUND,
       );
+    }
+  }
+
+  // 4. Calculer le score de participation d'un utilisateur
+  // Participation = nombre d'incidents signalés + nombre de confirmations effectuées
+  async getParticipationScore(userId: string): Promise<number> {
+    try {
+      // Incidents signalés par l'utilisateur
+      const signalesCount = await this.prisma.incident.count({
+        where: { idRapporteur: userId },
+      });
+
+      // Incidents confirmés par l'utilisateur (dans le tableau confirmePar)
+      const confirmedIncidents = await this.prisma.incident.findMany({
+        select: { confirmePar: true },
+      });
+      const confirmationsCount = confirmedIncidents.filter((inc) =>
+        inc.confirmePar.includes(userId),
+      ).length;
+
+      return signalesCount + confirmationsCount;
+    } catch (error) {
+      console.error('Erreur calcul score participation:', error);
+      return 0;
+    }
+  }
+
+  // 5. Vérifier l'éligibilité d'un utilisateur aux récompenses
+  async getEligibility(userId: string) {
+    try {
+      const participationScore = await this.getParticipationScore(userId);
+      const allRewards = await this.prisma.recompense.findMany({
+        where: { actif: true },
+      });
+
+      const eligibleRewards = allRewards.filter(
+        (r) => participationScore >= r.participationMin,
+      );
+
+      return {
+        participationScore,
+        eligibleRewards,
+        totalRewards: allRewards.length,
+      };
+    } catch (error) {
+      console.error('Erreur vérification éligibilité:', error);
+      return { participationScore: 0, eligibleRewards: [], totalRewards: 0 };
     }
   }
 }

@@ -8,6 +8,7 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  Request,
 } from '@nestjs/common';
 import { RewardsService } from './rewards.service';
 import { AuthGuard } from '../../auth/guards/auth.guard';
@@ -43,6 +44,12 @@ export class RewardsController {
   @Get()
   async getAllRewards() {
     return await this.rewardsService.getAllRewards();
+  }
+
+  @Get('my-eligibility')
+  async getMyEligibility(@Request() req: any) {
+    const userId: string = req.user?.id || req.user?.userId || req.user?.sub;
+    return await this.rewardsService.getEligibility(userId);
   }
 
   @Delete(':id')
