@@ -12,8 +12,16 @@ export class AdsService {
       // 'prismaData' contiendra le reste (titre, type, dateDebut, dateFin, etc.)
       const { mediaPath, ...prismaData } = data;
 
+      const formattedData = {
+        ...prismaData,
+        dateDebut: prismaData.dateDebut
+          ? new Date(prismaData.dateDebut)
+          : new Date(),
+        dateFin: prismaData.dateFin ? new Date(prismaData.dateFin) : new Date(),
+      };
+
       return await this.prisma.publicite.create({
-        data: prismaData,
+        data: formattedData,
       });
     } catch (error) {
       console.error('Erreur lors de la création Prisma :', error);

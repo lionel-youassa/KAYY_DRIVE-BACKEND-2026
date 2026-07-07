@@ -36,7 +36,11 @@ export class RewardsController {
       imageUrl = await this.storageService.uploadFile(image, 'rewards');
     }
 
-    return await this.rewardsService.createReward({ ...data, imageUrl });
+    const reward = await this.rewardsService.createReward({
+      ...data,
+      imageUrl,
+    });
+    return { success: true, message: 'Récompense créée avec succès', reward };
   }
 
   @Get()
@@ -47,6 +51,7 @@ export class RewardsController {
   @Delete(':id')
   @UseGuards(AdminGuard)
   async deleteReward(@Param('id') id: string) {
-    return await this.rewardsService.deleteReward(id);
+    await this.rewardsService.deleteReward(id);
+    return { success: true, message: 'Récompense supprimée' };
   }
 }

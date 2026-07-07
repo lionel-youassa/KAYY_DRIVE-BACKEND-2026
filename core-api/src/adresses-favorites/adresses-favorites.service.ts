@@ -1,63 +1,87 @@
 import { Injectable } from '@nestjs/common';
-import { FirebaseService } from '../firebase/firebase.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface AdresseFavorite {
   id?: string;
   nom: string;
+  adresse: string;
   latitude: number;
   longitude: number;
   categorieId?: string;
+  categorie?: any;
   id_utilisateur: string;
 }
 
 @Injectable()
 export class AdressesFavoritesService {
-  constructor(private readonly firebase: FirebaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async createAdresseFavorite(data: {
     nom: string;
+    adresse: string;
     latitude: number;
     longitude: number;
     categorieId?: string;
     id_utilisateur: string;
-  }): Promise<string> {
-    if (!this.firebase.db) {
-      console.warn(
-        '⚠️ Firebase non initialisé - adresse favorite non enregistrée',
-      );
-      return 'simulated-id';
-    }
-
-    const docRef = await this.firebase.db
-      .collection('adresses_favorites')
-      .add(data);
-    return docRef.id;
+  }): Promise<AdresseFavorite> {
+    const adresse = await this.prisma.adresseFavorite.create({
+      data: {
+        nom: data.nom,
+        adresse: data.adresse,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        categorieId: data.categorieId,
+        utilisateurId: data.id_utilisateur,
+      },
+      include: { categorie: true },
+    });
+    return {
+      id: adresse.id,
+      nom: adresse.nom,
+      adresse: adresse.adresse,
+      latitude: adresse.latitude,
+      longitude: adresse.longitude,
+      categorieId: adresse.categorieId || undefined,
+      categorie: adresse.categorie
+        ? {
+            id: adresse.categorie.id,
+            nom: adresse.categorie.nom,
+            icone: adresse.categorie.icone,
+            couleur: adresse.categorie.couleur,
+          }
+        : null,
+      id_utilisateur: adresse.utilisateurId,
+    };
   }
 
   async getAdressesFavorites(uid: string): Promise<AdresseFavorite[]> {
-    if (!this.firebase.db) {
-      console.warn('⚠️ Firebase non initialisé - retour de liste vide');
-      return [];
-    }
+    const adresses = await this.prisma.adresseFavorite.findMany({
+      where: { utilisateurId: uid },
+      include: { categorie: true },
+    });
 
-    const snapshot = await this.firebase.db
-      .collection('adresses_favorites')
-      .where('id_utilisateur', '==', uid)
-      .get();
-
-    return snapshot.docs.map(
-      (doc: FirebaseFirestore.QueryDocumentSnapshot) => ({
-        ...(doc.data() as AdresseFavorite),
-        id: doc.id,
-      }),
-    );
+    return adresses.map((a) => ({
+      id: a.id,
+      nom: a.nom,
+      adresse: a.adresse,
+      latitude: a.latitude,
+      longitude: a.longitude,
+      categorieId: a.categorieId || undefined,
+      categorie: a.categorie
+        ? {
+            id: a.categorie.id,
+            nom: a.categorie.nom,
+            icone: a.categorie.icone,
+            couleur: a.categorie.couleur,
+          }
+        : null,
+      id_utilisateur: a.utilisateurId,
+    }));
   }
 
   async deleteAdresseFavorite(id: string): Promise<void> {
-    if (!this.firebase.db) {
-      console.warn('⚠️ Firebase non initialisé - suppression ignorée');
-      return;
-    }
-    await this.firebase.db.collection('adresses_favorites').doc(id).delete();
+    await this.prisma.adresseFavorite.delete({
+      where: { id },
+    });
   }
 }

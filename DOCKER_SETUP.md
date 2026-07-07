@@ -8,7 +8,7 @@ Cette architecture Docker permet de déployer tous les services KayyDrive dans d
 
 ```
 Frontend → Nginx (80) → Core-API (3001)
-                        → IA-Service (9500)
+                        → IA-Service (9820)
                         → OSRM (5000)
 
 Core-API ↔ PostgreSQL (5432)
@@ -27,7 +27,7 @@ IA-Service ↔ PostgreSQL (5432)
 
 ### 2. IA-Service (FastAPI)
 - **Port interne**: 8000
-- **Port externe**: 9500
+- **Port externe**: 9820
 - **Dépendances**: PostgreSQL
 - **Routes API**: `/ia/*`
 

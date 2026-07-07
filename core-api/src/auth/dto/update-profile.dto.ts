@@ -6,6 +6,10 @@ export class UpdateProfileDto {
   nom?: string;
 
   @IsOptional()
+  @IsString()
+  prenom?: string;
+
+  @IsOptional()
   @IsEmail()
   email?: string;
 

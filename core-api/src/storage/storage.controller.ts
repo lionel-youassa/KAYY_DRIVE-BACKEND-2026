@@ -4,13 +4,17 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  UseGuards,
+  Body,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StorageService } from './storage.service';
 import { ApiTags, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { AuthGuard } from '../auth/guards/auth.guard';
 
 @ApiTags('Storage')
 @Controller('storage')
+@UseGuards(AuthGuard)
 export class StorageController {
   constructor(private readonly storageService: StorageService) {}
 
@@ -35,7 +39,7 @@ export class StorageController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadImage(
     @UploadedFile() file: Express.Multer.File,
-    @UploadedFile() folder?: string,
+    @Body('folder') folder?: string,
   ) {
     if (!file) {
       throw new BadRequestException('Aucun fichier fourni');
@@ -59,6 +63,6 @@ export class StorageController {
     }
 
     const url = await this.storageService.uploadFile(file, folder || 'uploads');
-    return { url };
+    return { success: true, url };
   }
 }

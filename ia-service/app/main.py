@@ -143,3 +143,43 @@ def predict_traffic_batch(batch: BatchPredictionInput):
         ))
 
     return BatchPredictionOutput(resultats=resultats, total=len(resultats))
+
+
+from pydantic import BaseModel
+
+class ChatRequest(BaseModel):
+    message: str
+
+@app.post("/chat", tags=["IA"])
+@app.post("/ia/chat", tags=["IA"])
+async def chat(request: ChatRequest):
+    try:
+        from google import genai as google_genai
+        client = google_genai.Client(
+            api_key=os.getenv("GEMINI_API_KEY")
+        )
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=(
+                'Tu es un assistant de navigation intelligent pour KAYY Drive a Douala au Cameroun. '
+                'Tu reponds UNIQUEMENT en francais, en 2-3 phrases maximum. '
+                'Tu peux aider avec : '
+                'le trafic sur les axes routiers de Douala, '
+                'les itineraires alternatifs pour eviter les bouchons, '
+                'les incidents signales (nids-de-poule, inondations, accidents), '
+                'les conseils de conduite, '
+                'la meteo et son impact sur la circulation a Douala '
+                '(pluie = routes glissantes et risques d\'inondation notamment a Bassa et Ndokoti), '
+                'les heures de pointe (7h-9h matin et 17h-19h soir), '
+                'les quartiers et axes principaux de Douala (Akwa, Bonanjo, Deido, Bassa, Yassa, Makepe). '
+                'Si la question est hors navigation, ramene poliment vers ton domaine.\n\n'
+                f'Utilisateur: {request.message}'
+            ),
+        )
+        return {"reponse": response.text, "statut": "ok"}
+    except Exception as e:
+        return {
+            "reponse": "Je suis temporairement indisponible.",
+            "statut": "erreur",
+            "detail": str(e)
+        }

@@ -30,23 +30,33 @@ export class AdsController {
     @Body() data: any,
     @UploadedFile() image?: Express.Multer.File,
   ) {
+    console.log('DEBUG CREATE AD - Body data:', data);
+    console.log('DEBUG CREATE AD - Uploaded file:', image);
+
     let imageUrl: string | undefined;
 
     if (image) {
       imageUrl = await this.storageService.uploadFile(image, 'ads');
+      console.log(
+        'DEBUG CREATE AD - Image uploaded to storage, URL:',
+        imageUrl,
+      );
     }
 
-    return await this.adsService.createAdvertising({ ...data, imageUrl });
+    const ad = await this.adsService.createAdvertising({ ...data, imageUrl });
+    return { success: true, message: 'Publicité créée avec succès', ad };
   }
 
   @Get()
   async getAllAdvertising() {
-    return await this.adsService.getAllAdvertising();
+    const ads = await this.adsService.getAllAdvertising();
+    return { ads };
   }
 
   @Delete(':id')
   @UseGuards(AdminGuard)
   async deleteAdvertising(@Param('id') id: string) {
-    return await this.adsService.deleteAdvertising(id);
+    await this.adsService.deleteAdvertising(id);
+    return { success: true, message: 'Publicité supprimée' };
   }
 }

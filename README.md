@@ -35,8 +35,13 @@ Pour plus d'informations détaillées, consultez :
 
 Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toutes les opérations CRUD sont centralisées dans la base de données PostgreSQL.
 
-**Firebase est conservé uniquement pour :**
-- Envoi de notifications push (Firebase Messaging)
+**Firebase a été complètement supprimé du backend.** Toutes les données sont maintenant stockées et gérées via PostgreSQL, y compris :
+- Relevés de trafic
+- Prédictions de trafic
+- Préférences utilisateur
+- Adresses favorites
+- Données Safe-Drive (secousses)
+- Notifications (tokens FCM stockés en PostgreSQL)
 
 **L'authentification est entièrement gérée par PostgreSQL avec JWT.**
 
@@ -97,7 +102,7 @@ Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toute
 
 5. **Accéder aux services :**
    - **Core API (NestJS):** `http://localhost:3001`
-   - **IA Service (FastAPI):** `http://localhost:9500`
+   - **IA Service (FastAPI):** `http://localhost:9820`
    - **Minio Console:** `http://localhost:9001`
    - **Minio API:** `http://localhost:9000`
    - **Nginx:** `http://localhost:80`
@@ -229,11 +234,12 @@ Connexion d'un utilisateur.
 ```json
 {
   "success": true,
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "uid": "uuid",
     "email": "user@example.com",
     "nom": "John Doe",
+    "prenom": "",
     "role": "user"
   }
 }
@@ -254,6 +260,7 @@ Authorization: Bearer <token>
     "uid": "uuid",
     "email": "user@example.com",
     "nom": "John Doe",
+    "prenom": "",
     "role": "user"
   }
 }
@@ -788,7 +795,8 @@ Authorization: Bearer <admin_token>
 ```json
 {
   "success": true,
-  "categorie": {
+  "message": "Catégorie créée avec succès",
+  "category": {
     "id": "uuid",
     "nom": "Transport",
     "icone": "🚌",
@@ -820,13 +828,17 @@ Authorization: Bearer <admin_token>
 **Réponse :**
 ```json
 {
-  "id": "uuid",
-  "titre": "Promotion KayyDrive",
-  "description": "Offre spéciale pour les nouveaux utilisateurs",
-  "type": "banner",
-  "dateDebut": "2026-07-01T00:00:00Z",
-  "dateFin": "2026-07-31T23:59:59Z",
-  "actif": true
+  "success": true,
+  "message": "Publicité créée avec succès",
+  "ad": {
+    "id": "uuid",
+    "titre": "Promotion KayyDrive",
+    "description": "Offre spéciale pour les nouveaux utilisateurs",
+    "type": "banner",
+    "dateDebut": "2026-07-01T00:00:00Z",
+    "dateFin": "2026-07-31T23:59:59Z",
+    "actif": true
+  }
 }
 ```
 
@@ -869,14 +881,18 @@ Authorization: Bearer <admin_token>
 **Réponse :**
 ```json
 {
-  "id": "uuid",
-  "titre": "Bonus de bienvenue",
-  "description": "100 points pour votre première inscription",
-  "points": 100,
-  "type": "inscription",
-  "dateDebut": "2026-07-01T00:00:00Z",
-  "dateFin": "2026-12-31T23:59:59Z",
-  "actif": true
+  "success": true,
+  "message": "Récompense créée avec succès",
+  "reward": {
+    "id": "uuid",
+    "titre": "Bonus de bienvenue",
+    "description": "100 points pour votre première inscription",
+    "points": 100,
+    "type": "inscription",
+    "dateDebut": "2026-07-01T00:00:00Z",
+    "dateFin": "2026-12-31T23:59:59Z",
+    "actif": true
+  }
 }
 ```
 
@@ -1033,12 +1049,25 @@ Authorization: Bearer <admin_token>
 **Réponse :**
 ```json
 {
-  "overview": { ... },
-  "shortcuts": { ... },
-  "incidents": { ... },
-  "safeDrive": { ... },
-  "engagement": { ... },
-  "performance": { ... }
+  "overview": {
+    "totalUsers": 1500,
+    "activeUsers": 850,
+    "totalIncidents": 120,
+    "totalRoutes": 45
+  },
+  "incidents": {
+    "confirmedIncidents": 85,
+    "incidentsByType": {
+      "accident": 40,
+      "inondation": 25,
+      "travaux": 20
+    }
+  },
+  "performance": {
+    "averageResponseTime": 150,
+    "uptime": 99.5,
+    "errorRate": 0.5
+  }
 }
 ```
 

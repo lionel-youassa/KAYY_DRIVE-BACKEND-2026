@@ -28,17 +28,19 @@ export class IncidentsController {
     private readonly storageService: StorageService,
   ) {}
 
-  // GET /incidents?latitude=&longitude=&rayon=
+  // GET /incidents?latitude=&longitude=&rayon=&filterType=
   @Get()
   async getIncidents(
     @Query('latitude') latitude: string,
     @Query('longitude') longitude: string,
     @Query('rayon') rayon?: string,
+    @Query('filterType') filterType?: string,
   ) {
     const incidents = await this.incidentsService.getIncidentsProches(
       parseFloat(latitude),
       parseFloat(longitude),
       rayon ? parseFloat(rayon) : undefined,
+      filterType,
     );
     return { incidents };
   }
@@ -51,10 +53,17 @@ export class IncidentsController {
     @Body() dto: CreateIncidentDto,
     @UploadedFile() image?: Express.Multer.File,
   ) {
-    let imageUrl: string | undefined;
+    console.log('DEBUG CREATE INCIDENT - DTO:', dto);
+    console.log('DEBUG CREATE INCIDENT - Uploaded file:', image);
+
+    let imageUrl = dto.imageUrl;
 
     if (image) {
       imageUrl = await this.storageService.uploadFile(image, 'incidents');
+      console.log(
+        'DEBUG CREATE INCIDENT - Image uploaded to storage, URL:',
+        imageUrl,
+      );
     }
 
     const incident = await this.incidentsService.createIncident({
@@ -82,7 +91,7 @@ export class IncidentsController {
       })
       .catch((err) => console.error('Erreur notification incident:', err));
 
-    return { success: true, incident };
+    return { success: true, message: 'Incident signalé avec succès', incident };
   }
 
   // POST /incidents/:id/confirmer

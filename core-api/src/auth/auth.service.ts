@@ -14,13 +14,14 @@ export interface UserProfile {
   uid: string;
   email: string;
   nom: string;
+  prenom: string;
   telephone?: string;
   role: UserRole;
   dateCreation: string;
 }
 
 export interface LoginResponse {
-  access_token: string;
+  token: string;
   user: UserProfile;
 }
 
@@ -71,10 +72,18 @@ export class AuthService {
       uid: utilisateur.id,
       email: utilisateur.email,
       nom: utilisateur.pseudo,
+      prenom: utilisateur.prenom || '',
       telephone: utilisateur.telephone || undefined,
       role: utilisateur.role as UserRole,
       dateCreation: utilisateur.dateCreation.toISOString(),
     };
+  }
+
+  async checkUserExists(email: string): Promise<boolean> {
+    const user = await this.prisma.utilisateur.findUnique({
+      where: { email },
+    });
+    return !!user;
   }
 
   // -------------------------------------------------------------------------
@@ -104,14 +113,15 @@ export class AuthService {
       role: utilisateur.role,
     };
 
-    const access_token = this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload);
 
     return {
-      access_token,
+      token,
       user: {
         uid: utilisateur.id,
         email: utilisateur.email,
         nom: utilisateur.pseudo,
+        prenom: utilisateur.prenom || '',
         telephone: utilisateur.telephone || undefined,
         role: utilisateur.role as UserRole,
         dateCreation: utilisateur.dateCreation.toISOString(),
@@ -170,6 +180,7 @@ export class AuthService {
       uid: utilisateur.id,
       email: utilisateur.email,
       nom: utilisateur.pseudo,
+      prenom: utilisateur.prenom || '',
       telephone: utilisateur.telephone || undefined,
       role: utilisateur.role as UserRole,
       dateCreation: utilisateur.dateCreation.toISOString(),
@@ -183,6 +194,7 @@ export class AuthService {
     uid: string,
     updateData: {
       nom?: string;
+      prenom?: string;
       email?: string;
       telephone?: string;
       password?: string;
@@ -200,6 +212,10 @@ export class AuthService {
 
     if (updateData.nom) {
       updatePayload.pseudo = updateData.nom;
+    }
+
+    if (updateData.prenom !== undefined) {
+      updatePayload.prenom = updateData.prenom;
     }
 
     if (updateData.email) {
@@ -232,6 +248,7 @@ export class AuthService {
       uid: updatedUser.id,
       email: updatedUser.email,
       nom: updatedUser.pseudo,
+      prenom: updatedUser.prenom || '',
       telephone: updatedUser.telephone || undefined,
       role: updatedUser.role as UserRole,
       dateCreation: updatedUser.dateCreation.toISOString(),

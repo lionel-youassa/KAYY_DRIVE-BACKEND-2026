@@ -31,11 +31,11 @@ export class NavigationParserService {
    * Parse la réponse brute d'OSRM pour extraire des instructions lisibles
    * Amélioré avec des étapes textuelles précises incluant les noms de rues
    */
-  parseInstructions(osrmData: any): any[] {
-    if (!osrmData.routes || osrmData.routes.length === 0) return [];
+  parseInstructions(osrmData: any, routeIndex = 0): any[] {
+    if (!osrmData.routes || osrmData.routes.length <= routeIndex) return [];
 
     const instructions: any[] = [];
-    const route = osrmData.routes[0];
+    const route = osrmData.routes[routeIndex];
 
     route.legs.forEach((leg) => {
       leg.steps.forEach((step, index) => {
@@ -49,18 +49,18 @@ export class NavigationParserService {
 
         // Construction de la phrase de guidage améliorée
         if (maneuverType === 'depart') {
-          text = `Départ de ${streetName}`;
+          text = `Prenez ${streetName}`;
         } else if (maneuverType === 'arrive') {
           text = `Arrivée à ${streetName}`;
         } else {
           const action = this.translations[maneuverType] || maneuverType;
           const direction = this.translations[modifier] || modifier || '';
 
-          // Instructions plus précises avec nom de rue de destination
+          // Instructions plus précises avec nom de rue de destination (sans la distance statique préfixée)
           if (nextStreetName && nextStreetName !== streetName) {
-            text = `Dans ${distance}, ${action} ${direction} vers ${nextStreetName}`;
+            text = `${action} ${direction} vers ${nextStreetName}`;
           } else {
-            text = `Dans ${distance}, ${action} ${direction} sur ${streetName}`;
+            text = `${action} ${direction} sur ${streetName}`;
           }
         }
 

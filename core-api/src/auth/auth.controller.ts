@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Patch, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  UseGuards,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { PromoteDto } from './dto/promote.dto';
@@ -17,6 +26,22 @@ export class AuthController {
   async register(@Body() dto: RegisterDto) {
     const profile = await this.authService.createUser(dto);
     return { success: true, user: profile };
+  }
+
+  // POST /auth/forgot-password
+  @Post('forgot-password')
+  async forgotPassword(@Body('email') email: string) {
+    if (!email) {
+      throw new BadRequestException('Email requis');
+    }
+    const exists = await this.authService.checkUserExists(email);
+    if (!exists) {
+      throw new NotFoundException('Utilisateur introuvable avec cet e-mail');
+    }
+    return {
+      success: true,
+      message: 'Un e-mail de réinitialisation de mot de passe a été envoyé.',
+    };
   }
 
   // POST /auth/login

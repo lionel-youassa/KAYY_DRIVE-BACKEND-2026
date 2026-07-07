@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { FirebaseService } from '../firebase/firebase.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 export type NiveauTrafic = 'fluide' | 'dense' | 'bouchon';
 
@@ -37,7 +37,7 @@ function distanceEnMetres(
 
 @Injectable()
 export class TraficService {
-  constructor(private readonly firebase: FirebaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async enregistrerRelevé(data: {
     latitude: number;
@@ -45,26 +45,27 @@ export class TraficService {
     vitesseMoyenne: number;
     id_utilisateur: string;
   }): Promise<RelevéTrafic> {
-    if (!this.firebase.db) {
-      console.warn(
-        '⚠️ Firebase non initialisé - relevé de trafic non enregistré',
-      );
-      return {
-        ...data,
-        niveau: niveauDepuisVitesse(data.vitesseMoyenne),
-        timestamp: new Date().toISOString(),
-        id: 'simulated-id',
-      };
-    }
+    const niveau = niveauDepuisVitesse(data.vitesseMoyenne);
 
-    const relevé: RelevéTrafic = {
-      ...data,
-      niveau: niveauDepuisVitesse(data.vitesseMoyenne),
-      timestamp: new Date().toISOString(),
+    const relevé = await this.prisma.releveTrafic.create({
+      data: {
+        latitude: data.latitude,
+        longitude: data.longitude,
+        vitesseMoyenne: data.vitesseMoyenne,
+        niveau: niveau,
+        id_utilisateur: data.id_utilisateur,
+      },
+    });
+
+    return {
+      id: relevé.id,
+      latitude: relevé.latitude,
+      longitude: relevé.longitude,
+      vitesseMoyenne: relevé.vitesseMoyenne,
+      niveau: relevé.niveau as NiveauTrafic,
+      id_utilisateur: relevé.id_utilisateur,
+      timestamp: relevé.timestamp.toISOString(),
     };
-
-    const docRef = await this.firebase.db.collection('trafic').add(relevé);
-    return { ...relevé, id: docRef.id };
   }
 
   async getTraficActuel(
@@ -76,38 +77,29 @@ export class TraficService {
     vitesseMoyenne: number;
     nombreReleves: number;
   }> {
-    if (!this.firebase.db) {
-      console.warn('⚠️ Firebase non initialisé - retour de trafic simulé');
-      return { niveau: 'fluide', vitesseMoyenne: 0, nombreReleves: 0 };
-    }
+    const ilYa15Minutes = new Date(Date.now() - 15 * 60 * 1000);
 
-    const ilYa15Minutes = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const relevés = await this.prisma.releveTrafic.findMany({
+      where: {
+        timestamp: {
+          gte: ilYa15Minutes,
+        },
+      },
+    });
 
-    const snapshot = await this.firebase.db
-      .collection('trafic')
-      .where('timestamp', '>', ilYa15Minutes)
-      .get();
-
-    const relevésProches = snapshot.docs
-      .map(
-        (doc: FirebaseFirestore.QueryDocumentSnapshot) =>
-          doc.data() as RelevéTrafic,
-      )
-      .filter(
-        (r: RelevéTrafic) =>
-          distanceEnMetres(latitude, longitude, r.latitude, r.longitude) <=
-            rayonMetres && typeof r.vitesseMoyenne === 'number',
-      );
+    const relevésProches = relevés.filter(
+      (r) =>
+        distanceEnMetres(latitude, longitude, r.latitude, r.longitude) <=
+          rayonMetres && typeof r.vitesseMoyenne === 'number',
+    );
 
     if (relevésProches.length === 0) {
       return { niveau: 'fluide', vitesseMoyenne: 0, nombreReleves: 0 };
     }
 
     const vitesseMoyenne =
-      relevésProches.reduce(
-        (sum: number, r: RelevéTrafic) => sum + r.vitesseMoyenne,
-        0,
-      ) / relevésProches.length;
+      relevésProches.reduce((sum: number, r) => sum + r.vitesseMoyenne, 0) /
+      relevésProches.length;
 
     return {
       niveau: niveauDepuisVitesse(vitesseMoyenne),

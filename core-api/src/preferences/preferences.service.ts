@@ -1,79 +1,69 @@
 import { Injectable } from '@nestjs/common';
-import { FirebaseService } from '../firebase/firebase.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface PreferencesUtilisateur {
-  id_utilisateur: string;
-  modeDeplacement: 'voiture' | 'moto' | 'pied' | 'transport_commun';
-  notificationsIncidents: boolean;
-  notificationsRaccourcis: boolean;
-  eviterZonesRisque: boolean;
-  unite: 'km' | 'miles';
-  langue: 'fr' | 'en';
-  dateMiseAJour: string;
+  eviterPeages: boolean;
+  prioriserRoutesSecu: boolean;
+  eviterZonesInondables: boolean;
+  modeHorsLigneActif: boolean;
 }
 
-const PREFERENCES_PAR_DEFAUT: Omit<
-  PreferencesUtilisateur,
-  'id_utilisateur' | 'dateMiseAJour'
-> = {
-  modeDeplacement: 'voiture',
-  notificationsIncidents: true,
-  notificationsRaccourcis: true,
-  eviterZonesRisque: true,
-  unite: 'km',
-  langue: 'fr',
+const PREFERENCES_PAR_DEFAUT: PreferencesUtilisateur = {
+  eviterPeages: false,
+  prioriserRoutesSecu: true,
+  eviterZonesInondables: true,
+  modeHorsLigneActif: false,
 };
 
 @Injectable()
 export class PreferencesService {
-  constructor(private readonly firebase: FirebaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async getPreferences(uid: string): Promise<PreferencesUtilisateur> {
-    if (!this.firebase.db) {
-      console.warn(
-        '⚠️ Firebase non initialisé - retour de préférences par défaut',
-      );
-      return {
-        id_utilisateur: uid,
-        ...PREFERENCES_PAR_DEFAUT,
-        dateMiseAJour: new Date().toISOString(),
-      };
+    const preferences = await this.prisma.preferencesUtilisateur.findUnique({
+      where: { utilisateurId: uid },
+    });
+
+    if (!preferences) {
+      return PREFERENCES_PAR_DEFAUT;
     }
 
-    const doc = await this.firebase.db.collection('preferences').doc(uid).get();
-
-    if (!doc.exists) {
-      return {
-        id_utilisateur: uid,
-        ...PREFERENCES_PAR_DEFAUT,
-        dateMiseAJour: new Date().toISOString(),
-      };
-    }
-
-    return doc.data() as PreferencesUtilisateur;
+    return {
+      eviterPeages: preferences.eviterPeages,
+      prioriserRoutesSecu: preferences.prioriserRoutesSecu,
+      eviterZonesInondables: preferences.eviterZonesInondables,
+      modeHorsLigneActif: preferences.modeHorsLigneActif,
+    };
   }
 
   async updatePreferences(
     uid: string,
-    updates: Partial<
-      Omit<PreferencesUtilisateur, 'id_utilisateur' | 'dateMiseAJour'>
-    >,
+    updates: Partial<PreferencesUtilisateur>,
   ): Promise<PreferencesUtilisateur> {
-    const actuelles = await this.getPreferences(uid);
+    const preferences = await this.prisma.preferencesUtilisateur.upsert({
+      where: { utilisateurId: uid },
+      update: updates,
+      create: {
+        utilisateurId: uid,
+        eviterPeages:
+          updates.eviterPeages ?? PREFERENCES_PAR_DEFAUT.eviterPeages,
+        prioriserRoutesSecu:
+          updates.prioriserRoutesSecu ??
+          PREFERENCES_PAR_DEFAUT.prioriserRoutesSecu,
+        eviterZonesInondables:
+          updates.eviterZonesInondables ??
+          PREFERENCES_PAR_DEFAUT.eviterZonesInondables,
+        modeHorsLigneActif:
+          updates.modeHorsLigneActif ??
+          PREFERENCES_PAR_DEFAUT.modeHorsLigneActif,
+      },
+    });
 
-    const nouvelles: PreferencesUtilisateur = {
-      ...actuelles,
-      ...updates,
-      id_utilisateur: uid,
-      dateMiseAJour: new Date().toISOString(),
+    return {
+      eviterPeages: preferences.eviterPeages,
+      prioriserRoutesSecu: preferences.prioriserRoutesSecu,
+      eviterZonesInondables: preferences.eviterZonesInondables,
+      modeHorsLigneActif: preferences.modeHorsLigneActif,
     };
-
-    if (!this.firebase.db) {
-      console.warn('⚠️ Firebase non initialisé - mise à jour ignorée');
-      return nouvelles;
-    }
-
-    await this.firebase.db.collection('preferences').doc(uid).set(nouvelles);
-    return nouvelles;
   }
 }

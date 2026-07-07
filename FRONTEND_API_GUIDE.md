@@ -4,7 +4,7 @@ Ce document décrit tous les endpoints de l'API KayyDrive pour l'intégration fr
 
 **Base URL :** `http://localhost:3001`
 
-**Authentication :** La plupart des routes nécessitent un token Firebase dans le header `Authorization: Bearer <token>`
+**Authentication :** La plupart des routes nécessitent un token JWT dans le header `Authorization: Bearer <token>`
 
 ---
 
@@ -87,7 +87,7 @@ Connexion d'un utilisateur.
 ```json
 {
   "success": true,
-  "token": "firebase-token",
+  "token": "jwt-token",
   "user": {
     "uid": "user-uuid",
     "email": "user@example.com",
@@ -109,7 +109,7 @@ Récupérer le profil de l'utilisateur connecté.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -119,6 +119,7 @@ Authorization: Bearer <firebase-token>
     "uid": "user-uuid",
     "email": "user@example.com",
     "nom": "John Doe",
+    "prenom": "",
     "telephone": "+237123456789",
     "role": "user"
   }
@@ -138,7 +139,7 @@ Mettre à jour le profil de l'utilisateur connecté.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -159,6 +160,7 @@ Authorization: Bearer <firebase-token>
     "uid": "user-uuid",
     "email": "newemail@example.com",
     "nom": "John Doe Updated",
+    "prenom": "",
     "telephone": "+237987654321",
     "role": "user"
   }
@@ -438,7 +440,7 @@ Récupérer les incidents proches d'une position.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Query params :**
@@ -459,7 +461,11 @@ rayon=5000
       "latitude": 3.8490,
       "longitude": 11.5030,
       "statut": "confirme",
-      "nombreValidations": 5,
+      "nombreConfirmations": 5,
+      "confirmePar": ["uuid1", "uuid2"],
+      "id_utilisateur_createur": "uuid",
+      "dateCreation": "2024-01-01T10:00:00Z",
+      "dateExpiration": "2024-01-01T14:00:00Z",
       "imageUrl": "https://minio-url/image.jpg"
     }
   ]
@@ -479,7 +485,7 @@ Signaler un nouvel incident.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 Content-Type: multipart/form-data
 ```
 
@@ -496,12 +502,19 @@ longitude: 11.5021
 ```json
 {
   "success": true,
+  "message": "Incident signalé avec succès",
   "incident": {
     "id": "incident-uuid",
     "type": "inondation",
     "description": "Route inondée",
     "latitude": 3.8488,
     "longitude": 11.5021,
+    "statut": "non_confirme",
+    "nombreConfirmations": 1,
+    "confirmePar": ["uuid"],
+    "id_utilisateur_createur": "uuid",
+    "dateCreation": "2024-01-01T10:00:00Z",
+    "dateExpiration": "2024-01-01T14:00:00Z",
     "imageUrl": "https://minio-url/image.jpg"
   }
 }
@@ -520,7 +533,7 @@ Confirmer un incident existant.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -535,8 +548,21 @@ Authorization: Bearer <firebase-token>
 ```json
 {
   "success": true,
-  "message": "Incident confirmé",
-  "nombreValidations": 6
+  "message": "Incident confirmé par la communauté !",
+  "incident": {
+    "id": "uuid",
+    "type": "inondation",
+    "description": "Description de l'incident",
+    "latitude": 3.8488,
+    "longitude": 11.5021,
+    "statut": "confirme",
+    "nombreConfirmations": 3,
+    "confirmePar": ["uuid1", "uuid2", "uuid3"],
+    "id_utilisateur_createur": "uuid",
+    "dateCreation": "2024-01-01T10:00:00Z",
+    "dateExpiration": "2024-01-01T14:00:00Z",
+    "imageUrl": "https://minio-url/incidents/image.jpg"
+  }
 }
 ```
 
@@ -555,7 +581,7 @@ Créer un nouveau raccourci communautaire.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -605,7 +631,7 @@ Voter pour un raccourci.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -626,6 +652,37 @@ Authorization: Bearer <firebase-token>
 
 ---
 
+### GET /routes
+Récupérer toutes les routes locales (raccourcis).
+
+**URL :** `http://localhost:3001/routes`
+
+**Méthode :** GET
+
+**Protection :** AuthGuard
+
+**Headers :**
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Réponse :**
+```json
+{
+  "routes": [
+    {
+      "id": "route-uuid",
+      "nom": "Raccourci Akwa",
+      "description": "Évite les bouchons",
+      "votesPositifs": 15,
+      "votesNegatifs": 2
+    }
+  ]
+}
+```
+
+---
+
 ### GET /routes/suggestions
 Obtenir des suggestions de raccourcis pour un trajet.
 
@@ -637,7 +694,7 @@ Obtenir des suggestions de raccourcis pour un trajet.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Query params :**
@@ -678,7 +735,7 @@ Enregistrer une secousse (détection de qualité de route).
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -713,7 +770,7 @@ Récupérer le trafic actuel dans une zone.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Query params :**
@@ -726,13 +783,12 @@ rayon=5000
 **Réponse :**
 ```json
 {
-  "trafic": [
+  "segments": [
     {
-      "latitude": 3.8490,
-      "longitude": 11.5030,
-      "niveau": "eleve",
-      "vitesseMoyenne": 15,
-      "horodatage": "2026-07-02T10:00:00Z"
+      "roadName": "Route actuelle",
+      "congestionLevel": "high",
+      "averageSpeed": 15,
+      "geometry": "encoded_polyline_string"
     }
   ]
 }
@@ -751,7 +807,7 @@ Enregistrer un relevé de trafic.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -792,7 +848,7 @@ Prédire le trafic à un point donné à une date future.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Query params :**
@@ -826,7 +882,7 @@ Prédire le trafic sur un itinéraire complet.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -843,12 +899,13 @@ Authorization: Bearer <firebase-token>
 **Réponse :**
 ```json
 {
-  "predictions": [
+  "predictedDuration": 350,
+  "confidence": 0.85,
+  "trafficHotspots": [
     {
-      "latitude": 3.8488,
-      "longitude": 11.5021,
-      "niveau_trafic": "moyen",
-      "temps_estime_minutes": 25
+      "location": {"lat": 3.8490, "lon": 11.5030},
+      "severity": "high",
+      "expectedDelay": 50
     }
   ]
 }
@@ -869,7 +926,7 @@ Récupérer les notifications de l'utilisateur.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -900,7 +957,7 @@ Enregistrer un token FCM pour les push notifications.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -930,7 +987,30 @@ Marquer une notification comme lue.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
+```
+
+**Réponse :**
+```json
+{
+  "success": true
+}
+```
+
+---
+
+### POST /notifications/:id/lue
+Marquer une notification comme lue (alias pour compatibilité).
+
+**URL :** `http://localhost:3001/notifications/:id/lue`
+
+**Méthode :** POST
+
+**Protection :** AuthGuard
+
+**Headers :**
+```
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -955,7 +1035,7 @@ Récupérer toutes les catégories.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1003,7 +1083,8 @@ Authorization: Bearer <admin-token>
 ```json
 {
   "success": true,
-  "categorie": {
+  "message": "Catégorie créée avec succès",
+  "category": {
     "id": "cat-uuid",
     "nom": "Transport",
     "icone": "🚌",
@@ -1028,7 +1109,7 @@ Récupérer les préférences de l'utilisateur.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1056,7 +1137,7 @@ Mettre à jour les préférences de l'utilisateur.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -1097,7 +1178,7 @@ Mettre à jour la position de l'utilisateur.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -1128,7 +1209,7 @@ Supprimer la position de l'utilisateur.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1153,7 +1234,7 @@ Récupérer les adresses favorites de l'utilisateur.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1184,7 +1265,7 @@ Ajouter une adresse favorite.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Body :**
@@ -1218,7 +1299,7 @@ Supprimer une adresse favorite.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1243,23 +1324,25 @@ Récupérer toutes les publicités actives.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
 ```json
-[
-  {
-    "id": "ad-uuid",
-    "titre": "Promotion KayyDrive",
-    "description": "Offre spéciale",
-    "type": "banner",
-    "imageUrl": "https://minio-url/ad.jpg",
-    "dateDebut": "2026-07-01T00:00:00Z",
-    "dateFin": "2026-07-31T23:59:59Z",
-    "actif": true
-  }
-]
+{
+  "ads": [
+    {
+      "id": "ad-uuid",
+      "titre": "Promotion KayyDrive",
+      "description": "Offre spéciale",
+      "type": "banner",
+      "imageUrl": "https://minio-url/ad.jpg",
+      "dateDebut": "2026-07-01T00:00:00Z",
+      "dateFin": "2026-07-31T23:59:59Z",
+      "actif": true
+    }
+  ]
+}
 ```
 
 ---
@@ -1292,14 +1375,18 @@ dateFin: "2026-07-31T23:59:59Z"
 **Réponse :**
 ```json
 {
-  "id": "ad-uuid",
-  "titre": "Promotion KayyDrive",
-  "description": "Offre spéciale",
-  "type": "banner",
-  "imageUrl": "https://minio-url/ad.jpg",
-  "dateDebut": "2026-07-01T00:00:00Z",
-  "dateFin": "2026-07-31T23:59:59Z",
-  "actif": true
+  "success": true,
+  "message": "Publicité créée avec succès",
+  "ad": {
+    "id": "ad-uuid",
+    "titre": "Promotion KayyDrive",
+    "description": "Offre spéciale",
+    "type": "banner",
+    "imageUrl": "https://minio-url/ad.jpg",
+    "dateDebut": "2026-07-01T00:00:00Z",
+    "dateFin": "2026-07-31T23:59:59Z",
+    "actif": true
+  }
 }
 ```
 
@@ -1322,7 +1409,8 @@ Authorization: Bearer <admin-token>
 **Réponse :**
 ```json
 {
-  "success": true
+  "success": true,
+  "message": "Publicité supprimée"
 }
 ```
 
@@ -1341,24 +1429,26 @@ Récupérer toutes les récompenses actives.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
 ```json
-[
-  {
-    "id": "reward-uuid",
-    "titre": "Réduction 10%",
-    "description": "Sur votre prochain trajet",
-    "points": 100,
-    "type": "discount",
-    "imageUrl": "https://minio-url/reward.jpg",
-    "dateDebut": "2026-07-01T00:00:00Z",
-    "dateFin": "2026-07-31T23:59:59Z",
-    "actif": true
-  }
-]
+{
+  "rewards": [
+    {
+      "id": "reward-uuid",
+      "titre": "Réduction 10%",
+      "description": "Sur votre prochain trajet",
+      "points": 100,
+      "type": "discount",
+      "imageUrl": "https://minio-url/reward.jpg",
+      "dateDebut": "2026-07-01T00:00:00Z",
+      "dateFin": "2026-07-31T23:59:59Z",
+      "actif": true
+    }
+  ]
+}
 ```
 
 ---
@@ -1392,15 +1482,19 @@ dateFin: "2026-07-31T23:59:59Z"
 **Réponse :**
 ```json
 {
-  "id": "reward-uuid",
-  "titre": "Réduction 10%",
-  "description": "Sur votre prochain trajet",
-  "points": 100,
-  "type": "discount",
-  "imageUrl": "https://minio-url/reward.jpg",
-  "dateDebut": "2026-07-01T00:00:00Z",
-  "dateFin": "2026-07-31T23:59:59Z",
-  "actif": true
+  "success": true,
+  "message": "Récompense créée avec succès",
+  "reward": {
+    "id": "reward-uuid",
+    "titre": "Réduction 10%",
+    "description": "Sur votre prochain trajet",
+    "points": 100,
+    "type": "discount",
+    "imageUrl": "https://minio-url/reward.jpg",
+    "dateDebut": "2026-07-01T00:00:00Z",
+    "dateFin": "2026-07-31T23:59:59Z",
+    "actif": true
+  }
 }
 ```
 
@@ -1423,7 +1517,8 @@ Authorization: Bearer <admin-token>
 **Réponse :**
 ```json
 {
-  "success": true
+  "success": true,
+  "message": "Récompense supprimée"
 }
 ```
 
@@ -1603,12 +1698,25 @@ Authorization: Bearer <admin-token>
 **Réponse :**
 ```json
 {
-  "overview": {...},
-  "shortcuts": {...},
-  "incidents": {...},
-  "safeDrive": {...},
-  "engagement": {...},
-  "performance": {...}
+  "overview": {
+    "totalUsers": 1500,
+    "activeUsers": 850,
+    "totalIncidents": 120,
+    "totalRoutes": 45
+  },
+  "incidents": {
+    "confirmedIncidents": 85,
+    "incidentsByType": {
+      "accident": 40,
+      "inondation": 25,
+      "travaux": 20
+    }
+  },
+  "performance": {
+    "averageResponseTime": 150,
+    "uptime": 99.5,
+    "errorRate": 0.5
+  }
 }
 ```
 
@@ -1627,19 +1735,21 @@ Récupérer les zones disponibles pour le mode hors-ligne.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
 ```json
-[
-  {
-    "id": "zone-uuid",
-    "nom": "Douala",
-    "tailleMo": 150,
-    "dateGeneration": "2026-07-01T00:00:00Z"
-  }
-]
+{
+  "zones": [
+    {
+      "id": "zone-uuid",
+      "nom": "Douala",
+      "tailleMo": 150,
+      "dateGeneration": "2026-07-01T00:00:00Z"
+    }
+  ]
+}
 ```
 
 ---
@@ -1655,7 +1765,7 @@ Récupérer les métadonnées d'une zone hors-ligne.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1682,7 +1792,7 @@ Télécharger une zone hors-ligne.
 
 **Headers :**
 ```
-Authorization: Bearer <firebase-token>
+Authorization: Bearer <jwt-token>
 ```
 
 **Réponse :**
@@ -1728,10 +1838,11 @@ Uploader une image.
 
 **Méthode :** POST
 
-**Protection :** Publique
+**Protection :** AuthGuard
 
 **Headers :**
 ```
+Authorization: Bearer <jwt-token>
 Content-Type: multipart/form-data
 ```
 
@@ -1748,6 +1859,7 @@ folder: "incidents" (optionnel, défaut: "uploads")
 **Réponse :**
 ```json
 {
+  "success": true,
   "url": "https://minio-url/incidents/image.jpg"
 }
 ```
@@ -1927,27 +2039,33 @@ Recherche de lieux avec autocomplétion (type Google Maps) via OpenStreetMap Nom
 
 **Query params :**
 ```
+query=Akwa
+ou
 q=Akwa
 ```
 
 **Réponse :**
 ```json
-[
-  {
-    "id": "0",
-    "nom": "Akwa",
-    "adresse": "Akwa, Douala, Cameroun",
-    "latitude": 4.051,
-    "longitude": 9.767
-  },
-  {
-    "id": "1",
-    "nom": "Akwa Nord",
-    "adresse": "Akwa Nord, Douala, Cameroun",
-    "latitude": 4.052,
-    "longitude": 9.768
-  }
-]
+{
+  "results": [
+    {
+      "id": "0",
+      "name": "Akwa",
+      "display_name": "Akwa, Douala, Cameroun",
+      "address": "Akwa, Douala, Cameroun",
+      "lat": 4.051,
+      "lon": 9.767
+    },
+    {
+      "id": "1",
+      "name": "Akwa Nord",
+      "display_name": "Akwa Nord, Douala, Cameroun",
+      "address": "Akwa Nord, Douala, Cameroun",
+      "lat": 4.052,
+      "lon": 9.768
+    }
+  ]
+}
 ```
 
 **Notes :**

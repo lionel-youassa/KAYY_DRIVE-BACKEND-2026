@@ -36,6 +36,13 @@ export class RoutesController {
     return { success: true, raccourci };
   }
 
+  // GET /routes
+  @Get()
+  async getAll() {
+    const raccourcis = await this.routesService.getAllRaccourcis();
+    return { routes: raccourcis };
+  }
+
   // POST /routes/:id/voter
   @Post(':id/voter')
   async voter(
@@ -63,6 +70,6 @@ export class RoutesController {
       { latitude: parseFloat(departLat), longitude: parseFloat(departLng) },
       { latitude: parseFloat(arriveeLat), longitude: parseFloat(arriveeLng) },
     );
-    return { raccourcis };
+    return { suggestions: raccourcis, raccourcis };
   }
 }

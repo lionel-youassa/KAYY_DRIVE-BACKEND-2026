@@ -8,8 +8,15 @@ export class RewardsService {
   // 1. Créer une récompense dans PostgreSQL
   async createReward(data: any) {
     try {
+      const formattedData = {
+        ...data,
+        points: data.points ? parseInt(data.points, 10) : 0,
+        dateDebut: data.dateDebut ? new Date(data.dateDebut) : new Date(),
+        dateFin: data.dateFin ? new Date(data.dateFin) : new Date(),
+      };
+
       return await this.prisma.recompense.create({
-        data: data,
+        data: formattedData,
       });
     } catch (error) {
       console.error(
