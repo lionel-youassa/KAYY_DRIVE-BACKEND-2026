@@ -148,8 +148,16 @@ jobs:
           name: coverage-report
           path: core-api/coverage/
 
+      - name: Verify SONAR_TOKEN
+        run: |
+          if [ -z "${{ secrets.SONAR_TOKEN }}" ]; then
+            echo "::error::SONAR_TOKEN is empty! Go to Settings > Secrets > Actions and add it."
+            exit 1
+          fi
+          echo "SONAR_TOKEN is set."
+
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v5
+        uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
