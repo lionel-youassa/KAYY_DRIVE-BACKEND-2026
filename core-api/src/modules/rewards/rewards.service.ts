@@ -8,12 +8,23 @@ export class RewardsService {
   // 1. Créer une récompense dans PostgreSQL
   async createReward(data: any) {
     try {
+      // Extraire uniquement les champs valides du modèle Prisma Recompense
+      const now = new Date();
+      const defaultEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // +30 jours
+
+      const parsedDateDebut = data.dateDebut && data.dateDebut !== '' ? new Date(data.dateDebut) : now;
+      const parsedDateFin = data.dateFin && data.dateFin !== '' ? new Date(data.dateFin) : defaultEnd;
+
       const formattedData = {
-        ...data,
+        titre: data.titre || 'Sans titre',
+        description: data.description || null,
         points: data.points ? parseInt(data.points, 10) : 0,
         participationMin: data.participationMin ? parseInt(data.participationMin, 10) : 0,
-        dateDebut: data.dateDebut ? new Date(data.dateDebut) : new Date(),
-        dateFin: data.dateFin ? new Date(data.dateFin) : new Date(),
+        type: data.type || 'discount',
+        dateDebut: isNaN(parsedDateDebut.getTime()) ? now : parsedDateDebut,
+        dateFin: isNaN(parsedDateFin.getTime()) ? defaultEnd : parsedDateFin,
+        actif: true,
+        imageUrl: data.imageUrl || null,
       };
 
       return await this.prisma.recompense.create({

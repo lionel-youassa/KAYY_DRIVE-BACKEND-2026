@@ -285,8 +285,8 @@ export class NavigationService {
 
     try {
       // 1. Appel OSRM pour les itinéraires de base + alternatives si mode confort
-      // En mode confort on demande jusqu'à 5 alternatives pour maximiser les chances d'en trouver une sans incident
-      const maxAlternatives = useAlternatives ? 5 : 0;
+      // En mode confort on demande jusqu'à 3 alternatives (maximum OSRM) pour trouver un itinéraire sans incident
+      const maxAlternatives = useAlternatives ? 3 : 0;
       const osrmUrl = `${this.osrmUrl}/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson&steps=true${maxAlternatives > 0 ? `&alternatives=${maxAlternatives}` : ''}`;
       const osrmResponse: AxiosResponse<any> = await firstValueFrom(
         this.httpService.get(osrmUrl),
