@@ -64,9 +64,28 @@ export class NavigationService {
       .map((coord) => `${coord[0]},${coord[1]}`)
       .join(';');
 
-    const url = `${this.osrmUrl}/matching/v1/driving/${coordsString}?geometries=geojson&overview=full`;
-
     try {
+      if (coordinates.length === 1) {
+        const nearestUrl = `${this.osrmUrl}/nearest/v1/driving/${coordsString}`;
+        this.logger.log(`Nearest road OSRM: ${nearestUrl}`);
+        const response: AxiosResponse<any> = await firstValueFrom(
+          this.httpService.get(nearestUrl),
+        );
+
+        if (response.data.code !== 'Ok' || !response.data.waypoints || response.data.waypoints.length === 0) {
+          this.logger.warn(`Nearest road OSRM failed`);
+          return null;
+        }
+
+        return {
+          snappedCoordinates: [response.data.waypoints[0].location],
+          confidence: 1.0,
+          distance: response.data.waypoints[0].distance,
+          duration: 0,
+        };
+      }
+
+      const url = `${this.osrmUrl}/match/v1/driving/${coordsString}?geometries=geojson&overview=full`;
       this.logger.log(`Snap-to-road OSRM: ${url}`);
       const response: AxiosResponse<any> = await firstValueFrom(
         this.httpService.get(url),

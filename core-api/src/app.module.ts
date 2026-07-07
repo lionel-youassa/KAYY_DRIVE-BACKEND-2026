@@ -4,7 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { NavigationModule } from './modules/navigation/navigation.module';
 import { AdsModule } from './modules/ads/ads.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { RewardsService } from './modules/rewards/rewards.service';
+import { RewardsModule } from './modules/rewards/rewards.module';
 import { AuthModule } from './auth/auth.module';
 import { IncidentsModule } from './incidents/incidents.module';
 import { RoutesModule } from './routes/routes.module';
@@ -49,8 +49,9 @@ import { GeocodingModule } from './geocoding/geocoding.module';
     DashboardModule,
     StorageModule,
     GeocodingModule,
+    RewardsModule,
   ],
   controllers: [],
-  providers: [RewardsService],
+  providers: [],
 })
 export class AppModule {}
