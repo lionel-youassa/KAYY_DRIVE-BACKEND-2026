@@ -357,9 +357,14 @@ export class NavigationService {
         for (const inc of activeIncidents) {
           if (inc.latitude == null || inc.longitude == null) continue;
           
-          const isNear = routeCoords.some(coord => 
-            distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 50
-          );
+          const isNear = routeCoords.some(coord => {
+            // Ignorer les points proches du départ ou de l'arrivée pour éviter les conflits d'évitement sur courte distance
+            const isNearStartOrEnd = distanceEnMetres(coord[1], coord[0], startLat, startLng) <= 30 ||
+                                     distanceEnMetres(coord[1], coord[0], endLat, endLng) <= 30;
+            if (isNearStartOrEnd) return false;
+
+            return distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 50;
+          });
 
           if (isNear) {
             if (inc.type === 'INONDATION') {
@@ -375,9 +380,13 @@ export class NavigationService {
         // Check recent shocks
         let hasDegradedShock = false;
         for (const shock of recentShocks) {
-          const isNear = routeCoords.some(coord =>
-            distanceEnMetres(coord[1], coord[0], shock.latitude, shock.longitude) <= 50
-          );
+          const isNear = routeCoords.some(coord => {
+            const isNearStartOrEnd = distanceEnMetres(coord[1], coord[0], startLat, startLng) <= 30 ||
+                                     distanceEnMetres(coord[1], coord[0], endLat, endLng) <= 30;
+            if (isNearStartOrEnd) return false;
+
+            return distanceEnMetres(coord[1], coord[0], shock.latitude, shock.longitude) <= 50;
+          });
           if (isNear) {
             hasDegradedShock = true;
             break;
@@ -465,14 +474,20 @@ export class NavigationService {
           // Trouver l'incident critique sur le tracé de bestChoice (inondation d'abord, puis route dégradée/endommagée)
           const criticalIncident = activeIncidents.find(inc =>
             inc.latitude != null && inc.longitude != null &&
-            bestChoice.route.geometry.coordinates.some(coord =>
-              distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 50
-            ) && inc.type === 'INONDATION'
+            bestChoice.route.geometry.coordinates.some(coord => {
+              const isNearStartOrEnd = distanceEnMetres(coord[1], coord[0], startLat, startLng) <= 30 ||
+                                       distanceEnMetres(coord[1], coord[0], endLat, endLng) <= 30;
+              if (isNearStartOrEnd) return false;
+              return distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 50;
+            }) && inc.type === 'INONDATION'
           ) || activeIncidents.find(inc =>
             inc.latitude != null && inc.longitude != null &&
-            bestChoice.route.geometry.coordinates.some(coord =>
-              distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 50
-            ) && (inc.type === 'QUALITE_ROUTE' || inc.type === 'ROUTE_ENDOMMAGEE')
+            bestChoice.route.geometry.coordinates.some(coord => {
+              const isNearStartOrEnd = distanceEnMetres(coord[1], coord[0], startLat, startLng) <= 30 ||
+                                       distanceEnMetres(coord[1], coord[0], endLat, endLng) <= 30;
+              if (isNearStartOrEnd) return false;
+              return distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 50;
+            }) && (inc.type === 'QUALITE_ROUTE' || inc.type === 'ROUTE_ENDOMMAGEE')
           );
 
           if (criticalIncident) {
@@ -485,9 +500,9 @@ export class NavigationService {
             );
 
             if (nearestResponse.data.code === 'Ok' && nearestResponse.data.waypoints) {
-              // Filtrer pour obtenir des points situés à plus de 80m (autre rue) mais moins de 350m (pas trop loin)
+              // Filtrer pour obtenir des points situés à plus de 55m (autre rue) mais moins de 350m (pas trop loin)
               const candidates = nearestResponse.data.waypoints.filter((wp: any) =>
-                wp.distance >= 80 && wp.distance <= 350
+                wp.distance >= 55 && wp.distance <= 350
               );
 
               this.logger.log(`[CONTOURNEMENT] Nombre de segments de rue alternatifs candidats trouvés : ${candidates.length}`);
@@ -518,9 +533,12 @@ export class NavigationService {
 
                     for (const inc of activeIncidents) {
                       if (inc.latitude == null || inc.longitude == null) continue;
-                      const isNear = bCoords.some(c =>
-                        distanceEnMetres(c[1], c[0], inc.latitude!, inc.longitude!) <= 50
-                      );
+                      const isNear = bCoords.some(c => {
+                        const isNearStartOrEnd = distanceEnMetres(c[1], c[0], startLat, startLng) <= 30 ||
+                                                 distanceEnMetres(c[1], c[0], endLat, endLng) <= 30;
+                        if (isNearStartOrEnd) return false;
+                        return distanceEnMetres(c[1], c[0], inc.latitude!, inc.longitude!) <= 50;
+                      });
                       if (isNear) {
                         if (inc.type === 'INONDATION') bFloodIncidents.add(inc.id);
                         else if (inc.type === 'QUALITE_ROUTE' || inc.type === 'ROUTE_ENDOMMAGEE') bDegradedIncidents.add(inc.id);
