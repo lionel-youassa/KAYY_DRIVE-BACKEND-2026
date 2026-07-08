@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NiveauTrafic, niveauDepuisVitesse } from '../trafic/trafic.service';
+import { WazeRouteService } from './waze-route.service';
 
 export interface PredictionTrafic {
   latitude: number;
@@ -39,7 +40,10 @@ function determinerConfiance(
 
 @Injectable()
 export class PredictionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly wazeRouteService: WazeRouteService,
+  ) {}
 
   async predireTraficPoint(
     latitude: number,
@@ -83,8 +87,8 @@ export class PredictionsService {
         longitude,
         jourSemaine,
         heure,
-        niveauPredit: 'fluide',
-        vitesseMoyennePredite: 0,
+        niveauPredit: 'modere' as NiveauTrafic,
+        vitesseMoyennePredite: 25,
         confidence: 'faible',
         nombreEchantillons: 0,
       };
@@ -112,8 +116,8 @@ export class PredictionsService {
     points: { latitude: number; longitude: number }[],
     dateCible: Date = new Date(),
   ): Promise<PredictionTrafic[]> {
+    // 1. Obtenir les prédictions historiques locales
     const predictions: PredictionTrafic[] = [];
-
     for (const point of points) {
       const prediction = await this.predireTraficPoint(
         point.latitude,
@@ -121,6 +125,41 @@ export class PredictionsService {
         dateCible,
       );
       predictions.push(prediction);
+    }
+
+    // 2. Enrichir avec les données Waze temps réel (si disponible)
+    if (points.length >= 2) {
+      try {
+        const start = points[0];
+        const end = points[points.length - 1];
+        const wazeResult = await this.wazeRouteService.getRouteTraffic(
+          start.latitude,
+          start.longitude,
+          end.latitude,
+          end.longitude,
+        );
+
+        if (wazeResult.success && wazeResult.segments.length > 0) {
+          // Pour chaque point de prédiction, trouver le segment Waze le plus proche
+          for (const pred of predictions) {
+            const closestSeg = this.wazeRouteService.findClosestSegment(
+              pred.latitude,
+              pred.longitude,
+              wazeResult.segments,
+            );
+
+            if (closestSeg) {
+              // Écraser avec la vitesse réelle Waze
+              pred.vitesseMoyennePredite = Math.round(closestSeg.speedKmh);
+              pred.niveauPredit = niveauDepuisVitesse(closestSeg.speedKmh);
+              pred.confidence = 'haute';
+            }
+          }
+        }
+      } catch (e) {
+        // Waze indisponible — on garde les prédictions historiques
+        console.warn('[PredictionsService] Waze overlay échoué:', (e as any)?.message);
+      }
     }
 
     return predictions;

@@ -1,8 +1,8 @@
 import { IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateIncidentDto {
-  @IsIn(['inondation', 'travaux', 'accident', 'bouchon', 'route_degradee'])
-  type!: 'inondation' | 'travaux' | 'accident' | 'bouchon' | 'route_degradee';
+  @IsIn(['inondation', 'travaux', 'accident', 'bouchon', 'route_degradee', 'endomage'])
+  type!: 'inondation' | 'travaux' | 'accident' | 'bouchon' | 'route_degradee' | 'endomage';
 
   @IsOptional()
   @IsString()

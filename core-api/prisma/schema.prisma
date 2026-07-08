@@ -20,6 +20,7 @@ enum TypeIncident {
   INONDATION
   QUALITE_ROUTE
   TRAFIC
+  ROUTE_ENDOMMAGEE
 }
 
 model Utilisateur {

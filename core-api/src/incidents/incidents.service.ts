@@ -11,7 +11,8 @@ export type IncidentType =
   | 'travaux'
   | 'accident'
   | 'bouchon'
-  | 'route_degradee';
+  | 'route_degradee'
+  | 'endomage';
 export type IncidentStatut = 'non_confirme' | 'confirme' | 'resolu' | 'expire';
 
 export interface Incident {
@@ -37,6 +38,7 @@ const DUREE_VIE_HEURES: Record<IncidentType, number> = {
   accident: 3,
   bouchon: 2,
   route_degradee: 72,
+  endomage: 72,
 };
 
 function distanceEnMetres(
@@ -88,7 +90,9 @@ export class IncidentsService {
             ? 'INONDATION'
             : data.type === 'travaux' || data.type === 'route_degradee'
               ? 'QUALITE_ROUTE'
-              : 'TRAFIC',
+              : data.type === 'endomage'
+                ? 'ROUTE_ENDOMMAGEE'
+                : 'TRAFIC',
         description: data.description,
         horodatage: now,
         nombreConfirmations: 1,
@@ -113,7 +117,9 @@ export class IncidentsService {
           ? 'inondation'
           : incident.type === 'QUALITE_ROUTE'
             ? 'travaux'
-            : 'accident',
+            : incident.type === 'ROUTE_ENDOMMAGEE'
+              ? 'endomage'
+              : 'accident',
       description: incident.description || '',
       latitude: incident.latitude || 0,
       longitude: incident.longitude || 0,
@@ -258,7 +264,9 @@ export class IncidentsService {
             ? 'inondation'
             : incident.type === 'QUALITE_ROUTE'
               ? 'travaux'
-              : 'accident',
+              : incident.type === 'ROUTE_ENDOMMAGEE'
+                ? 'endomage'
+                : 'accident',
         description: incident.description || '',
         latitude: incident.latitude || 0,
         longitude: incident.longitude || 0,

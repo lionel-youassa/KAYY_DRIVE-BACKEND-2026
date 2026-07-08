@@ -77,6 +77,7 @@ export class IncidentsController {
       inondation: 'Inondation signalée près de vous',
       travaux: 'Travaux signalés près de vous',
       accident: 'Accident signalé près de vous',
+      endomage: 'Route endommagée signalée près de vous',
     };
 
     this.notificationsService

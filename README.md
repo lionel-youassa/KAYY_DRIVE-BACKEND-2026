@@ -36,8 +36,8 @@ Pour plus d'informations détaillées, consultez :
 Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toutes les opérations CRUD sont centralisées dans la base de données PostgreSQL.
 
 **Firebase a été complètement supprimé du backend.** Toutes les données sont maintenant stockées et gérées via PostgreSQL, y compris :
-- Relevés de trafic
-- Prédictions de trafic
+- Relevés de trafic (collecte hybride : Waze temps réel + historique seedé)
+- Prédictions de trafic (système à 3 niveaux de repli)
 - Préférences utilisateur
 - Adresses favorites
 - Données Safe-Drive (secousses)
@@ -563,7 +563,34 @@ Authorization: Bearer <token>
   ],
   "horodatage": "2026-06-30T12:00:00Z"
 }
+**Réponse :**
+```json
+{
+  "niveau_trafic": "dense",
+  "temps_estime_minutes": 12.5,
+  "confiance": 0.85,
+  "predictions": [
+    { "latitude": 3.8488, "longitude": 11.5021, "niveauPredit": "fluide" },
+    { "latitude": 3.8500, "longitude": 11.5100, "niveauPredit": "dense" }
+  ],
+  "trafficHotspots": [
+    { "location": { "lat": 3.85, "lon": 11.51 }, "severity": "moderate", "expectedDelay": 15 }
+  ]
+}
 ```
+
+> **Système Hybride à 3 niveaux :**
+> 1. **Waze LiveMap** (temps réel) — proxy vers `routing-livemap-row.waze.com` pour les vitesses réelles sur le trajet
+> 2. **Historique local** — table `ReleveTrafic` seedée avec des données réalistes de Douala et Yaoundé
+> 3. **Fallback statistique** — `modere` (25 km/h) si aucune donnée disponible
+
+**Niveaux de trafic et couleurs :**
+| Niveau | Vitesse | Couleur carte |
+|--------|---------|---------------|
+| `fluide` | ≥ 30 km/h | 🟢 Vert |
+| `modere` | 15–29 km/h | 🟠 Orange |
+| `dense` | 10–14 km/h | 🔴 Rouge |
+| `bouchon` | < 10 km/h | 🟤 Rouge foncé |
 
 ### Trafic
 
@@ -927,6 +954,27 @@ Cela créera :
 - Des catégories par défaut (Domicile, Travail, École, Famille, Restaurant, Santé, Autre)
 
 **Important :** Changez le mot de passe de l'admin après la première connexion en production.
+
+## Seeding des données de trafic
+
+Pour peupler la base de données `ReleveTrafic` avec des données historiques réalistes pour Douala et Yaoundé :
+
+```bash
+# Sans clé TomTom (simulation intelligente basée sur les heures de pointe)
+docker exec -i kayydrive-core-api-1 npm run seed:trafic
+
+# Avec une clé TomTom gratuite (données réelles si couverture disponible)
+docker exec -i -e TOMTOM_API_KEY=votre_cle_api kayydrive-core-api-1 npm run seed:trafic
+```
+
+Le script génère **650+ enregistrements** sur les 7 derniers jours en couvrant les principaux carrefours :
+- 🇨🇲 **Douala** : Ndokotti, Deido, Akwa, Bonabéri, Ancien Troisième
+- 🇨🇲 **Yaoundé** : Rond-point Poste, Mvan, Bastos, Warda
+
+**Obtenir une clé TomTom gratuite :**
+1. S'inscrire sur [developer.tomtom.com](https://developer.tomtom.com/)
+2. Créer un projet et copier la clé API
+3. Plan gratuit : 2 500 transactions/jour (largement suffisant pour le seeding)
 
 ## Tests Unitaires
 

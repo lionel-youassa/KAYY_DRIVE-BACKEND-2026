@@ -74,10 +74,10 @@ export class PredictionsController {
       : 40;
 
     let niveau_trafic = 'modere';
-    if (avgSpeed >= 35) niveau_trafic = 'fluide';
-    else if (avgSpeed >= 20) niveau_trafic = 'modere';
+    if (avgSpeed >= 30) niveau_trafic = 'fluide';
+    else if (avgSpeed >= 15) niveau_trafic = 'modere';
     else if (avgSpeed >= 10) niveau_trafic = 'dense';
-    else niveau_trafic = 'bloque';
+    else niveau_trafic = 'bouchon';
 
     return {
       niveau_trafic,
