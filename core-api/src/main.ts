@@ -1,25 +1,25 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // 1. Intercepteur de Logs global
-  app.useGlobalInterceptors(new LoggingInterceptor());
+  // Active CORS
+  app.enableCors();
 
-  // 2. Filtre d'exceptions global
-  app.useGlobalFilters(new HttpExceptionFilter());
-
-  // 3. Validation globale
+  // Active automatiquement la validation des DTO (class-validator) sur
+  // toutes les routes. Sans ça, les décorateurs @IsString(), @IsNumber()
+  // etc. dans nos DTO ne servent à rien.
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
+      whitelist: true, // retire les champs non déclarés dans le DTO
       forbidNonWhitelisted: true,
-      transform: true,
+      transform: true, // convertit automatiquement les types (ex: query string -> number)
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
     }),
   );
 
@@ -33,8 +33,14 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-  console.log(`🚀 KayyDrive Core API is running on: http://localhost:${port}`);
+  // Health check endpoint
+  app.getHttpAdapter().get('/health', (req, res) => {
+    res.status(200).send('OK');
+  });
+
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port, '0.0.0.0');
+
+  console.log(` KayyDrive Core API is running on: http://localhost:${port}`);
 }
 bootstrap();

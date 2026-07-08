@@ -1,39 +1,55 @@
-# Utilise une image Node.js officielle comme base
-FROM node:18-alpine AS development
+# --- Étape 1 : développement ---
+FROM node:22-alpine AS development
 
-# Crée et définit le répertoire de travail
 WORKDIR /app
 
-# Copie package.json et package-lock.json (ou yarn.lock)
-COPY package*.json ./
+COPY package.json package-lock.json* ./
+RUN npm install --legacy-peer-deps
 
-# Installe les dépendances
-RUN npm install
-
-# Copie le reste du code source
 COPY . .
 
-# Construit l'application NestJS
-RUN npm run build
+# Install OpenSSL and curl for Prisma compatibility and health checks
+RUN apk add --no-cache openssl curl
 
-# Image de production
-FROM node:18-alpine AS production
+EXPOSE 3000
+
+CMD ["sh", "-c", "npm install --legacy-peer-deps && npx prisma generate && npx prisma db push && npx ts-node scripts/init-db.ts && npm run start:dev"]
+
+# --- Étape 2 : build ---
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copie uniquement les dépendances de production
-COPY --from=development /app/package*.json ./
-RUN npm install --only=production
+RUN apk add --no-cache openssl
 
-# Copie le code construit depuis l'étape de développement
-COPY --from=development /app/dist ./dist
-COPY --from=development /app/.env ./
-COPY --from=development /app/src/common/filters ./src/common/filters
-COPY --from=development /app/src/common/interceptors ./src/common/interceptors
-COPY --from=development /app/src/modules ./src/modules
+COPY package.json package-lock.json* ./
+RUN npm install --legacy-peer-deps
 
-# Expose le port sur lequel l'application s'exécute
+COPY . .
+
+RUN npx prisma generate
+RUN npm run build
+
+# --- Étape 3 : production ---
+FROM node:22-alpine AS production
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+RUN apk add --no-cache openssl curl
+
+COPY package.json package-lock.json* ./
+RUN npm install --legacy-peer-deps --omit=dev
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/prisma ./prisma
+
 EXPOSE 3000
 
-# Commande pour démarrer l'application
-CMD ["node", "dist/main"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health || exit 1
+
+CMD ["node", "dist/src/main.js"]

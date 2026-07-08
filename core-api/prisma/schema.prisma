@@ -1,0 +1,275 @@
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis]
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+enum NiveauRisque {
+  SUR
+  MODERE
+  RISQUE_INONDATION
+  ROUTE_DEGRADEE
+}
+
+enum TypeIncident {
+  INONDATION
+  QUALITE_ROUTE
+  TRAFIC
+}
+
+model Utilisateur {
+  id                String                  @id @default(uuid())
+  pseudo            String
+  prenom            String?                 @default("")
+  email             String                  @unique
+  passwordHash      String?
+  telephone         String?
+  role              String                  @default("user")
+  scoreReputation   Int                     @default(0)
+  dateCreation      DateTime                @default(now())
+  preferences       PreferencesUtilisateur?
+  sessions          SessionNavigation[]
+  incidentsSignales Incident[]
+  raccourcisCrees   RaccourciCommunautaire[] @relation("RaccourcisCrees")
+  votesRaccourcis   VoteRaccourci[]
+  positions         PositionUtilisateur[]
+  notifications     Notification[]
+  tokensFCM         TokenFCM[]
+  adressesFavorites AdresseFavorite[]
+  relevesTrafic     ReleveTrafic[]
+  secousses         SecousseData[]
+}
+
+model PreferencesUtilisateur {
+  id                    String      @id @default(uuid())
+  eviterPeages          Boolean     @default(false)
+  prioriserRoutesSecu   Boolean     @default(true)
+  eviterZonesInondables Boolean     @default(true)
+  modeHorsLigneActif    Boolean     @default(false)
+  utilisateurId         String      @unique
+  utilisateur           Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+}
+
+model SessionNavigation {
+  id              String       @id @default(uuid())
+  heureDebut      DateTime     @default(now())
+  vitesseActuelle Float        @default(0)
+  statut          String
+  utilisateurId   String
+  utilisateur     Utilisateur  @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  itineraires     Itineraire[]
+}
+
+model Itineraire {
+  id             String            @id @default(uuid())
+  distanceTotale Float
+  dureeEstimee   Int
+  niveauRisque   NiveauRisque      @default(SUR)
+  estHorsLigne   Boolean           @default(false)
+  sessionId      String
+  session        SessionNavigation @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  depart  Unsupported("geometry(Point, 4326)")
+  arrivee Unsupported("geometry(Point, 4326)")
+
+  segments SegmentRoute[] @relation("ItineraireToSegmentRoute")
+}
+
+model SegmentRoute {
+  id              String   @id @default(uuid())
+  vitesseMoyenne  Int
+  estOfficiel     Boolean  @default(true)
+  estInonde       Boolean  @default(false)
+  scoreQualite    Float    @default(1.0)
+  dateDerniereMaj DateTime @updatedAt
+
+  path Unsupported("geometry(LineString, 4326)")
+
+  itineraires Itineraire[] @relation("ItineraireToSegmentRoute")
+  incidents   Incident[]
+
+  @@index([path], type: Gist)
+}
+
+model Incident {
+  id                String       @id @default(uuid())
+  type              TypeIncident
+  description       String?
+  horodatage        DateTime     @default(now())
+  nombreConfirmations Int        @default(0)
+  statut            String       @default("non_confirme")
+  idRapporteur      String
+  segmentId         String?
+  niveauEau         Int?
+  estPraticable     Boolean?
+  niveauVibration   Float?
+  tailleNidPoule    String?
+  detecteAuto       Boolean?
+  dateExpiration    DateTime?
+  confirmePar       String[]
+  id_utilisateur_createur String
+  latitude          Float?
+  longitude         Float?
+  imageUrl          String?
+  quartier          String?
+  ville             String?
+  region            String?
+
+  rapporteur Utilisateur  @relation(fields: [idRapporteur], references: [id], onDelete: Cascade)
+  segment    SegmentRoute? @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+}
+
+model Publicite {
+  id          String   @id @default(uuid())
+  titre       String
+  description String?
+  type        String
+  dateDebut   DateTime
+  dateFin     DateTime
+  actif       Boolean  @default(true)
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Recompense {
+  id          String   @id @default(uuid())
+  titre       String
+  description String?
+  points      Int      @default(0)
+  type        String
+  dateDebut   DateTime
+  dateFin     DateTime
+  actif       Boolean  @default(true)
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Modèles pour centraliser les données Firebase
+
+model RaccourciCommunautaire {
+  id                    String   @id @default(uuid())
+  nom                   String
+  description           String
+  pointDepartLat        Float
+  pointDepartLng        Float
+  pointArriveeLat       Float
+  pointArriveeLng       Float
+  trace                 Json
+  idUtilisateurCreateur String
+  votesPositifs         Int      @default(0)
+  votesNegatifs         Int      @default(0)
+  scoreFiabilite        Float    @default(0)
+  statut                String   @default("propose")
+  dateCreation          DateTime @default(now())
+  createur              Utilisateur @relation("RaccourcisCrees", fields: [idUtilisateurCreateur], references: [id], onDelete: Cascade)
+  votes                 VoteRaccourci[]
+
+  @@index([statut])
+}
+
+model VoteRaccourci {
+  id           String   @id @default(uuid())
+  raccourciId  String
+  utilisateurId String
+  vote         String
+  dateVote     DateTime @default(now())
+  raccourci    RaccourciCommunautaire @relation(fields: [raccourciId], references: [id], onDelete: Cascade)
+  utilisateur  Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+
+  @@unique([raccourciId, utilisateurId])
+}
+
+model PositionUtilisateur {
+  id                String   @id @default(uuid())
+  utilisateurId     String
+  latitude          Float
+  longitude         Float
+  derniereMiseAJour DateTime @default(now())
+  utilisateur       Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+
+  @@unique([utilisateurId])
+}
+
+model Notification {
+  id            String   @id @default(uuid())
+  utilisateurId String
+  type          String
+  titre         String
+  corps         String
+  data          Json?
+  lu            Boolean  @default(false)
+  dateCreation  DateTime @default(now())
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+}
+
+model TokenFCM {
+  id                String   @id @default(uuid())
+  utilisateurId     String
+  token             String
+  dateEnregistrement DateTime @default(now())
+  utilisateur       Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+}
+
+model Categorie {
+  id        String   @id @default(uuid())
+  nom       String
+  icone     String
+  couleur   String
+  ordre     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  adressesFavorites AdresseFavorite[]
+
+  @@index([ordre])
+}
+
+model AdresseFavorite {
+  id            String   @id @default(uuid())
+  utilisateurId String
+  nom           String
+  adresse       String
+  latitude      Float
+  longitude     Float
+  categorieId   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  categorie     Categorie?  @relation(fields: [categorieId], references: [id], onDelete: Cascade)
+}
+
+model ReleveTrafic {
+  id            String   @id @default(uuid())
+  latitude      Float
+  longitude     Float
+  vitesseMoyenne Float
+  niveau        String
+  id_utilisateur String
+  timestamp     DateTime @default(now())
+  utilisateur   Utilisateur @relation(fields: [id_utilisateur], references: [id], onDelete: Cascade)
+
+  @@index([latitude, longitude])
+  @@index([timestamp])
+}
+
+model SecousseData {
+  id            String   @id @default(uuid())
+  id_utilisateur String
+  latitude      Float
+  longitude     Float
+  intensite     Float
+  timestamp     DateTime @default(now())
+  traite        Boolean  @default(false)
+  utilisateur   Utilisateur @relation(fields: [id_utilisateur], references: [id], onDelete: Cascade)
+
+  @@index([timestamp])
+}

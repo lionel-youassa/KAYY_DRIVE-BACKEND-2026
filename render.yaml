@@ -1,0 +1,67 @@
+services:
+  # ── Core API (NestJS) ──
+  - type: web
+    name: kayydrive-core-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./core-api
+    plan: starter
+    region: frankfurt
+    healthCheckPath: /api/health
+    ipAllowList: []
+    preDeployCommand: "npx prisma migrate deploy"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kayydrive-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: kayydrive-redis
+          type: redis
+          property: connectionString
+      - key: IA_SERVICE_URL
+        fromService:
+          name: kayydrive-ia-service
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FIREBASE_ADMIN_CONFIG
+        sync: false
+      - key: OSRM_URL
+        sync: false
+      - key: PORT
+        value: "3000"
+
+  # ── IA Service (FastAPI / Python) ──
+  - type: web
+    name: kayydrive-ia-service
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./ia-service
+    plan: starter
+    region: frankfurt
+    healthCheckPath: /health
+    ipAllowList: []
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: PORT
+        value: "8000"
+
+  # ── Redis ──
+  - type: redis
+    name: kayydrive-redis
+    plan: starter
+    region: frankfurt
+    ipAllowList: []
+
+databases:
+  - name: kayydrive-db
+    plan: starter
+    region: frankfurt
+    postgresMajorVersion: "15"
+    ipAllowList: []

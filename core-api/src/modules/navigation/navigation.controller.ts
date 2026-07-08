@@ -1,22 +1,34 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Query, Post, Body } from '@nestjs/common';
 import { NavigationService } from './navigation.service';
 import { GetRouteDto } from './dto/get-route.dto';
+import { RerouteDto } from './dto/reroute.dto';
 
-@ApiTags('navigation')
 @Controller('route')
 export class NavigationController {
   constructor(private readonly navigationService: NavigationService) {}
 
   @Get('basic')
-  @ApiOperation({ summary: 'Obtenir un itinéraire basique via OSRM' })
-  getBasicRoute(@Query() query: GetRouteDto) {
+  async getBasicRoute(@Query() query: GetRouteDto) {
     return this.navigationService.getBasicRoute(query);
   }
 
   @Get('smart')
-  @ApiOperation({ summary: 'Obtenir un itinéraire "Smart" orchestré' })
-  getSmartRoute(@Query() query: GetRouteDto) {
+  async getSmartRoute(@Query() query: GetRouteDto) {
     return this.navigationService.getSmartRoute(query);
+  }
+
+  @Post('reroute')
+  async reroute(@Body() rerouteDto: RerouteDto) {
+    return this.navigationService.reroute(
+      rerouteDto.currentLat,
+      rerouteDto.currentLng,
+      rerouteDto.endLat,
+      rerouteDto.endLng,
+    );
+  }
+
+  @Post('snap-to-road')
+  async snapToRoad(@Body('coordinates') coordinates: number[][]) {
+    return this.navigationService.snapToRoad(coordinates);
   }
 }
