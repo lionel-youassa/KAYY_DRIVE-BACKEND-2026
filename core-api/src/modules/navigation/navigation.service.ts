@@ -339,48 +339,43 @@ export class NavigationService {
         const route = osrmResponse.data.routes[routeIndex];
         const routeCoords = route.geometry.coordinates; // [[lng, lat], ...]
 
-        let floodCount = 0;
-        let degradedCount = 0;
-        let trafficCount = 0;
+        const intersectedFloodIncidents = new Set<string>();
+        const intersectedDegradedIncidents = new Set<string>();
+        const intersectedTrafficIncidents = new Set<string>();
 
-        for (const coord of routeCoords) {
-          const lng = coord[0];
-          const lat = coord[1];
-
-          // HydroGuard check (inondation à moins de 150m)
-          const hasFlood = activeIncidents.some(inc => 
-            inc.type === 'INONDATION' && 
-            inc.latitude != null && inc.longitude != null &&
-            distanceEnMetres(lat, lng, inc.latitude!, inc.longitude!) <= 150
-          );
-          if (hasFlood) {
-            floodCount++;
-          }
-
-          // SafeDrive check (route dégradée, travaux ou route endommagée à moins de 150m)
-          const hasDegradedIncident = activeIncidents.some(inc => 
-            (inc.type === 'QUALITE_ROUTE' || inc.type === 'ROUTE_ENDOMMAGEE') && 
-            inc.latitude != null && inc.longitude != null &&
-            distanceEnMetres(lat, lng, inc.latitude!, inc.longitude!) <= 150
-          );
-          const hasDegradedShock = recentShocks.some(shock => 
-            distanceEnMetres(lat, lng, shock.latitude, shock.longitude) <= 150
+        for (const inc of activeIncidents) {
+          if (inc.latitude == null || inc.longitude == null) continue;
+          
+          const isNear = routeCoords.some(coord => 
+            distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 150
           );
 
-          // Trafic dense
-          const hasTrafficIncident = activeIncidents.some(inc =>
-            inc.type === 'TRAFIC' &&
-            inc.latitude != null && inc.longitude != null &&
-            distanceEnMetres(lat, lng, inc.latitude!, inc.longitude!) <= 200
-          );
-
-          if (hasDegradedIncident || hasDegradedShock) {
-            degradedCount++;
-          }
-          if (hasTrafficIncident) {
-            trafficCount++;
+          if (isNear) {
+            if (inc.type === 'INONDATION') {
+              intersectedFloodIncidents.add(inc.id);
+            } else if (inc.type === 'QUALITE_ROUTE' || inc.type === 'ROUTE_ENDOMMAGEE') {
+              intersectedDegradedIncidents.add(inc.id);
+            } else if (inc.type === 'TRAFIC') {
+              intersectedTrafficIncidents.add(inc.id);
+            }
           }
         }
+
+        // Check recent shocks
+        let hasDegradedShock = false;
+        for (const shock of recentShocks) {
+          const isNear = routeCoords.some(coord =>
+            distanceEnMetres(coord[1], coord[0], shock.latitude, shock.longitude) <= 150
+          );
+          if (isNear) {
+            hasDegradedShock = true;
+            break;
+          }
+        }
+
+        const floodCount = intersectedFloodIncidents.size;
+        const degradedCount = intersectedDegradedIncidents.size + (hasDegradedShock ? 1 : 0);
+        const trafficCount = intersectedTrafficIncidents.size;
 
         // Calcul du score de confort (0 à 100)
         let comfortScore = 100 - (floodCount * 40) - (degradedCount * 20) - (trafficCount * 10);
@@ -453,78 +448,118 @@ export class NavigationService {
 
       let bestChoice = evaluatedRoutes[0];
 
-      // En mode confort : si la meilleure route a encore des incidents, tenter un contournement forcé
+      // En mode confort : si la meilleure route a encore des incidents, tenter un contournement précis au niveau de l'incident
       if (routingMode === 'confort' && (bestChoice.hasFlood || bestChoice.hasDegraded) && activeIncidents.length > 0) {
         try {
-          // Trouver les incidents pertinents (inondations, travaux, route endommagée) proches
-          const relevantIncidents = activeIncidents.filter(inc =>
-            (inc.type === 'INONDATION' || inc.type === 'QUALITE_ROUTE' || inc.type === 'ROUTE_ENDOMMAGEE') &&
-            inc.latitude != null && inc.longitude != null
+          // Trouver l'incident critique sur le tracé de bestChoice
+          const criticalIncident = activeIncidents.find(inc =>
+            inc.latitude != null && inc.longitude != null &&
+            bestChoice.route.geometry.coordinates.some(coord =>
+              distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 150
+            ) && inc.type === 'INONDATION'
+          ) || activeIncidents.find(inc =>
+            inc.latitude != null && inc.longitude != null &&
+            bestChoice.route.geometry.coordinates.some(coord =>
+              distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 150
+            ) && (inc.type === 'QUALITE_ROUTE' || inc.type === 'ROUTE_ENDOMMAGEE')
           );
 
-          if (relevantIncidents.length > 0) {
-            // Créer une requête OSRM avec des waypoints qui contournent la zone par un point perpendiculaire
-            const avgStartLng = (startLng + endLng) / 2;
-            const avgStartLat = (startLat + endLat) / 2;
+          if (criticalIncident) {
+            this.logger.log(`Incident critique détecté pour contournement : ${criticalIncident.type} à [${criticalIncident.latitude}, ${criticalIncident.longitude}]`);
             
-            // Décalage de 0.01 degré (~1.1 km) perpendiculairement
-            const dx = endLng - startLng;
-            const dy = endLat - startLat;
-            const norm = Math.sqrt(dx * dx + dy * dy) || 1;
-            const perpLng = avgStartLng + (dy / norm) * 0.01;
-            const perpLat = avgStartLat - (dx / norm) * 0.01;
-
-            const bypassUrl = `${this.osrmUrl}/route/v1/driving/${startLng},${startLat};${perpLng},${perpLat};${endLng},${endLat}?overview=full&geometries=geojson&steps=true`;
-            const bypassResponse: AxiosResponse<any> = await firstValueFrom(
-              this.httpService.get(bypassUrl),
-            );
-
-            if (bypassResponse.data.code === 'Ok' && bypassResponse.data.routes.length > 0) {
-              const bypassRoute = bypassResponse.data.routes[0];
-              const bypassCoords = bypassRoute.geometry.coordinates;
-              let bypassFloodCount = 0;
-              let bypassDegradedCount = 0;
-
-              for (const coord of bypassCoords) {
-                const hasFlood = activeIncidents.some(inc =>
-                  inc.type === 'INONDATION' &&
-                  inc.latitude != null && inc.longitude != null &&
-                  distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 150
-                );
-                if (hasFlood) bypassFloodCount++;
-                const hasDeg = activeIncidents.some(inc =>
-                  (inc.type === 'QUALITE_ROUTE' || inc.type === 'ROUTE_ENDOMMAGEE') &&
-                  inc.latitude != null && inc.longitude != null &&
-                  distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 150
-                );
-                if (hasDeg) bypassDegradedCount++;
+            const coords = bestChoice.route.geometry.coordinates;
+            let closestIdx = 0;
+            let minDistance = Infinity;
+            for (let i = 0; i < coords.length; i++) {
+              const d = distanceEnMetres(coords[i][1], coords[i][0], criticalIncident.latitude!, criticalIncident.longitude!);
+              if (d < minDistance) {
+                minDistance = d;
+                closestIdx = i;
               }
+            }
 
-              const bypassComfort = 100 - (bypassFloodCount * 40) - (bypassDegradedCount * 20);
-              
-              const currentIncidentCount = bestChoice.floodCount + bestChoice.degradedCount;
-              const bypassIncidentCount = bypassFloodCount + bypassDegradedCount;
+            // Calculer la tangente locale
+            let dx = 0;
+            let dy = 0;
+            if (closestIdx > 0 && closestIdx < coords.length - 1) {
+              dx = coords[closestIdx + 1][0] - coords[closestIdx - 1][0];
+              dy = coords[closestIdx + 1][1] - coords[closestIdx - 1][1];
+            } else if (coords.length > 1) {
+              const nextIdx = closestIdx === 0 ? 1 : closestIdx;
+              const prevIdx = nextIdx - 1;
+              dx = coords[nextIdx][0] - coords[prevIdx][0];
+              dy = coords[nextIdx][1] - coords[prevIdx][1];
+            }
 
-              // Utiliser la déviation uniquement si elle réduit le nombre d'incidents sur le chemin
-              if (bypassIncidentCount < currentIncidentCount) {
-                const bypassPenalty = (bypassFloodCount * 1800) + (bypassDegradedCount * 600);
-                bestChoice = {
-                  route: bypassRoute,
-                  routeIndex: -1,
-                  floodCount: bypassFloodCount,
-                  degradedCount: bypassDegradedCount,
-                  trafficCount: 0,
-                  comfortScore: Math.max(0, Math.min(100, bypassComfort)),
-                  comfortLevel: bypassComfort >= 80 ? 'excellent' : bypassComfort >= 60 ? 'bon' : bypassComfort >= 40 ? 'moyen' : 'mauvais',
-                  recommendation: bypassIncidentCount === 0
-                    ? 'Itinéraire de contournement sûr (zones à risques évitées).'
-                    : 'Itinéraire alternatif réduisant les zones à risques.',
-                  penalizedDuration: bypassRoute.duration + bypassPenalty,
-                  hasFlood: bypassFloodCount > 0,
-                  hasDegraded: bypassDegradedCount > 0,
-                };
-                this.logger.log('Contournement d\'incident appliqué avec succès');
+            const len = Math.sqrt(dx * dx + dy * dy) || 1;
+            const px = -dy / len;
+            const py = dx / len;
+
+            // Décalage perpendiculaire (gauche et droite, ~400 mètres)
+            const offsets = [0.0036, -0.0036];
+            let bestBypassEvaluation: any = null;
+
+            for (const offsetVal of offsets) {
+              const perpLng = coords[closestIdx][0] + px * offsetVal;
+              const perpLat = coords[closestIdx][1] + py * offsetVal;
+
+              const bypassUrl = `${this.osrmUrl}/route/v1/driving/${startLng},${startLat};${perpLng},${perpLat};${endLng},${endLat}?overview=full&geometries=geojson&steps=true`;
+              try {
+                const bypassResponse: AxiosResponse<any> = await firstValueFrom(
+                  this.httpService.get(bypassUrl),
+                );
+
+                if (bypassResponse.data.code === 'Ok' && bypassResponse.data.routes.length > 0) {
+                  const bRoute = bypassResponse.data.routes[0];
+                  const bCoords = bRoute.geometry.coordinates;
+
+                  const bFloodIncidents = new Set<string>();
+                  const bDegradedIncidents = new Set<string>();
+
+                  for (const inc of activeIncidents) {
+                    if (inc.latitude == null || inc.longitude == null) continue;
+                    const isNear = bCoords.some(c =>
+                      distanceEnMetres(c[1], c[0], inc.latitude!, inc.longitude!) <= 150
+                    );
+                    if (isNear) {
+                      if (inc.type === 'INONDATION') bFloodIncidents.add(inc.id);
+                      else if (inc.type === 'QUALITE_ROUTE' || inc.type === 'ROUTE_ENDOMMAGEE') bDegradedIncidents.add(inc.id);
+                    }
+                  }
+
+                  const bFloodCount = bFloodIncidents.size;
+                  const bDegradedCount = bDegradedIncidents.size;
+                  const bComfort = 100 - (bFloodCount * 40) - (bDegradedCount * 20);
+
+                  const evalResult = {
+                    route: bRoute,
+                    routeIndex: -1,
+                    floodCount: bFloodCount,
+                    degradedCount: bDegradedCount,
+                    trafficCount: 0,
+                    comfortScore: Math.max(0, bComfort),
+                    comfortLevel: bComfort >= 80 ? 'excellent' : bComfort >= 60 ? 'bon' : bComfort >= 40 ? 'moyen' : 'mauvais',
+                    recommendation: bFloodCount + bDegradedCount === 0
+                      ? 'Itinéraire de contournement sûr (zones à risques évitées).'
+                      : 'Itinéraire alternatif réduisant les zones à risques.',
+                    penalizedDuration: bRoute.duration + (bFloodCount * 1800) + (bDegradedCount * 600),
+                    hasFlood: bFloodCount > 0,
+                    hasDegraded: bDegradedCount > 0,
+                  };
+
+                  if (bestBypassEvaluation === null || evalResult.comfortScore > bestBypassEvaluation.comfortScore ||
+                      (evalResult.comfortScore === bestBypassEvaluation.comfortScore && evalResult.penalizedDuration < bestBypassEvaluation.penalizedDuration)) {
+                    bestBypassEvaluation = evalResult;
+                  }
+                }
+              } catch (e) {
+                this.logger.warn(`Échec du calcul de déviation offset ${offsetVal}: ${e.message}`);
               }
+            }
+
+            if (bestBypassEvaluation && bestBypassEvaluation.comfortScore > bestChoice.comfortScore) {
+              bestChoice = bestBypassEvaluation;
+              this.logger.log(`Contournement d'incident appliqué avec succès. Confort amélioré : ${bestChoice.comfortScore}`);
             }
           }
         } catch (bypassError) {
@@ -595,7 +630,9 @@ export class NavigationService {
               ? 'inondation'
               : incident.type === 'QUALITE_ROUTE'
                 ? 'travaux'
-                : 'accident',
+                : incident.type === 'ROUTE_ENDOMMAGEE'
+                  ? 'endomage'
+                  : 'accident',
             description: incident.description,
             latitude: incident.latitude,
             longitude: incident.longitude,
