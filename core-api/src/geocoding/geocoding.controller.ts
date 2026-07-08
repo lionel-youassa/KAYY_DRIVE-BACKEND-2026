@@ -1,4 +1,10 @@
-import { Controller, Get, Query, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { GeocodingService } from './geocoding.service';
 
 @Controller('geocode')
@@ -37,7 +43,11 @@ export class GeocodingController {
   }
 
   @Get('reverse')
-  async reverse(@Query('lat') lat: string, @Query('lon') lon: string, @Query('lng') lng: string) {
+  async reverse(
+    @Query('lat') lat: string,
+    @Query('lon') lon: string,
+    @Query('lng') lng: string,
+  ) {
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lon || lng);
 

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { IncidentsService } from './incidents.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { GeocodingService } from '../geocoding/geocoding.service';
 
 describe('IncidentsService', () => {
   let service: IncidentsService;
@@ -19,6 +20,12 @@ describe('IncidentsService', () => {
               findUnique: jest.fn(),
               update: jest.fn(),
             },
+          },
+        },
+        {
+          provide: GeocodingService,
+          useValue: {
+            reverseGeocode: jest.fn(),
           },
         },
       ],

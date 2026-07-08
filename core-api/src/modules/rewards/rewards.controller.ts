@@ -37,7 +37,10 @@ export class RewardsController {
       imageUrl = await this.storageService.uploadFile(image, 'rewards');
     }
 
-    const reward = await this.rewardsService.createReward({ ...data, imageUrl });
+    const reward = await this.rewardsService.createReward({
+      ...data,
+      imageUrl,
+    });
     return { success: true, message: 'Récompense créée avec succès', reward };
   }
 

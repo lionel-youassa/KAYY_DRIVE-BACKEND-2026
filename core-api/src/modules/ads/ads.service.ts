@@ -14,7 +14,9 @@ export class AdsService {
 
       const formattedData = {
         ...prismaData,
-        dateDebut: prismaData.dateDebut ? new Date(prismaData.dateDebut) : new Date(),
+        dateDebut: prismaData.dateDebut
+          ? new Date(prismaData.dateDebut)
+          : new Date(),
         dateFin: prismaData.dateFin ? new Date(prismaData.dateFin) : new Date(),
       };
 

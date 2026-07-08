@@ -190,13 +190,16 @@ export class AuthService {
   // -------------------------------------------------------------------------
   // Mise à jour du profil utilisateur
   // -------------------------------------------------------------------------
-  async updateProfile(uid: string, updateData: {
-    nom?: string;
-    prenom?: string;
-    email?: string;
-    telephone?: string;
-    password?: string;
-  }): Promise<UserProfile> {
+  async updateProfile(
+    uid: string,
+    updateData: {
+      nom?: string;
+      prenom?: string;
+      email?: string;
+      telephone?: string;
+      password?: string;
+    },
+  ): Promise<UserProfile> {
     const utilisateur = await this.prisma.utilisateur.findUnique({
       where: { id: uid },
     });

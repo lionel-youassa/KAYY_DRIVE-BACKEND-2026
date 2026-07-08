@@ -25,6 +25,6 @@ export class SystemPerformanceDto {
   @ApiProperty({ description: 'Disponibilité du système (%)' })
   uptime: number;
 
-  @ApiProperty({ description: 'Taux d\'erreur (%)' })
+  @ApiProperty({ description: "Taux d'erreur (%)" })
   errorRate: number;
 }

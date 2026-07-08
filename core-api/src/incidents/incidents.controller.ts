@@ -60,7 +60,10 @@ export class IncidentsController {
 
     if (image) {
       imageUrl = await this.storageService.uploadFile(image, 'incidents');
-      console.log('DEBUG CREATE INCIDENT - Image uploaded to storage, URL:', imageUrl);
+      console.log(
+        'DEBUG CREATE INCIDENT - Image uploaded to storage, URL:',
+        imageUrl,
+      );
     }
 
     const incident = await this.incidentsService.createIncident({

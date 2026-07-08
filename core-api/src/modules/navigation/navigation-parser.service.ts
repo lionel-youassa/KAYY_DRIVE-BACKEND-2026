@@ -55,7 +55,7 @@ export class NavigationParserService {
         } else {
           const action = this.translations[maneuverType] || maneuverType;
           const direction = this.translations[modifier] || modifier || '';
-          
+
           // Instructions plus précises avec nom de rue de destination (sans la distance statique préfixée)
           if (nextStreetName && nextStreetName !== streetName) {
             text = `${action} ${direction} vers ${nextStreetName}`;

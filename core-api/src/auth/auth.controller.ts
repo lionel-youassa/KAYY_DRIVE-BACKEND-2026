@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Patch, UseGuards, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  UseGuards,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { PromoteDto } from './dto/promote.dto';
@@ -52,8 +61,14 @@ export class AuthController {
   // PATCH /auth/me
   @Patch('me')
   @UseGuards(AuthGuard)
-  async updateProfile(@CurrentUser() user: UserProfile, @Body() updateData: UpdateProfileDto) {
-    const updatedProfile = await this.authService.updateProfile(user.uid, updateData);
+  async updateProfile(
+    @CurrentUser() user: UserProfile,
+    @Body() updateData: UpdateProfileDto,
+  ) {
+    const updatedProfile = await this.authService.updateProfile(
+      user.uid,
+      updateData,
+    );
     return { success: true, user: updatedProfile };
   }
 

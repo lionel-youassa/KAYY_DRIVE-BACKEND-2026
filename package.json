@@ -10,7 +10,8 @@
     "lint:core": "cd core-api && npm run lint",
     "format:core": "cd core-api && npm run format",
     "test:core": "cd core-api && npm run test",
-    "postinstall": "npm run install:core"
+    "postinstall": "npm run install:core",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "Lionel",

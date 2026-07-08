@@ -49,29 +49,44 @@ export class PredictionsController {
       dateCible,
     );
 
-    const comfort = await this.predictionsService.calculerComfortItineraire(dto.points);
+    const comfort = await this.predictionsService.calculerComfortItineraire(
+      dto.points,
+    );
 
     // Format de réponse compatible frontend
     const totalDuration = predictions.reduce(
-      (sum, p) => sum + (p.vitesseMoyennePredite > 0 ? 60 / p.vitesseMoyennePredite : 0),
+      (sum, p) =>
+        sum + (p.vitesseMoyennePredite > 0 ? 60 / p.vitesseMoyennePredite : 0),
       0,
     );
-    const avgConfidence = predictions.length > 0
-      ? predictions.reduce((sum, p) => sum + (p.confidence === 'haute' ? 0.9 : p.confidence === 'moyenne' ? 0.6 : 0.3), 0) / predictions.length
-      : 0.5;
+    const avgConfidence =
+      predictions.length > 0
+        ? predictions.reduce(
+            (sum, p) =>
+              sum +
+              (p.confidence === 'haute'
+                ? 0.9
+                : p.confidence === 'moyenne'
+                  ? 0.6
+                  : 0.3),
+            0,
+          ) / predictions.length
+        : 0.5;
 
     const trafficHotspots = predictions
-      .filter(p => p.niveauPredit === 'bouchon' || p.niveauPredit === 'dense')
-      .map(p => ({
+      .filter((p) => p.niveauPredit === 'bouchon' || p.niveauPredit === 'dense')
+      .map((p) => ({
         location: { lat: p.latitude, lon: p.longitude },
         severity: p.niveauPredit === 'bouchon' ? 'high' : 'moderate',
         expectedDelay: p.niveauPredit === 'bouchon' ? 30 : 15,
       }));
 
     const confidenceVal = Math.round(avgConfidence * 100) / 100;
-    const avgSpeed = predictions.length > 0
-      ? predictions.reduce((sum, p) => sum + p.vitesseMoyennePredite, 0) / predictions.length
-      : 40;
+    const avgSpeed =
+      predictions.length > 0
+        ? predictions.reduce((sum, p) => sum + p.vitesseMoyennePredite, 0) /
+          predictions.length
+        : 40;
 
     let niveau_trafic = 'modere';
     if (avgSpeed >= 30) niveau_trafic = 'fluide';
@@ -91,7 +106,7 @@ export class PredictionsController {
       recommendation: comfort.recommendation,
       hasFlood: comfort.hasFlood,
       hasDegraded: comfort.hasDegraded,
-      predictions: predictions.map(p => ({
+      predictions: predictions.map((p) => ({
         latitude: p.latitude,
         longitude: p.longitude,
         niveauPredit: p.niveauPredit,

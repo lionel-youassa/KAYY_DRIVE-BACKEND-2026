@@ -1,4 +1,11 @@
-import { IsNumber, IsNotEmpty, Max, Min, IsOptional, IsString } from 'class-validator';
+import {
+  IsNumber,
+  IsNotEmpty,
+  Max,
+  Min,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -35,12 +42,20 @@ export class GetRouteDto {
   @Max(180)
   endLng!: number;
 
-  @ApiProperty({ example: 'vehicle', description: 'Mode de navigation: vehicle ou pedestrian', required: false })
+  @ApiProperty({
+    example: 'vehicle',
+    description: 'Mode de navigation: vehicle ou pedestrian',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   mode?: string;
 
-  @ApiProperty({ example: 'confort', description: 'Profil de routage: confort ou rapide', required: false })
+  @ApiProperty({
+    example: 'confort',
+    description: 'Profil de routage: confort ou rapide',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   routingMode?: 'confort' | 'rapide';

@@ -7,7 +7,10 @@ export class UpdatePreferencesDto {
   @IsBoolean()
   eviterPeages?: boolean;
 
-  @ApiProperty({ description: 'Prioriser les routes sécurisées', required: false })
+  @ApiProperty({
+    description: 'Prioriser les routes sécurisées',
+    required: false,
+  })
   @IsOptional()
   @IsBoolean()
   prioriserRoutesSecu?: boolean;

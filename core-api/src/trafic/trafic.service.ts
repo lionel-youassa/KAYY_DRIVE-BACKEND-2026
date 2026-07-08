@@ -46,7 +46,7 @@ export class TraficService {
     id_utilisateur: string;
   }): Promise<RelevéTrafic> {
     const niveau = niveauDepuisVitesse(data.vitesseMoyenne);
-    
+
     const relevé = await this.prisma.releveTrafic.create({
       data: {
         latitude: data.latitude,
@@ -87,22 +87,19 @@ export class TraficService {
       },
     });
 
-    const relevésProches = relevés
-      .filter(
-        (r) =>
-          distanceEnMetres(latitude, longitude, r.latitude, r.longitude) <=
-            rayonMetres && typeof r.vitesseMoyenne === 'number',
-      );
+    const relevésProches = relevés.filter(
+      (r) =>
+        distanceEnMetres(latitude, longitude, r.latitude, r.longitude) <=
+          rayonMetres && typeof r.vitesseMoyenne === 'number',
+    );
 
     if (relevésProches.length === 0) {
       return { niveau: 'fluide', vitesseMoyenne: 0, nombreReleves: 0 };
     }
 
     const vitesseMoyenne =
-      relevésProches.reduce(
-        (sum: number, r) => sum + r.vitesseMoyenne,
-        0,
-      ) / relevésProches.length;
+      relevésProches.reduce((sum: number, r) => sum + r.vitesseMoyenne, 0) /
+      relevésProches.length;
 
     return {
       niveau: niveauDepuisVitesse(vitesseMoyenne),

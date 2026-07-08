@@ -97,7 +97,8 @@ export class DashboardController {
         this.dashboardService.getSystemPerformance(),
       ]);
 
-    const totalIncidentsVal = (incidents.confirmedIncidents || 0) + (incidents.pendingIncidents || 0);
+    const totalIncidentsVal =
+      (incidents.confirmedIncidents || 0) + (incidents.pendingIncidents || 0);
     const formattedOverview = {
       totalUsers: overview.totalUsers,
       activeUsers: overview.activeUsers24h,

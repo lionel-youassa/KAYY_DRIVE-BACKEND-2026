@@ -42,12 +42,14 @@ export class AdressesFavoritesService {
       latitude: adresse.latitude,
       longitude: adresse.longitude,
       categorieId: adresse.categorieId || undefined,
-      categorie: adresse.categorie ? {
-        id: adresse.categorie.id,
-        nom: adresse.categorie.nom,
-        icone: adresse.categorie.icone,
-        couleur: adresse.categorie.couleur,
-      } : null,
+      categorie: adresse.categorie
+        ? {
+            id: adresse.categorie.id,
+            nom: adresse.categorie.nom,
+            icone: adresse.categorie.icone,
+            couleur: adresse.categorie.couleur,
+          }
+        : null,
       id_utilisateur: adresse.utilisateurId,
     };
   }
@@ -65,12 +67,14 @@ export class AdressesFavoritesService {
       latitude: a.latitude,
       longitude: a.longitude,
       categorieId: a.categorieId || undefined,
-      categorie: a.categorie ? {
-        id: a.categorie.id,
-        nom: a.categorie.nom,
-        icone: a.categorie.icone,
-        couleur: a.categorie.couleur,
-      } : null,
+      categorie: a.categorie
+        ? {
+            id: a.categorie.id,
+            nom: a.categorie.nom,
+            icone: a.categorie.icone,
+            couleur: a.categorie.couleur,
+          }
+        : null,
       id_utilisateur: a.utilisateurId,
     }));
   }

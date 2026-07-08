@@ -44,7 +44,9 @@ export class StorageService {
         this.bucketName,
         JSON.stringify(policy),
       );
-      this.logger.log(`Politique de lecture publique appliquée au bucket ${this.bucketName}`);
+      this.logger.log(
+        `Politique de lecture publique appliquée au bucket ${this.bucketName}`,
+      );
     } catch (error) {
       this.logger.error(
         `Erreur lors de l'initialisation du bucket: ${error.message}`,

@@ -27,7 +27,12 @@ export class TraficController {
       segments: [
         {
           roadName: 'Route actuelle',
-          congestionLevel: trafic.niveau === 'bouchon' ? 'high' : trafic.niveau === 'dense' ? 'moderate' : 'low',
+          congestionLevel:
+            trafic.niveau === 'bouchon'
+              ? 'high'
+              : trafic.niveau === 'dense'
+                ? 'moderate'
+                : 'low',
           averageSpeed: trafic.vitesseMoyenne,
           geometry: 'encoded_polyline_string',
         },

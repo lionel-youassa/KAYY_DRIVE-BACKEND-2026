@@ -45,10 +45,17 @@ export class PreferencesService {
       update: updates,
       create: {
         utilisateurId: uid,
-        eviterPeages: updates.eviterPeages ?? PREFERENCES_PAR_DEFAUT.eviterPeages,
-        prioriserRoutesSecu: updates.prioriserRoutesSecu ?? PREFERENCES_PAR_DEFAUT.prioriserRoutesSecu,
-        eviterZonesInondables: updates.eviterZonesInondables ?? PREFERENCES_PAR_DEFAUT.eviterZonesInondables,
-        modeHorsLigneActif: updates.modeHorsLigneActif ?? PREFERENCES_PAR_DEFAUT.modeHorsLigneActif,
+        eviterPeages:
+          updates.eviterPeages ?? PREFERENCES_PAR_DEFAUT.eviterPeages,
+        prioriserRoutesSecu:
+          updates.prioriserRoutesSecu ??
+          PREFERENCES_PAR_DEFAUT.prioriserRoutesSecu,
+        eviterZonesInondables:
+          updates.eviterZonesInondables ??
+          PREFERENCES_PAR_DEFAUT.eviterZonesInondables,
+        modeHorsLigneActif:
+          updates.modeHorsLigneActif ??
+          PREFERENCES_PAR_DEFAUT.modeHorsLigneActif,
       },
     });
 

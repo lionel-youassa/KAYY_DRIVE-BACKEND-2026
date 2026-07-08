@@ -37,7 +37,10 @@ export class AdsController {
 
     if (image) {
       imageUrl = await this.storageService.uploadFile(image, 'ads');
-      console.log('DEBUG CREATE AD - Image uploaded to storage, URL:', imageUrl);
+      console.log(
+        'DEBUG CREATE AD - Image uploaded to storage, URL:',
+        imageUrl,
+      );
     }
 
     const ad = await this.adsService.createAdvertising({ ...data, imageUrl });

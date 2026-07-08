@@ -1,20 +1,23 @@
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const hasDatabase = !!process.env.DATABASE_URL;
+const prisma = hasDatabase ? new PrismaClient() : null;
 
 beforeAll(async () => {
-  // Setup test database connection if needed
-  // For now, we'll use the same database but could use a separate test DB
+  if (prisma) {
+    await prisma.$connect();
+  }
 });
 
 afterAll(async () => {
-  // Cleanup test database
-  await prisma.$disconnect();
+  if (prisma) {
+    await prisma.$disconnect();
+  }
 });
 
 beforeEach(async () => {
-  // Clean up database before each test
-  // This ensures tests are isolated
+  if (!prisma) return;
+
   const tablenames = await prisma.$queryRaw<
     Array<{ tablename: string }>
   >`SELECT tablename FROM pg_tables WHERE schemaname='public'`;

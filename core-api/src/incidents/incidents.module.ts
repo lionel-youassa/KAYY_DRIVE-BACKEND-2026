@@ -8,7 +8,13 @@ import { StorageModule } from '../storage/storage.module';
 import { GeocodingModule } from '../geocoding/geocoding.module';
 
 @Module({
-  imports: [AuthModule, NotificationsModule, PrismaModule, StorageModule, GeocodingModule],
+  imports: [
+    AuthModule,
+    NotificationsModule,
+    PrismaModule,
+    StorageModule,
+    GeocodingModule,
+  ],
   controllers: [IncidentsController],
   providers: [IncidentsService],
   exports: [IncidentsService],
