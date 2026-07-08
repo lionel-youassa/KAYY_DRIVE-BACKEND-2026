@@ -116,14 +116,23 @@ export class NavigationService {
    */
   private async getTraficParTroncon(
     coordinates: number[][],
-  ): Promise<Array<{ start: number[]; end: number[]; niveau: string; vitesse: number }>> {
-    const segments: Array<{ start: number[]; end: number[]; niveau: string; vitesse: number }> = [];
+  ): Promise<Array<{ start: number[]; end: number[]; intermediatePoints?: number[][]; niveau: string; vitesse: number }>> {
+    const segments: Array<{ start: number[]; end: number[]; intermediatePoints?: number[][]; niveau: string; vitesse: number }> = [];
     const step = Math.max(1, Math.floor(coordinates.length / 10)); // Max 10 segments
 
     for (let i = 0; i < coordinates.length - 1; i += step) {
-      const start = coordinates[i];
-      const end = coordinates[Math.min(i + step, coordinates.length - 1)];
+      const startIdx = i;
+      const endIdx = Math.min(i + step, coordinates.length - 1);
+      const start = coordinates[startIdx];
+      const end = coordinates[endIdx];
       
+      // Collecter TOUS les points intermédiaires entre start et end
+      // pour que le frontend puisse tracer la route fidèlement
+      const intermediatePoints: number[][] = [];
+      for (let j = startIdx; j <= endIdx; j++) {
+        intermediatePoints.push(coordinates[j]);
+      }
+
       // Calcul du point médian du segment
       const midLat = (start[1] + end[1]) / 2;
       const midLng = (start[0] + end[0]) / 2;
@@ -140,6 +149,7 @@ export class NavigationService {
         segments.push({
           start,
           end,
+          intermediatePoints,
           niveau: niveauCouleur,
           vitesse: trafic.vitesseMoyenne,
         });
@@ -148,6 +158,7 @@ export class NavigationService {
         segments.push({
           start,
           end,
+          intermediatePoints,
           niveau: 'vert',
           vitesse: 0,
         });
@@ -347,7 +358,7 @@ export class NavigationService {
           if (inc.latitude == null || inc.longitude == null) continue;
           
           const isNear = routeCoords.some(coord => 
-            distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 150
+            distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 50
           );
 
           if (isNear) {
@@ -365,7 +376,7 @@ export class NavigationService {
         let hasDegradedShock = false;
         for (const shock of recentShocks) {
           const isNear = routeCoords.some(coord =>
-            distanceEnMetres(coord[1], coord[0], shock.latitude, shock.longitude) <= 150
+            distanceEnMetres(coord[1], coord[0], shock.latitude, shock.longitude) <= 50
           );
           if (isNear) {
             hasDegradedShock = true;
@@ -455,12 +466,12 @@ export class NavigationService {
           const criticalIncident = activeIncidents.find(inc =>
             inc.latitude != null && inc.longitude != null &&
             bestChoice.route.geometry.coordinates.some(coord =>
-              distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 150
+              distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 50
             ) && inc.type === 'INONDATION'
           ) || activeIncidents.find(inc =>
             inc.latitude != null && inc.longitude != null &&
             bestChoice.route.geometry.coordinates.some(coord =>
-              distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 150
+              distanceEnMetres(coord[1], coord[0], inc.latitude!, inc.longitude!) <= 50
             ) && (inc.type === 'QUALITE_ROUTE' || inc.type === 'ROUTE_ENDOMMAGEE')
           );
 
@@ -508,7 +519,7 @@ export class NavigationService {
                     for (const inc of activeIncidents) {
                       if (inc.latitude == null || inc.longitude == null) continue;
                       const isNear = bCoords.some(c =>
-                        distanceEnMetres(c[1], c[0], inc.latitude!, inc.longitude!) <= 150
+                        distanceEnMetres(c[1], c[0], inc.latitude!, inc.longitude!) <= 50
                       );
                       if (isNear) {
                         if (inc.type === 'INONDATION') bFloodIncidents.add(inc.id);
@@ -538,14 +549,14 @@ export class NavigationService {
 
                     this.logger.log(`[CONTOURNEMENT] Candidat #${cIdx + 1} évalué : scoreConfort=${evalResult.comfortScore} (incidents : ${bFloodCount} inon, ${bDegradedCount} deg), durée réelle : ${Math.round(bRoute.duration)}s`);
 
-                    // Le contournement n'est conservé que s'il ne double pas la durée originale du trajet
-                    if (bRoute.duration <= bestChoice.route.duration * 2.0) {
+                    // Le contournement n'est conservé que s'il ne dépasse pas la durée originale du trajet + 5 minutes
+                    if (bRoute.duration <= bestChoice.route.duration * 2.5 + 300) {
                       if (bestBypassEvaluation === null || evalResult.comfortScore > bestBypassEvaluation.comfortScore ||
                           (evalResult.comfortScore === bestBypassEvaluation.comfortScore && evalResult.penalizedDuration < bestBypassEvaluation.penalizedDuration)) {
                         bestBypassEvaluation = evalResult;
                       }
                     } else {
-                      this.logger.log(`[CONTOURNEMENT] Candidat #${cIdx + 1} rejeté car trop long (${Math.round(bRoute.duration)}s contre original ${Math.round(bestChoice.route.duration)}s)`);
+                      this.logger.log(`[CONTOURNEMENT] Candidat #${cIdx + 1} rejeté car trop long (${Math.round(bRoute.duration)}s contre original ${Math.round(bestChoice.route.duration)}s avec limite)`);
                     }
                   }
                 } catch (e) {
@@ -569,11 +580,23 @@ export class NavigationService {
       const selectedRoute = bestChoice.route;
       const selectedRouteIndex = bestChoice.routeIndex;
 
-
       // 3. Extraction des instructions pour l'itinéraire choisi
+      // Si c'est un itinéraire de contournement (routeIndex === -1), on emballe la route
+      // dans un objet compatible OSRM car le parser attend osrmData.routes[routeIndex]
+      let instructionData: any;
+      let instructionRouteIdx: number;
+      if (selectedRouteIndex === -1) {
+        // Route de bypass : emballer dans une structure OSRM-compatible
+        instructionData = { routes: [selectedRoute] };
+        instructionRouteIdx = 0;
+        this.logger.log(`[INSTRUCTIONS] Extraction des instructions depuis la route de contournement`);
+      } else {
+        instructionData = osrmResponse.data;
+        instructionRouteIdx = selectedRouteIndex;
+      }
       const osrmInstructions = this.parserService.parseInstructions(
-        osrmResponse.data,
-        selectedRouteIndex,
+        instructionData,
+        instructionRouteIdx,
       );
       const baseDistance = selectedRoute.distance;
       const baseDuration = isPedestrian
