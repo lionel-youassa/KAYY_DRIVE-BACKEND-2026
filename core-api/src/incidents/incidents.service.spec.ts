@@ -115,11 +115,11 @@ describe('IncidentsService', () => {
       id: incidentId,
       type: 'INONDATION',
       description: 'Inondation Akwa',
-      horodatage: new Date('2026-07-08T12:00:00Z'),
+      horodatage: new Date(),
       nombreConfirmations: 1,
       statut: 'non_confirme',
       idRapporteur: 'creator-uuid',
-      dateExpiration: new Date('2026-07-08T20:00:00Z'),
+      dateExpiration: new Date(Date.now() + 24 * 3600 * 1000), // future date
       confirmePar: ['creator-uuid'],
       latitude: 4.0511,
       longitude: 9.7679,
