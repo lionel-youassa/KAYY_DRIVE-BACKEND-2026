@@ -119,7 +119,7 @@ describe('IncidentsService', () => {
       nombreConfirmations: 1,
       statut: 'non_confirme',
       idRapporteur: 'creator-uuid',
-      dateExpiration: new Date(Date.now() + 6 * 60 * 60 * 1000), // +6h dans le futur
+      dateExpiration: new Date(Date.now() + 24 * 3600 * 1000), // future date
       confirmePar: ['creator-uuid'],
       latitude: 4.0511,
       longitude: 9.7679,
