@@ -18,13 +18,13 @@ async function initDatabase() {
 
     console.log('🌱 Aucun admin trouvé, exécution du seed...');
     
-    // Exécuter le seed
-    await import('../prisma/seed.js');
+    // Exécuter le seed via ts-node en process séparé
+    const { execSync } = await import('child_process');
+    execSync('npx ts-node prisma/seed.ts', { stdio: 'inherit' });
     
     console.log('✅ Initialisation de la base de données terminée.');
   } catch (error) {
     console.error('❌ Erreur lors de l\'initialisation:', error);
-    // Ne pas échouer le démarrage du conteneur si l'init échoue
   } finally {
     await prisma.$disconnect();
   }
