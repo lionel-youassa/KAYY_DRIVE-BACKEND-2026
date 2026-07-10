@@ -3,7 +3,7 @@ import { TraficService } from './trafic.service';
 import { CreateTraficDto } from './dto/create-trafic.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import type { UserProfile } from '../auth/auth.service';
 
 @Controller('trafic')
 @UseGuards(AuthGuard)
@@ -44,7 +44,7 @@ export class TraficController {
   @Post()
   async create(
     @Body() dto: CreateTraficDto,
-    @CurrentUser() user: DecodedIdToken,
+    @CurrentUser() user: UserProfile,
   ) {
     const relevé = await this.traficService.enregistrerRelevé({
       ...dto,

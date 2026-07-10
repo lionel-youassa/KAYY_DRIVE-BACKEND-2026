@@ -3,7 +3,7 @@ import { PreferencesService } from './preferences.service';
 import { UpdatePreferencesDto } from './dto/update-preferences.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import type { UserProfile } from '../auth/auth.service';
 
 @Controller('preferences')
 @UseGuards(AuthGuard)
@@ -12,7 +12,7 @@ export class PreferencesController {
 
   // GET /preferences
   @Get()
-  async getPreferences(@CurrentUser() user: DecodedIdToken) {
+  async getPreferences(@CurrentUser() user: UserProfile) {
     const preferences = await this.preferencesService.getPreferences(user.uid);
     return { preferences };
   }
@@ -21,7 +21,7 @@ export class PreferencesController {
   @Patch()
   async update(
     @Body() dto: UpdatePreferencesDto,
-    @CurrentUser() user: DecodedIdToken,
+    @CurrentUser() user: UserProfile,
   ) {
     const preferences = await this.preferencesService.updatePreferences(
       user.uid,

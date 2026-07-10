@@ -12,7 +12,7 @@ import { CreateRouteDto } from './dto/create-route.dto';
 import { VoteRouteDto } from './dto/vote-route.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import type { UserProfile } from '../auth/auth.service';
 
 @Controller('routes')
 @UseGuards(AuthGuard)
@@ -23,7 +23,7 @@ export class RoutesController {
   @Post()
   async create(
     @Body() dto: CreateRouteDto,
-    @CurrentUser() user: DecodedIdToken,
+    @CurrentUser() user: UserProfile,
   ) {
     const raccourci = await this.routesService.createRaccourci({
       nom: dto.nom,
@@ -48,7 +48,7 @@ export class RoutesController {
   async voter(
     @Param('id') id: string,
     @Body() dto: VoteRouteDto,
-    @CurrentUser() user: DecodedIdToken,
+    @CurrentUser() user: UserProfile,
   ) {
     const result = await this.routesService.voterRaccourci(
       id,

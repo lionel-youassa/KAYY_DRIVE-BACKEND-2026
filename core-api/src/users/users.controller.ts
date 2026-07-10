@@ -3,7 +3,7 @@ import { UsersService } from './users.service';
 import { UpdatePositionDto } from './dto/update-position.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import type { UserProfile } from '../auth/auth.service';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -14,7 +14,7 @@ export class UsersController {
   @Post('position')
   async updatePosition(
     @Body() dto: UpdatePositionDto,
-    @CurrentUser() user: DecodedIdToken,
+    @CurrentUser() user: UserProfile,
   ) {
     await this.usersService.mettreAJourPosition(
       user.uid,
@@ -26,7 +26,7 @@ export class UsersController {
 
   // DELETE /users/position
   @Delete('position')
-  async deletePosition(@CurrentUser() user: DecodedIdToken) {
+  async deletePosition(@CurrentUser() user: UserProfile) {
     await this.usersService.supprimerPosition(user.uid);
     return { success: true };
   }

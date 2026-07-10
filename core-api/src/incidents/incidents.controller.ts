@@ -17,7 +17,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { NotificationsService } from '../notifications/notifications.service';
 import { StorageService } from '../storage/storage.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import type { UserProfile } from '../auth/auth.service';
 
 @Controller('incidents')
 @UseGuards(AuthGuard)
@@ -49,7 +49,7 @@ export class IncidentsController {
   @Post()
   @UseInterceptors(FileInterceptor('image'))
   async createIncident(
-    @CurrentUser() user: DecodedIdToken,
+    @CurrentUser() user: UserProfile,
     @Body() dto: CreateIncidentDto,
     @UploadedFile() image?: Express.Multer.File,
   ) {
@@ -100,7 +100,7 @@ export class IncidentsController {
   async confirmer(
     @Param('id') id: string,
     @Body() dto: ConfirmIncidentDto,
-    @CurrentUser() user: DecodedIdToken,
+    @CurrentUser() user: UserProfile,
   ) {
     const result = await this.incidentsService.confirmerIncident(
       id,

@@ -41,7 +41,6 @@ model Utilisateur {
   votesRaccourcis   VoteRaccourci[]
   positions         PositionUtilisateur[]
   notifications     Notification[]
-  tokensFCM         TokenFCM[]
   adressesFavorites AdresseFavorite[]
   relevesTrafic     ReleveTrafic[]
   secousses         SecousseData[]
@@ -212,15 +211,7 @@ model Notification {
   utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
 }
 
-model TokenFCM {
-  id                String   @id @default(uuid())
-  utilisateurId     String
-  token             String
-  dateEnregistrement DateTime @default(now())
-  utilisateur       Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
-}
 
 model Categorie {
   id        String   @id @default(uuid())

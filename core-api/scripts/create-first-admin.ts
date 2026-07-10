@@ -8,7 +8,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
 import { AuthService } from '../src/auth/auth.service';
-import { FirebaseService } from '../src/firebase/firebase.service';
+import { PrismaService } from '../src/prisma/prisma.service';
 
 async function main() {
   const email = process.argv[2];
@@ -20,12 +20,18 @@ async function main() {
 
   const app = await NestFactory.createApplicationContext(AppModule);
   const authService = app.get(AuthService);
-  const firebase = app.get(FirebaseService);
+  const prisma = app.get(PrismaService);
 
-  const user = await firebase.auth.getUserByEmail(email);
-  await authService.setUserRole(user.uid, 'admin');
+  const user = await prisma.utilisateur.findUnique({ where: { email } });
+  if (!user) {
+    console.error(`❌ Aucun utilisateur trouvé avec l'email : ${email}`);
+    await app.close();
+    process.exit(1);
+  }
 
-  console.log(`✅ ${email} est maintenant admin (uid: ${user.uid})`);
+  await authService.setUserRole(user.id, 'admin');
+
+  console.log(`✅ ${email} est maintenant admin (id: ${user.id})`);
 
   await app.close();
   process.exit(0);

@@ -11,7 +11,7 @@ import { AdressesFavoritesService } from './adresses-favorites.service';
 import { CreateAdresseFavoriteDto } from './dto/create-adresse-favorite.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import type { UserProfile } from '../auth/auth.service';
 
 @Controller('adresses-favorites')
 @UseGuards(AuthGuard)
@@ -22,7 +22,7 @@ export class AdressesFavoritesController {
 
   // GET /adresses-favorites
   @Get()
-  async getAll(@CurrentUser() user: DecodedIdToken) {
+  async getAll(@CurrentUser() user: UserProfile) {
     const adresses = await this.adressesFavoritesService.getAdressesFavorites(
       user.uid,
     );
@@ -33,7 +33,7 @@ export class AdressesFavoritesController {
   @Post()
   async create(
     @Body() dto: CreateAdresseFavoriteDto,
-    @CurrentUser() user: DecodedIdToken,
+    @CurrentUser() user: UserProfile,
   ) {
     const created = await this.adressesFavoritesService.createAdresseFavorite({
       ...dto,

@@ -3,7 +3,7 @@ import { SafeDriveService } from './safe-drive.service';
 import { SecousseDto } from './dto/secousse.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import type { UserProfile } from '../auth/auth.service';
 
 @Controller('safe-drive')
 @UseGuards(AuthGuard)
@@ -14,7 +14,7 @@ export class SafeDriveController {
   @Post('secousse')
   async secousse(
     @Body() dto: SecousseDto,
-    @CurrentUser() user: DecodedIdToken,
+    @CurrentUser() user: UserProfile,
   ) {
     await this.safeDriveService.ajouterSecousse({
       id_utilisateur: user.uid,

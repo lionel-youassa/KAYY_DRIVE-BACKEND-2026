@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { FirebaseService } from '../firebase/firebase.service';
 import { NotificationsGateway } from './notifications.gateway';
 
 export type TypeNotification =
@@ -27,35 +26,8 @@ export class NotificationsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly firebase: FirebaseService,
     private readonly gateway: NotificationsGateway,
   ) {}
-
-  async enregistrerTokenFCM(uid: string, token: string): Promise<void> {
-    await this.prisma.tokenFCM.create({
-      data: {
-        utilisateurId: uid,
-        token,
-        dateEnregistrement: new Date(),
-      },
-    });
-  }
-
-  async supprimerTokenFCM(uid: string, token: string): Promise<void> {
-    await this.prisma.tokenFCM.deleteMany({
-      where: {
-        utilisateurId: uid,
-        token,
-      },
-    });
-  }
-
-  private async getTokensUtilisateur(uid: string): Promise<string[]> {
-    const tokens = await this.prisma.tokenFCM.findMany({
-      where: { utilisateurId: uid },
-    });
-    return tokens.map((t) => t.token);
-  }
 
   async envoyerNotification(input: {
     id_utilisateur: string;
@@ -75,31 +47,6 @@ export class NotificationsService {
         dateCreation: new Date(),
       },
     });
-
-    const tokens = await this.getTokensUtilisateur(input.id_utilisateur);
-
-    if (tokens.length > 0) {
-      try {
-        const response = await this.firebase.messaging.sendEachForMulticast({
-          tokens,
-          notification: { title: input.titre, body: input.corps },
-          data: input.data || {},
-        });
-
-        response.responses.forEach((resp, index) => {
-          if (
-            !resp.success &&
-            resp.error?.code === 'messaging/registration-token-not-registered'
-          ) {
-            this.supprimerTokenFCM(input.id_utilisateur, tokens[index]).catch(
-              () => {},
-            );
-          }
-        });
-      } catch (error) {
-        console.error('Erreur envoi FCM:', error);
-      }
-    }
 
     const notificationResult: NotificationData = {
       id: notification.id,
