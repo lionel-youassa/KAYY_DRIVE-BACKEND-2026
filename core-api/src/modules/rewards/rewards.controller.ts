@@ -8,13 +8,13 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
-  Request,
 } from '@nestjs/common';
 import { RewardsService } from './rewards.service';
 import { AuthGuard } from '../../auth/guards/auth.guard';
 import { AdminGuard } from '../../auth/guards/admin.guard';
 import { StorageService } from '../../storage/storage.service';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 
 @Controller('rewards')
 @UseGuards(AuthGuard)
@@ -50,8 +50,8 @@ export class RewardsController {
   }
 
   @Get('my-eligibility')
-  async getMyEligibility(@Request() req: any) {
-    const userId: string = req.user?.id || req.user?.userId || req.user?.sub;
+  async getMyEligibility(@CurrentUser() user: any) {
+    const userId: string = user?.uid;
     return await this.rewardsService.getEligibility(userId);
   }
 
