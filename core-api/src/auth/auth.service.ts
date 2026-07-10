@@ -16,6 +16,7 @@ export interface UserProfile {
   nom: string;
   prenom: string;
   telephone?: string;
+  photoUrl?: string;
   role: UserRole;
   dateCreation: string;
 }
@@ -74,6 +75,7 @@ export class AuthService {
       nom: utilisateur.pseudo,
       prenom: utilisateur.prenom || '',
       telephone: utilisateur.telephone || undefined,
+      photoUrl: utilisateur.photoUrl || undefined,
       role: utilisateur.role as UserRole,
       dateCreation: utilisateur.dateCreation.toISOString(),
     };
@@ -123,6 +125,7 @@ export class AuthService {
         nom: utilisateur.pseudo,
         prenom: utilisateur.prenom || '',
         telephone: utilisateur.telephone || undefined,
+        photoUrl: utilisateur.photoUrl || undefined,
         role: utilisateur.role as UserRole,
         dateCreation: utilisateur.dateCreation.toISOString(),
       },
@@ -182,6 +185,7 @@ export class AuthService {
       nom: utilisateur.pseudo,
       prenom: utilisateur.prenom || '',
       telephone: utilisateur.telephone || undefined,
+      photoUrl: utilisateur.photoUrl || undefined,
       role: utilisateur.role as UserRole,
       dateCreation: utilisateur.dateCreation.toISOString(),
     };
@@ -197,7 +201,6 @@ export class AuthService {
       prenom?: string;
       email?: string;
       telephone?: string;
-      password?: string;
     },
   ): Promise<UserProfile> {
     const utilisateur = await this.prisma.utilisateur.findUnique({
@@ -235,10 +238,6 @@ export class AuthService {
       updatePayload.telephone = updateData.telephone;
     }
 
-    if (updateData.password) {
-      updatePayload.passwordHash = await bcrypt.hash(updateData.password, 10);
-    }
-
     const updatedUser = await this.prisma.utilisateur.update({
       where: { id: uid },
       data: updatePayload,
@@ -250,6 +249,62 @@ export class AuthService {
       nom: updatedUser.pseudo,
       prenom: updatedUser.prenom || '',
       telephone: updatedUser.telephone || undefined,
+      photoUrl: updatedUser.photoUrl || undefined,
+      role: updatedUser.role as UserRole,
+      dateCreation: updatedUser.dateCreation.toISOString(),
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // Modification sécurisée de mot de passe
+  // -------------------------------------------------------------------------
+  async changePassword(
+    uid: string,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { id: uid },
+    });
+
+    if (!utilisateur || !utilisateur.passwordHash) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    // Vérifier l'ancien mot de passe
+    const isPasswordValid = await bcrypt.compare(
+      oldPassword,
+      utilisateur.passwordHash,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('L\'ancien mot de passe est incorrect');
+    }
+
+    // Hasher et mettre à jour le nouveau mot de passe
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.utilisateur.update({
+      where: { id: uid },
+      data: { passwordHash: newPasswordHash },
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Mise à jour de la photo de profil
+  // -------------------------------------------------------------------------
+  async updatePhoto(uid: string, photoUrl: string): Promise<UserProfile> {
+    const updatedUser = await this.prisma.utilisateur.update({
+      where: { id: uid },
+      data: { photoUrl },
+    });
+
+    return {
+      uid: updatedUser.id,
+      email: updatedUser.email,
+      nom: updatedUser.pseudo,
+      prenom: updatedUser.prenom || '',
+      telephone: updatedUser.telephone || undefined,
+      photoUrl: updatedUser.photoUrl || undefined,
       role: updatedUser.role as UserRole,
       dateCreation: updatedUser.dateCreation.toISOString(),
     };

@@ -57,4 +57,26 @@ export class AdsService {
       );
     }
   }
+
+  // 4. Récupérer uniquement les publicités actives
+  async getActiveAds() {
+    try {
+      const now = new Date();
+      const ads = await this.prisma.publicite.findMany({
+        where: {
+          actif: true,
+          dateDebut: {
+            lte: now,
+          },
+          dateFin: {
+            gte: now,
+          },
+        },
+      });
+      return ads || [];
+    } catch (error) {
+      console.error('Erreur lors de la récupération des pubs actives Prisma :', error);
+      return [];
+    }
+  }
 }

@@ -3,6 +3,7 @@ import { AuthController } from './auth.controller';
 import { AuthService, UserProfile } from './auth.service';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
+import { StorageService } from '../storage/storage.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('AuthController', () => {
@@ -25,6 +26,13 @@ describe('AuthController', () => {
     login: jest.fn(),
     updateProfile: jest.fn(),
     setUserRole: jest.fn(),
+    changePassword: jest.fn(),
+    updatePhoto: jest.fn(),
+  };
+
+  const mockStorageService = {
+    uploadFile: jest.fn().mockResolvedValue('http://localhost:9000/kayydrive/photo.jpg'),
+    deleteFile: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -34,6 +42,10 @@ describe('AuthController', () => {
         {
           provide: AuthService,
           useValue: mockAuthService,
+        },
+        {
+          provide: StorageService,
+          useValue: mockStorageService,
         },
       ],
     })

@@ -4,7 +4,7 @@ Bienvenue dans le monorepo de KayyDrive, une application de navigation routière
 
 Ce dépôt contient les différents services qui composent l'architecture backend de KayyDrive.
 
-## 📚 Documentation
+##  Documentation
 
 Pour plus d'informations détaillées, consultez :
 

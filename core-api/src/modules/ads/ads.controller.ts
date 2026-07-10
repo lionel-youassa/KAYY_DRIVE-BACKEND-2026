@@ -53,6 +53,12 @@ export class AdsController {
     return { ads };
   }
 
+  @Get('active')
+  async getActiveAds() {
+    const ads = await this.adsService.getActiveAds();
+    return { ads };
+  }
+
   @Delete(':id')
   @UseGuards(AdminGuard)
   async deleteAdvertising(@Param('id') id: string) {

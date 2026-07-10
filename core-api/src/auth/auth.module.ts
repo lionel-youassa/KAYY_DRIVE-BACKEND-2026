@@ -8,10 +8,12 @@ import { AdminGuard } from './guards/admin.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { PrismaModule } from '../prisma/prisma.module';
+import { StorageModule } from '../storage/storage.module';
 
 @Module({
   imports: [
     PrismaModule,
+    StorageModule,
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'kayydrive-secret-key-2026',

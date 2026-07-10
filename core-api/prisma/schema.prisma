@@ -30,6 +30,7 @@ model Utilisateur {
   email             String                  @unique
   passwordHash      String?
   telephone         String?
+  photoUrl          String?
   role              String                  @default("user")
   scoreReputation   Int                     @default(0)
   dateCreation      DateTime                @default(now())

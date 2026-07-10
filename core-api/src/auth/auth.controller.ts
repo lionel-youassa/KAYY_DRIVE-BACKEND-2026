@@ -7,11 +7,16 @@ import {
   UseGuards,
   NotFoundException,
   BadRequestException,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { StorageService } from '../storage/storage.service';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { PromoteDto } from './dto/promote.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -19,7 +24,26 @@ import type { UserProfile } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly storageService: StorageService,
+  ) {}
+
+  // POST /auth/me/photo
+  @Post('me/photo')
+  @UseGuards(AuthGuard)
+  @UseInterceptors(FileInterceptor('photo'))
+  async uploadPhoto(
+    @CurrentUser() user: UserProfile,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Aucun fichier fourni');
+    }
+    const photoUrl = await this.storageService.uploadFile(file, 'profiles');
+    const updatedProfile = await this.authService.updatePhoto(user.uid, photoUrl);
+    return { success: true, user: updatedProfile };
+  }
 
   // POST /auth/register
   @Post('register')
@@ -49,6 +73,21 @@ export class AuthController {
   async login(@Body() body: { email: string; password: string }) {
     const result = await this.authService.login(body.email, body.password);
     return { success: true, ...result };
+  }
+
+  // POST /auth/change-password
+  @Post('change-password')
+  @UseGuards(AuthGuard)
+  async changePassword(
+    @CurrentUser() user: UserProfile,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    await this.authService.changePassword(
+      user.uid,
+      dto.oldPassword,
+      dto.newPassword,
+    );
+    return { success: true, message: 'Mot de passe modifié avec succès.' };
   }
 
   // GET /auth/me

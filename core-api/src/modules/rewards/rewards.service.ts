@@ -1,9 +1,13 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 @Injectable()
 export class RewardsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   // 1. Créer une récompense dans PostgreSQL
   async createReward(data: any) {
@@ -27,9 +31,32 @@ export class RewardsService {
         imageUrl: data.imageUrl || null,
       };
 
-      return await this.prisma.recompense.create({
+      const reward = await this.prisma.recompense.create({
         data: formattedData,
       });
+
+      // Notifier en temps réel tous les clients connectés via WS
+      this.notificationsService.notifyAll('reward:published', reward);
+
+      // Créer une notification persistante dans la DB pour tous les utilisateurs
+      this.prisma.utilisateur
+        .findMany({ select: { id: true } })
+        .then((users) => {
+          for (const u of users) {
+            this.notificationsService
+              .envoyerNotification({
+                id_utilisateur: u.id,
+                type: 'systeme',
+                titre: 'Nouvelle récompense publiée ! 🎁',
+                corps: `Profitez de la récompense : "${reward.titre}".`,
+                data: { rewardId: reward.id.toString() },
+              })
+              .catch(() => {});
+          }
+        })
+        .catch((err) => console.error('Erreur fetch users for reward notification:', err));
+
+      return reward;
     } catch (error) {
       console.error(
         'Erreur lors de la création de la récompense Prisma :',

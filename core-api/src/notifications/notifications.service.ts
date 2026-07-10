@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FirebaseService } from '../firebase/firebase.service';
+import { NotificationsGateway } from './notifications.gateway';
 
 export type TypeNotification =
   | 'incident_proche'
@@ -22,9 +23,12 @@ export interface NotificationData {
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly firebase: FirebaseService,
+    private readonly gateway: NotificationsGateway,
   ) {}
 
   async enregistrerTokenFCM(uid: string, token: string): Promise<void> {
@@ -97,7 +101,7 @@ export class NotificationsService {
       }
     }
 
-    return {
+    const notificationResult: NotificationData = {
       id: notification.id,
       id_utilisateur: notification.utilisateurId,
       type: notification.type as TypeNotification,
@@ -107,6 +111,19 @@ export class NotificationsService {
       lu: notification.lu,
       dateCreation: notification.dateCreation.toISOString(),
     };
+
+    // Émettre via WebSocket en temps réel
+    try {
+      this.gateway.sendToUser(
+        input.id_utilisateur,
+        'notification:new',
+        notificationResult,
+      );
+    } catch (wsError) {
+      this.logger.warn(`WebSocket emit failed: ${wsError}`);
+    }
+
+    return notificationResult;
   }
 
   async notifierUtilisateursProches(
@@ -180,5 +197,27 @@ export class NotificationsService {
       where: { id: notificationId },
       data: { lu: true },
     });
+  }
+
+  // -------------------------------------------------------------------------
+  // Notifications broadcast WebSocket
+  // -------------------------------------------------------------------------
+
+  /** Notifier tous les admins via WebSocket (ex: nouvel incident signalé) */
+  notifyAdmins(event: string, data: any) {
+    try {
+      this.gateway.sendToAdmins(event, data);
+    } catch (e) {
+      this.logger.warn(`WebSocket admin broadcast failed: ${e}`);
+    }
+  }
+
+  /** Broadcast à tous les utilisateurs connectés (ex: nouvelle récompense) */
+  notifyAll(event: string, data: any) {
+    try {
+      this.gateway.broadcastToAll(event, data);
+    } catch (e) {
+      this.logger.warn(`WebSocket global broadcast failed: ${e}`);
+    }
   }
 }

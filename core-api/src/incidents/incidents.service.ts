@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GeocodingService } from '../geocoding/geocoding.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 export type IncidentType =
   | 'inondation'
@@ -62,6 +63,7 @@ export class IncidentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly geocodingService: GeocodingService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -110,7 +112,7 @@ export class IncidentsService {
       },
     });
 
-    return {
+    const incidentResult: Incident = {
       id: incident.id,
       type:
         incident.type === 'INONDATION'
@@ -131,6 +133,21 @@ export class IncidentsService {
       dateExpiration: incident.dateExpiration?.toISOString() || '',
       imageUrl: incident.imageUrl || undefined,
     };
+
+    // Notifier les admins via WebSocket qu'un nouvel incident a été signalé
+    this.notificationsService.notifyAdmins('incident:created', incidentResult);
+
+    // Notifier les utilisateurs proches (dans un rayon de 5km)
+    this.notificationsService
+      .notifierUtilisateursProches(data.latitude, data.longitude, 5000, {
+        type: 'incident_proche',
+        titre: `Incident signalé : ${data.type}`,
+        corps: data.description || 'Un nouvel incident a été signalé près de vous.',
+        data: { incidentId: incident.id, type: data.type },
+      })
+      .catch((e) => console.error('Erreur notification proches:', e));
+
+    return incidentResult;
   }
 
   // -------------------------------------------------------------------------

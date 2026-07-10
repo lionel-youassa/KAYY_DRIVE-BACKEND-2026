@@ -1,7 +1,23 @@
+jest.mock('firebase-admin/app', () => ({
+  initializeApp: jest.fn(),
+  getApps: jest.fn(() => []),
+  cert: jest.fn(),
+}));
+jest.mock('firebase-admin/auth', () => ({
+  getAuth: jest.fn(),
+}));
+jest.mock('firebase-admin/messaging', () => ({
+  getMessaging: jest.fn(),
+}));
+jest.mock('firebase-admin/firestore', () => ({
+  getFirestore: jest.fn(),
+}));
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { IncidentsService } from './incidents.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { GeocodingService } from '../geocoding/geocoding.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('IncidentsService', () => {
@@ -22,6 +38,11 @@ describe('IncidentsService', () => {
     reverse: jest.fn(),
   };
 
+  const mockNotificationsService = {
+    notifyAdmins: jest.fn(),
+    notifierUtilisateursProches: jest.fn().mockResolvedValue(1),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -33,6 +54,10 @@ describe('IncidentsService', () => {
         {
           provide: GeocodingService,
           useValue: mockGeocodingService,
+        },
+        {
+          provide: NotificationsService,
+          useValue: mockNotificationsService,
         },
       ],
     }).compile();

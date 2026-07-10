@@ -65,6 +65,7 @@ export async function createTestIncident(overrides: Partial<any> = {}) {
       type: overrides.type || 'INONDATION',
       description: overrides.description || 'Test incident',
       idRapporteur: typeof user === 'string' ? user : user.id,
+      id_utilisateur_createur: typeof user === 'string' ? user : user.id,
       latitude: overrides.latitude || 3.8488,
       longitude: overrides.longitude || 11.5021,
       statut: overrides.statut || 'non_confirme',
