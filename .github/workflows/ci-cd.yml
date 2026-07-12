@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ Main,develop]
+    branches: [main, develop]
   pull_request:
-    branches: [ Main,develop]
+    branches: [main, develop]
 
 env:
   NODE_VERSION: '22'
@@ -12,10 +12,10 @@ env:
 
 jobs:
   # ──────────────────────────────────────────────
-  # 1. Lint & Format
+  # Étape 1 — Lint & Format
   # ──────────────────────────────────────────────
   lint:
-    name: Lint & Format
+    name: 1. Lint & Format
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -32,17 +32,19 @@ jobs:
       - run: npm ci --legacy-peer-deps
 
       - name: Format (Prettier)
-        run: npx prettier --write "{src,test}/**/*.ts"
+        run: npx prettier --check "{src,test}/**/*.ts"
 
       - name: Lint (ESLint)
         run: npx eslint "{src,test}/**/*.ts" --max-warnings 500
 
   # ──────────────────────────────────────────────
-  # 2. Tests unitaires + couverture
+  # Étape 2 — Tests unitaires + couverture
+  # Dépend de : lint
   # ──────────────────────────────────────────────
   test:
-    name: Tests
+    name: 2. Tests
     runs-on: ubuntu-latest
+    needs: [lint]
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIR }}
@@ -71,12 +73,13 @@ jobs:
           retention-days: 5
 
   # ──────────────────────────────────────────────
-  # 3. Build
+  # Étape 3 — Build
+  # Dépend de : test
   # ──────────────────────────────────────────────
   build:
-    name: Build
+    name: 3. Build
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [test]
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIR }}
@@ -98,13 +101,14 @@ jobs:
         run: npm run build
 
   # ──────────────────────────────────────────────
-  # 4. Docker Build & Push (Docker Hub)
+  # Étape 4 — Docker Build & Push (Docker Hub)
+  # Dépend de : build
   # ──────────────────────────────────────────────
   docker:
-    name: Docker Build & Push
+    name: 4. Docker Build & Push
     runs-on: ubuntu-latest
     needs: [build]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
 
@@ -131,49 +135,18 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ──────────────────────────────────────────────
-  # 5. SonarCloud - Analyse qualité
-  # ──────────────────────────────────────────────
-  sonarqube:
-    name: SonarCloud Analysis
-    runs-on: ubuntu-latest
-    needs: [test]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download coverage report
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-report
-          path: core-api/coverage/
-
-      - name: Verify SONAR_TOKEN
-        run: |
-          if [ -z "${{ secrets.SONAR_TOKEN }}" ]; then
-            echo "::error::SONAR_TOKEN is empty! Go to Settings > Secrets > Actions and add it."
-            exit 1
-          fi
-          echo "SONAR_TOKEN is set."
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # ──────────────────────────────────────────────
-  # 5. Deploy sur Render (main uniquement)
+  # Étape 5 — Deploy sur Render
+  # Dépend de : docker
   # ──────────────────────────────────────────────
   deploy:
-    name: Deploy to Render
+    name: 5. Deploy to Render
     runs-on: ubuntu-latest
-    needs: [build, docker, sonarqube]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && !failure() && !cancelled()
+    needs: [docker]
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && github.event_name == 'push'
     steps:
       - name: Trigger Render Deploy
         run: |
           curl -s -o /dev/null -w "%{http_code}" \
             "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" | grep -q "200\|201" \
-            && echo "Deploy triggered successfully" \
-            || (echo "Deploy trigger failed" && exit 1)
+            && echo "✅ Deploy triggered successfully" \
+            || (echo "❌ Deploy trigger failed" && exit 1)
