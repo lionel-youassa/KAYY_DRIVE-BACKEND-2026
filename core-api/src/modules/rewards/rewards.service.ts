@@ -46,7 +46,7 @@ export class RewardsService {
             this.notificationsService
               .envoyerNotification({
                 id_utilisateur: u.id,
-                type: 'systeme',
+                type: 'recompense',
                 titre: 'Nouvelle récompense publiée ! 🎁',
                 corps: `Profitez de la récompense : "${reward.titre}".`,
                 data: { rewardId: reward.id.toString() },

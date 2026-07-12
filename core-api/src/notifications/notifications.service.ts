@@ -7,6 +7,7 @@ export type TypeNotification =
   | 'incident_confirme'
   | 'raccourci_valide'
   | 'embouteillage_predit'
+  | 'recompense'
   | 'systeme';
 
 export interface NotificationData {
