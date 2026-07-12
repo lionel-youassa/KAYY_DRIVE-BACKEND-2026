@@ -370,7 +370,7 @@ export class DashboardService {
       },
     });
 
-    const activeFcmTokens = await this.prisma.tokenFCM.count();
+    const activeFcmTokens = 0;
 
     return {
       averageRouteResponseTime: 0, // À implémenter avec un système de logs

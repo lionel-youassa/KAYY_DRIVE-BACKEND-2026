@@ -134,8 +134,8 @@ export class IncidentsService {
       imageUrl: incident.imageUrl || undefined,
     };
 
-    // Notifier les admins via WebSocket qu'un nouvel incident a été signalé
-    this.notificationsService.notifyAdmins('incident:created', incidentResult);
+    // Notifier tous les utilisateurs via WebSocket qu'un nouvel incident a été signalé
+    this.notificationsService.notifyAll('incident:created', incidentResult);
 
     // Notifier les utilisateurs proches (dans un rayon de 5km)
     this.notificationsService

@@ -25,6 +25,7 @@ describe('IncidentsService', () => {
 
   const mockNotificationsService = {
     notifyAdmins: jest.fn(),
+    notifyAll: jest.fn(),
     notifierUtilisateursProches: jest.fn().mockResolvedValue(1),
   };
 
