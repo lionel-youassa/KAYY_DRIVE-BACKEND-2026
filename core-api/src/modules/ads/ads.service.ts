@@ -75,7 +75,10 @@ export class AdsService {
       });
       return ads || [];
     } catch (error) {
-      console.error('Erreur lors de la récupération des pubs actives Prisma :', error);
+      console.error(
+        'Erreur lors de la récupération des pubs actives Prisma :',
+        error,
+      );
       return [];
     }
   }

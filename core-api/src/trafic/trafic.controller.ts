@@ -42,10 +42,7 @@ export class TraficController {
 
   // POST /trafic
   @Post()
-  async create(
-    @Body() dto: CreateTraficDto,
-    @CurrentUser() user: UserProfile,
-  ) {
+  async create(@Body() dto: CreateTraficDto, @CurrentUser() user: UserProfile) {
     const relevé = await this.traficService.enregistrerRelevé({
       ...dto,
       id_utilisateur: user.uid,

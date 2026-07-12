@@ -16,14 +16,22 @@ export class RewardsService {
       const now = new Date();
       const defaultEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // +30 jours
 
-      const parsedDateDebut = data.dateDebut && data.dateDebut !== '' ? new Date(data.dateDebut) : now;
-      const parsedDateFin = data.dateFin && data.dateFin !== '' ? new Date(data.dateFin) : defaultEnd;
+      const parsedDateDebut =
+        data.dateDebut && data.dateDebut !== ''
+          ? new Date(data.dateDebut)
+          : now;
+      const parsedDateFin =
+        data.dateFin && data.dateFin !== ''
+          ? new Date(data.dateFin)
+          : defaultEnd;
 
       const formattedData = {
         titre: data.titre || 'Sans titre',
         description: data.description || null,
         points: data.points ? parseInt(data.points, 10) : 0,
-        participationMin: data.participationMin ? parseInt(data.participationMin, 10) : 0,
+        participationMin: data.participationMin
+          ? parseInt(data.participationMin, 10)
+          : 0,
         type: data.type || 'discount',
         dateDebut: isNaN(parsedDateDebut.getTime()) ? now : parsedDateDebut,
         dateFin: isNaN(parsedDateFin.getTime()) ? defaultEnd : parsedDateFin,
@@ -54,7 +62,9 @@ export class RewardsService {
               .catch(() => {});
           }
         })
-        .catch((err) => console.error('Erreur fetch users for reward notification:', err));
+        .catch((err) =>
+          console.error('Erreur fetch users for reward notification:', err),
+        );
 
       return reward;
     } catch (error) {

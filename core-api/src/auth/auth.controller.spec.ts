@@ -31,7 +31,9 @@ describe('AuthController', () => {
   };
 
   const mockStorageService = {
-    uploadFile: jest.fn().mockResolvedValue('http://localhost:9000/kayydrive/photo.jpg'),
+    uploadFile: jest
+      .fn()
+      .mockResolvedValue('http://localhost:9000/kayydrive/photo.jpg'),
     deleteFile: jest.fn(),
   };
 
@@ -69,7 +71,11 @@ describe('AuthController', () => {
 
   describe('register', () => {
     it('should create and return user profile', async () => {
-      const dto = { email: 'test@example.com', password: 'password123', nom: 'Test' };
+      const dto = {
+        email: 'test@example.com',
+        password: 'password123',
+        nom: 'Test',
+      };
       mockAuthService.createUser.mockResolvedValue(mockUserProfile);
 
       const result = await controller.register(dto);
@@ -81,12 +87,16 @@ describe('AuthController', () => {
 
   describe('forgotPassword', () => {
     it('should throw BadRequestException if email not provided', async () => {
-      await expect(controller.forgotPassword('')).rejects.toThrow(BadRequestException);
+      await expect(controller.forgotPassword('')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw NotFoundException if user does not exist', async () => {
       mockAuthService.checkUserExists.mockResolvedValue(false);
-      await expect(controller.forgotPassword('nonexistent@example.com')).rejects.toThrow(NotFoundException);
+      await expect(
+        controller.forgotPassword('nonexistent@example.com'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should return success message if user exists', async () => {
@@ -107,7 +117,10 @@ describe('AuthController', () => {
 
       const result = await controller.login(loginBody);
 
-      expect(service.login).toHaveBeenCalledWith(loginBody.email, loginBody.password);
+      expect(service.login).toHaveBeenCalledWith(
+        loginBody.email,
+        loginBody.password,
+      );
       expect(result).toEqual({ success: true, ...loginResponse });
     });
   });
@@ -127,7 +140,10 @@ describe('AuthController', () => {
 
       const result = await controller.updateProfile(mockUserProfile, updateDto);
 
-      expect(service.updateProfile).toHaveBeenCalledWith(mockUserProfile.uid, updateDto);
+      expect(service.updateProfile).toHaveBeenCalledWith(
+        mockUserProfile.uid,
+        updateDto,
+      );
       expect(result).toEqual({ success: true, user: updatedProfile });
     });
   });
@@ -139,8 +155,14 @@ describe('AuthController', () => {
 
       const result = await controller.promote(promoteDto);
 
-      expect(service.setUserRole).toHaveBeenCalledWith(promoteDto.uid, promoteDto.role);
-      expect(result).toEqual({ success: true, message: 'Rôle mis à jour : admin' });
+      expect(service.setUserRole).toHaveBeenCalledWith(
+        promoteDto.uid,
+        promoteDto.role,
+      );
+      expect(result).toEqual({
+        success: true,
+        message: 'Rôle mis à jour : admin',
+      });
     });
   });
 });

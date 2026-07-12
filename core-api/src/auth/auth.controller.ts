@@ -41,7 +41,10 @@ export class AuthController {
       throw new BadRequestException('Aucun fichier fourni');
     }
     const photoUrl = await this.storageService.uploadFile(file, 'profiles');
-    const updatedProfile = await this.authService.updatePhoto(user.uid, photoUrl);
+    const updatedProfile = await this.authService.updatePhoto(
+      user.uid,
+      photoUrl,
+    );
     return { success: true, user: updatedProfile };
   }
 

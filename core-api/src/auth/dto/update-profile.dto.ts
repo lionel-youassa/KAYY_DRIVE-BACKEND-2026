@@ -16,5 +16,4 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   telephone?: string;
-
 }

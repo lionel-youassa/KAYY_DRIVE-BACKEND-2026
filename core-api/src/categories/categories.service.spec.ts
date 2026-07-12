@@ -59,7 +59,12 @@ describe('CategoriesService', () => {
 
   describe('createCategorie', () => {
     it('should create and return a category', async () => {
-      const categoryData = { nom: 'School', icone: 'school', couleur: '#789', ordre: 3 };
+      const categoryData = {
+        nom: 'School',
+        icone: 'school',
+        couleur: '#789',
+        ordre: 3,
+      };
       const dbCategory = { id: 'cat-3', ...categoryData };
       mockPrismaService.categorie.create.mockResolvedValue(dbCategory);
 
@@ -75,7 +80,7 @@ describe('CategoriesService', () => {
   describe('seedCategoriesParDefaut', () => {
     it('should do nothing and return 0 if categories exist', async () => {
       mockPrismaService.categorie.findMany.mockResolvedValue([
-        { id: 'cat-1', nom: 'Home', icone: 'home', couleur: '#123', ordre: 1 }
+        { id: 'cat-1', nom: 'Home', icone: 'home', couleur: '#123', ordre: 1 },
       ]);
 
       const result = await service.seedCategoriesParDefaut();
@@ -86,15 +91,19 @@ describe('CategoriesService', () => {
 
     it('should seed default categories if none exist', async () => {
       mockPrismaService.categorie.findMany.mockResolvedValue([]);
-      mockPrismaService.categorie.create.mockImplementation((args) => Promise.resolve({
-        id: `seeded-${args.data.nom}`,
-        ...args.data,
-      }));
+      mockPrismaService.categorie.create.mockImplementation((args) =>
+        Promise.resolve({
+          id: `seeded-${args.data.nom}`,
+          ...args.data,
+        }),
+      );
 
       const result = await service.seedCategoriesParDefaut();
 
       expect(result).toBe(CATEGORIES_PAR_DEFAUT.length);
-      expect(prismaService.categorie.create).toHaveBeenCalledTimes(CATEGORIES_PAR_DEFAUT.length);
+      expect(prismaService.categorie.create).toHaveBeenCalledTimes(
+        CATEGORIES_PAR_DEFAUT.length,
+      );
     });
   });
 });

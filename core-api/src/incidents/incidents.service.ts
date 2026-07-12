@@ -83,7 +83,10 @@ export class IncidentsService {
     );
 
     // Résolution géocodage inverse des coordonnées de l'incident
-    const zoneInfo = await this.geocodingService.reverse(data.latitude, data.longitude);
+    const zoneInfo = await this.geocodingService.reverse(
+      data.latitude,
+      data.longitude,
+    );
 
     const incident = await this.prisma.incident.create({
       data: {
@@ -142,7 +145,8 @@ export class IncidentsService {
       .notifierUtilisateursProches(data.latitude, data.longitude, 5000, {
         type: 'incident_proche',
         titre: `Incident signalé : ${data.type}`,
-        corps: data.description || 'Un nouvel incident a été signalé près de vous.',
+        corps:
+          data.description || 'Un nouvel incident a été signalé près de vous.',
         data: { incidentId: incident.id, type: data.type },
       })
       .catch((e) => console.error('Erreur notification proches:', e));
@@ -229,7 +233,11 @@ export class IncidentsService {
     let filterVille: string | undefined;
     let filterRegion: string | undefined;
 
-    if (filterType === 'quartier' || filterType === 'ville' || filterType === 'region') {
+    if (
+      filterType === 'quartier' ||
+      filterType === 'ville' ||
+      filterType === 'region'
+    ) {
       const userGeo = await this.geocodingService.reverse(latitude, longitude);
       filterQuartier = userGeo.quartier;
       filterVille = userGeo.ville;
@@ -250,7 +258,9 @@ export class IncidentsService {
 
         // Si filtrage spécifique
         if (filterType === 'quartier' && filterQuartier && incident.quartier) {
-          return incident.quartier.toLowerCase() === filterQuartier.toLowerCase();
+          return (
+            incident.quartier.toLowerCase() === filterQuartier.toLowerCase()
+          );
         }
         if (filterType === 'ville' && filterVille && incident.ville) {
           return incident.ville.toLowerCase() === filterVille.toLowerCase();
