@@ -35,7 +35,7 @@ jobs:
         run: npx prettier --check "{src,test}/**/*.ts"
 
       - name: Lint (ESLint)
-        run: npx eslint "{src,test}/**/*.ts" --max-warnings -1
+        run: npx eslint "{src,test}/**/*.ts"
 
   # ──────────────────────────────────────────────
   # Étape 2 — Tests unitaires + couverture
