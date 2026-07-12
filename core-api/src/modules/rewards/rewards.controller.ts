@@ -45,8 +45,9 @@ export class RewardsController {
   }
 
   @Get()
-  async getAllRewards() {
-    return await this.rewardsService.getAllRewards();
+  async getAllRewards(@CurrentUser() user: any) {
+    const userId: string = user?.uid;
+    return await this.rewardsService.getAllRewardsWithUserStatus(userId);
   }
 
   @Get('my-eligibility')

@@ -16,14 +16,22 @@ export class RewardsService {
       const now = new Date();
       const defaultEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // +30 jours
 
-      const parsedDateDebut = data.dateDebut && data.dateDebut !== '' ? new Date(data.dateDebut) : now;
-      const parsedDateFin = data.dateFin && data.dateFin !== '' ? new Date(data.dateFin) : defaultEnd;
+      const parsedDateDebut =
+        data.dateDebut && data.dateDebut !== ''
+          ? new Date(data.dateDebut)
+          : now;
+      const parsedDateFin =
+        data.dateFin && data.dateFin !== ''
+          ? new Date(data.dateFin)
+          : defaultEnd;
 
       const formattedData = {
         titre: data.titre || 'Sans titre',
         description: data.description || null,
         points: data.points ? parseInt(data.points, 10) : 0,
-        participationMin: data.participationMin ? parseInt(data.participationMin, 10) : 0,
+        participationMin: data.participationMin
+          ? parseInt(data.participationMin, 10)
+          : 0,
         type: data.type || 'discount',
         dateDebut: isNaN(parsedDateDebut.getTime()) ? now : parsedDateDebut,
         dateFin: isNaN(parsedDateFin.getTime()) ? defaultEnd : parsedDateFin,
@@ -54,7 +62,9 @@ export class RewardsService {
               .catch(() => {});
           }
         })
-        .catch((err) => console.error('Erreur fetch users for reward notification:', err));
+        .catch((err) =>
+          console.error('Erreur fetch users for reward notification:', err),
+        );
 
       return reward;
     } catch (error) {
@@ -69,17 +79,77 @@ export class RewardsService {
     }
   }
 
-  // 2. Récupérer toutes les récompenses (Garantit un tableau [] même si c'est vide)
-  async getAllRewards() {
+  // 2. Récupérer toutes les récompenses enrichies avec le statut de l'utilisateur
+  async getAllRewardsWithUserStatus(userId: string) {
     try {
       const rewards = await this.prisma.recompense.findMany();
-      return rewards || [];
+      if (!rewards || rewards.length === 0) return [];
+
+      const enrichedRewards = await Promise.all(
+        rewards.map(async (reward) => {
+          const score = await this.getParticipationScoreForPeriod(
+            userId,
+            reward.dateDebut,
+            reward.dateFin,
+          );
+          return {
+            ...reward,
+            userParticipationScore: score,
+            isEligible: score >= reward.participationMin,
+          };
+        }),
+      );
+
+      return enrichedRewards;
     } catch (error) {
       console.error(
         'Erreur lors de la récupération des récompenses Prisma :',
         error,
       );
-      return []; // Renvoie un tableau vide plutôt que de faire planter Flutter
+      return [];
+    }
+  }
+
+  // 2b. Calculer le score de participation d'un utilisateur pour une période donnée (dateDebut à dateFin)
+  async getParticipationScoreForPeriod(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
+    try {
+      // 1. Incidents signalés par l'utilisateur pendant la période de la récompense
+      const signalesCount = await this.prisma.incident.count({
+        where: {
+          idRapporteur: userId,
+          horodatage: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+      });
+
+      // 2. Incidents signalés par d'autres mais confirmés par l'utilisateur pendant la période
+      const confirmedIncidents = await this.prisma.incident.findMany({
+        where: {
+          idRapporteur: { not: userId },
+          horodatage: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        select: {
+          confirmePar: true,
+        },
+      });
+
+      const confirmationsCount = confirmedIncidents.filter((inc) =>
+        inc.confirmePar.includes(userId),
+      ).length;
+
+      return signalesCount + confirmationsCount;
+    } catch (error) {
+      console.error('Erreur calcul score participation pour période:', error);
+      return 0;
     }
   }
 
