@@ -65,7 +65,6 @@ KayyDrive est une application de navigation intelligente pour le Cameroun, compo
 - `@nestjs/bullmq` ^11.0.4
 - `@prisma/client` ^7.8.0
 - `@prisma/adapter-pg` ^7.8.0
-- `firebase-admin` ^14.1.0
 - `axios` ^1.6.0
 - `bullmq` ^5.79.2
 - `pg` ^8.22.0
