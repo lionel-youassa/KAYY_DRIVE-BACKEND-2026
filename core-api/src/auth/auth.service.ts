@@ -278,7 +278,7 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('L\'ancien mot de passe est incorrect');
+      throw new UnauthorizedException("L'ancien mot de passe est incorrect");
     }
 
     // Hasher et mettre à jour le nouveau mot de passe

@@ -12,10 +12,7 @@ export class SafeDriveController {
 
   // POST /safe-drive/secousse
   @Post('secousse')
-  async secousse(
-    @Body() dto: SecousseDto,
-    @CurrentUser() user: UserProfile,
-  ) {
+  async secousse(@Body() dto: SecousseDto, @CurrentUser() user: UserProfile) {
     await this.safeDriveService.ajouterSecousse({
       id_utilisateur: user.uid,
       latitude: dto.latitude,

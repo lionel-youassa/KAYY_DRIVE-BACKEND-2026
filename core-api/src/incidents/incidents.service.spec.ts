@@ -100,7 +100,10 @@ describe('IncidentsService', () => {
 
       const result = await service.createIncident(createData);
 
-      expect(geocodingService.reverse).toHaveBeenCalledWith(createData.latitude, createData.longitude);
+      expect(geocodingService.reverse).toHaveBeenCalledWith(
+        createData.latitude,
+        createData.longitude,
+      );
       expect(prismaService.incident.create).toHaveBeenCalled();
       expect(result).toEqual({
         id: 'inc-uuid',
@@ -144,9 +147,16 @@ describe('IncidentsService', () => {
         nombreConfirmations: 2,
       });
 
-      const result = await service.confirmerIncident(incidentId, userId, 4.0511, 9.7679);
+      const result = await service.confirmerIncident(
+        incidentId,
+        userId,
+        4.0511,
+        9.7679,
+      );
 
-      expect(prismaService.incident.findUnique).toHaveBeenCalledWith({ where: { id: incidentId } });
+      expect(prismaService.incident.findUnique).toHaveBeenCalledWith({
+        where: { id: incidentId },
+      });
       expect(prismaService.incident.update).toHaveBeenCalledWith({
         where: { id: incidentId },
         data: {
@@ -165,7 +175,9 @@ describe('IncidentsService', () => {
         confirmePar: ['c1', 'c2'],
         nombreConfirmations: 2,
       };
-      mockPrismaService.incident.findUnique.mockResolvedValue(dbIncidentNearLimit);
+      mockPrismaService.incident.findUnique.mockResolvedValue(
+        dbIncidentNearLimit,
+      );
       mockPrismaService.incident.update.mockResolvedValue({
         ...dbIncidentNearLimit,
         confirmePar: ['c1', 'c2', userId],
@@ -173,7 +185,12 @@ describe('IncidentsService', () => {
         statut: 'confirme',
       });
 
-      const result = await service.confirmerIncident(incidentId, userId, 4.0511, 9.7679);
+      const result = await service.confirmerIncident(
+        incidentId,
+        userId,
+        4.0511,
+        9.7679,
+      );
 
       expect(prismaService.incident.update).toHaveBeenCalledWith({
         where: { id: incidentId },
@@ -189,7 +206,9 @@ describe('IncidentsService', () => {
 
     it('should throw NotFoundException if incident does not exist', async () => {
       mockPrismaService.incident.findUnique.mockResolvedValue(null);
-      await expect(service.confirmerIncident(incidentId, userId, 4.0, 9.0)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.confirmerIncident(incidentId, userId, 4.0, 9.0),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException if incident has expired', async () => {
@@ -198,7 +217,9 @@ describe('IncidentsService', () => {
         dateExpiration: new Date('2026-07-08T10:00:00Z'), // past
       };
       mockPrismaService.incident.findUnique.mockResolvedValue(expiredIncident);
-      await expect(service.confirmerIncident(incidentId, userId, 4.0, 9.0)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.confirmerIncident(incidentId, userId, 4.0, 9.0),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException if user already confirmed', async () => {
@@ -207,7 +228,9 @@ describe('IncidentsService', () => {
         confirmePar: ['creator-uuid', userId],
       };
       mockPrismaService.incident.findUnique.mockResolvedValue(alreadyConfirmed);
-      await expect(service.confirmerIncident(incidentId, userId, 4.0, 9.0)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.confirmerIncident(incidentId, userId, 4.0, 9.0),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -230,7 +253,7 @@ describe('IncidentsService', () => {
       {
         id: 'inc-2',
         type: 'QUALITE_ROUTE',
-        latitude: 4.1500, // further away (~11 km)
+        latitude: 4.15, // further away (~11 km)
         longitude: 9.7679,
         horodatage: new Date(),
         dateExpiration: new Date(Date.now() + 100000),
@@ -261,7 +284,12 @@ describe('IncidentsService', () => {
         region: 'Littoral',
       });
 
-      const result = await service.getIncidentsProches(4.0511, 9.7679, 5000, 'ville');
+      const result = await service.getIncidentsProches(
+        4.0511,
+        9.7679,
+        5000,
+        'ville',
+      );
 
       // Both are in 'Douala'
       expect(result.length).toBe(2);

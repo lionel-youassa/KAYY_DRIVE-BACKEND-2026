@@ -103,8 +103,24 @@ describe('DashboardService', () => {
     it('should return shortcuts stats', async () => {
       mockPrismaService.raccourciCommunautaire.count.mockResolvedValue(2);
       mockPrismaService.raccourciCommunautaire.findMany.mockResolvedValue([
-        { id: '1', nom: 'S1', description: 'D1', scoreFiabilite: 0.8, votesPositifs: 5, votesNegatifs: 1, createur: { pseudo: 'P1' } },
-        { id: '2', nom: 'S2', description: 'D2', scoreFiabilite: 0.9, votesPositifs: 10, votesNegatifs: 0, createur: { pseudo: 'P2' } },
+        {
+          id: '1',
+          nom: 'S1',
+          description: 'D1',
+          scoreFiabilite: 0.8,
+          votesPositifs: 5,
+          votesNegatifs: 1,
+          createur: { pseudo: 'P1' },
+        },
+        {
+          id: '2',
+          nom: 'S2',
+          description: 'D2',
+          scoreFiabilite: 0.9,
+          votesPositifs: 10,
+          votesNegatifs: 0,
+          createur: { pseudo: 'P2' },
+        },
       ]);
       mockPrismaService.voteRaccourci.count.mockResolvedValue(15);
 
@@ -139,8 +155,18 @@ describe('DashboardService', () => {
   describe('getSafeDriveStats', () => {
     it('should return safedrive stats', async () => {
       mockPrismaService.segmentRoute.findMany.mockResolvedValue([
-        { scoreQualite: 0.8, estOfficiel: true, vitesseMoyenne: 50, estInonde: false },
-        { scoreQualite: 0.2, estOfficiel: false, vitesseMoyenne: 20, estInonde: true },
+        {
+          scoreQualite: 0.8,
+          estOfficiel: true,
+          vitesseMoyenne: 50,
+          estInonde: false,
+        },
+        {
+          scoreQualite: 0.2,
+          estOfficiel: false,
+          vitesseMoyenne: 20,
+          estInonde: true,
+        },
       ]);
       mockPrismaService.itineraire.groupBy.mockResolvedValue([
         { niveauRisque: 'SUR', _count: { niveauRisque: 8 } },
@@ -161,13 +187,25 @@ describe('DashboardService', () => {
   describe('getUserEngagement', () => {
     it('should return user engagement stats', async () => {
       mockPrismaService.utilisateur.findMany.mockResolvedValue([
-        { id: 'u1', pseudo: 'User1', email: 'u1@ex.com', scoreReputation: 100, _count: { incidentsSignales: 5, raccourcisCrees: 2, votesRaccourcis: 10 } }
+        {
+          id: 'u1',
+          pseudo: 'User1',
+          email: 'u1@ex.com',
+          scoreReputation: 100,
+          _count: {
+            incidentsSignales: 5,
+            raccourcisCrees: 2,
+            votesRaccourcis: 10,
+          },
+        },
       ]);
       mockPrismaService.utilisateur.count.mockResolvedValue(1);
       mockPrismaService.incident.count.mockResolvedValue(5);
       mockPrismaService.voteRaccourci.count.mockResolvedValue(10);
       mockPrismaService.adresseFavorite.count.mockResolvedValue(2);
-      mockPrismaService.adresseFavorite.groupBy.mockResolvedValue([{ utilisateurId: 'u1' }]);
+      mockPrismaService.adresseFavorite.groupBy.mockResolvedValue([
+        { utilisateurId: 'u1' },
+      ]);
 
       const result = await service.getUserEngagement();
 

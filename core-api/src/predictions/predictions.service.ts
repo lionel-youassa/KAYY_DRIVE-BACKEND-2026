@@ -54,9 +54,7 @@ export class PredictionsService {
     const jourSemaine = dateCible.getDay();
     const heure = dateCible.getHours();
 
-    const ilYa60Jours = new Date(
-      Date.now() - 60 * 24 * 60 * 60 * 1000,
-    );
+    const ilYa60Jours = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
 
     const relevés = await this.prisma.releveTrafic.findMany({
       where: {
@@ -76,8 +74,7 @@ export class PredictionsService {
       }
       const date = r.timestamp;
       return (
-        date.getDay() === jourSemaine &&
-        Math.abs(date.getHours() - heure) <= 1
+        date.getDay() === jourSemaine && Math.abs(date.getHours() - heure) <= 1
       );
     });
 
@@ -158,14 +155,22 @@ export class PredictionsService {
         }
       } catch (e) {
         // Waze indisponible — on garde les prédictions historiques
-        console.warn('[PredictionsService] Waze overlay échoué:', (e as any)?.message);
+        console.warn('[PredictionsService] Waze overlay échoué:', e?.message);
       }
     }
 
     return predictions;
   }
 
-  async calculerComfortItineraire(points: { latitude: number; longitude: number }[]): Promise<{ comfortScore: number; comfortLevel: string; recommendation: string; hasFlood: boolean; hasDegraded: boolean }> {
+  async calculerComfortItineraire(
+    points: { latitude: number; longitude: number }[],
+  ): Promise<{
+    comfortScore: number;
+    comfortLevel: string;
+    recommendation: string;
+    hasFlood: boolean;
+    hasDegraded: boolean;
+  }> {
     const activeIncidents = await this.prisma.incident.findMany({
       where: {
         dateExpiration: { gt: new Date() },
@@ -181,7 +186,9 @@ export class PredictionsService {
     });
 
     // Filtrer les incidents avec coordonnées valides
-    const geoIncidents = activeIncidents.filter(inc => inc.latitude != null && inc.longitude != null);
+    const geoIncidents = activeIncidents.filter(
+      (inc) => inc.latitude != null && inc.longitude != null,
+    );
 
     let floodCount = 0;
     let degradedCount = 0;
@@ -190,24 +197,27 @@ export class PredictionsService {
       const lat = point.latitude;
       const lng = point.longitude;
 
-      const hasFlood = geoIncidents.some(inc => 
-        inc.type === 'INONDATION' && 
-        distanceEnMetres(lat, lng, inc.latitude!, inc.longitude!) <= 150
+      const hasFlood = geoIncidents.some(
+        (inc) =>
+          inc.type === 'INONDATION' &&
+          distanceEnMetres(lat, lng, inc.latitude!, inc.longitude!) <= 150,
       );
       if (hasFlood) floodCount++;
 
-      const hasDegradedIncident = geoIncidents.some(inc => 
-        inc.type === 'QUALITE_ROUTE' && 
-        distanceEnMetres(lat, lng, inc.latitude!, inc.longitude!) <= 150
+      const hasDegradedIncident = geoIncidents.some(
+        (inc) =>
+          inc.type === 'QUALITE_ROUTE' &&
+          distanceEnMetres(lat, lng, inc.latitude!, inc.longitude!) <= 150,
       );
-      const hasDegradedShock = recentShocks.some(shock => 
-        distanceEnMetres(lat, lng, shock.latitude, shock.longitude) <= 150
+      const hasDegradedShock = recentShocks.some(
+        (shock) =>
+          distanceEnMetres(lat, lng, shock.latitude, shock.longitude) <= 150,
       );
 
       if (hasDegradedIncident || hasDegradedShock) degradedCount++;
     }
 
-    let comfortScore = 100 - (floodCount * 40) - (degradedCount * 20);
+    let comfortScore = 100 - floodCount * 40 - degradedCount * 20;
     comfortScore = Math.max(0, Math.min(100, comfortScore));
 
     let comfortLevel = 'excellent';
@@ -217,13 +227,15 @@ export class PredictionsService {
       recommendation = 'Itinéraire sûr, chaussée en bon état.';
     } else if (comfortScore >= 60) {
       comfortLevel = 'bon';
-      recommendation = 'Itinéraire globalement bon, légers ralentissements ou dégradations.';
+      recommendation =
+        'Itinéraire globalement bon, légers ralentissements ou dégradations.';
     } else if (comfortScore >= 40) {
       comfortLevel = 'moyen';
       recommendation = 'Itinéraire moyennement dégradé, soyez vigilant.';
     } else {
       comfortLevel = 'mauvais';
-      recommendation = 'Itinéraire très dégradé ou inondation détectée, évitez ce trajet si possible !';
+      recommendation =
+        'Itinéraire très dégradé ou inondation détectée, évitez ce trajet si possible !';
     }
 
     return {

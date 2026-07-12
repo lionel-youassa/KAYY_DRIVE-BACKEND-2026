@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
 jest.mock('bcrypt');
@@ -64,7 +68,7 @@ describe('AuthService', () => {
     it('should create a new user successfully', async () => {
       mockPrismaService.utilisateur.findUnique.mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
-      
+
       const createdDbUser = {
         id: 'user-uuid',
         pseudo: createInput.nom,
@@ -97,16 +101,22 @@ describe('AuthService', () => {
     });
 
     it('should throw ConflictException if email is already taken', async () => {
-      mockPrismaService.utilisateur.findUnique.mockResolvedValue({ id: 'existing' });
+      mockPrismaService.utilisateur.findUnique.mockResolvedValue({
+        id: 'existing',
+      });
 
-      await expect(service.createUser(createInput)).rejects.toThrow(ConflictException);
+      await expect(service.createUser(createInput)).rejects.toThrow(
+        ConflictException,
+      );
       expect(prismaService.utilisateur.create).not.toHaveBeenCalled();
     });
   });
 
   describe('checkUserExists', () => {
     it('should return true if user exists', async () => {
-      mockPrismaService.utilisateur.findUnique.mockResolvedValue({ id: 'exists' });
+      mockPrismaService.utilisateur.findUnique.mockResolvedValue({
+        id: 'exists',
+      });
       const result = await service.checkUserExists('test@example.com');
       expect(result).toBe(true);
     });
@@ -166,13 +176,17 @@ describe('AuthService', () => {
       mockPrismaService.utilisateur.findUnique.mockResolvedValue(dbUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(service.login(loginEmail, loginPass)).rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginEmail, loginPass)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException if user not found', async () => {
       mockPrismaService.utilisateur.findUnique.mockResolvedValue(null);
 
-      await expect(service.login(loginEmail, loginPass)).rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginEmail, loginPass)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -254,7 +268,9 @@ describe('AuthService', () => {
 
     it('should throw NotFoundException if user not found', async () => {
       mockPrismaService.utilisateur.findUnique.mockResolvedValue(null);
-      await expect(service.getUserProfile('user-uuid')).rejects.toThrow(NotFoundException);
+      await expect(service.getUserProfile('user-uuid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -290,10 +306,13 @@ describe('AuthService', () => {
 
     it('should throw ConflictException if new email is already taken by someone else', async () => {
       mockPrismaService.utilisateur.findUnique.mockResolvedValueOnce(dbUser);
-      mockPrismaService.utilisateur.findUnique.mockResolvedValueOnce({ id: 'other-user-uuid' });
+      mockPrismaService.utilisateur.findUnique.mockResolvedValueOnce({
+        id: 'other-user-uuid',
+      });
 
-      await expect(service.updateProfile('user-uuid', { email: 'taken@example.com' }))
-        .rejects.toThrow(ConflictException);
+      await expect(
+        service.updateProfile('user-uuid', { email: 'taken@example.com' }),
+      ).rejects.toThrow(ConflictException);
     });
   });
 });

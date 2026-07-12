@@ -21,10 +21,7 @@ export class RoutesController {
 
   // POST /routes
   @Post()
-  async create(
-    @Body() dto: CreateRouteDto,
-    @CurrentUser() user: UserProfile,
-  ) {
+  async create(@Body() dto: CreateRouteDto, @CurrentUser() user: UserProfile) {
     const raccourci = await this.routesService.createRaccourci({
       nom: dto.nom,
       description: dto.description || '',

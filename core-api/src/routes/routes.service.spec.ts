@@ -49,7 +49,7 @@ describe('RoutesService', () => {
         nom: 'Raccourci Test',
         description: 'Test description',
         pointDepart: { latitude: 4.0511, longitude: 9.7679 },
-        pointArrivee: { latitude: 4.0530, longitude: 9.7690 },
+        pointArrivee: { latitude: 4.053, longitude: 9.769 },
         trace: [{ latitude: 4.0511, longitude: 9.7679 }],
         id_utilisateur_createur: 'user-uuid',
       };
@@ -71,7 +71,9 @@ describe('RoutesService', () => {
         dateCreation: new Date('2026-07-09T10:00:00Z'),
       };
 
-      mockPrismaService.raccourciCommunautaire.create.mockResolvedValue(dbOutput);
+      mockPrismaService.raccourciCommunautaire.create.mockResolvedValue(
+        dbOutput,
+      );
 
       const result = await service.createRaccourci(input);
 
@@ -116,12 +118,18 @@ describe('RoutesService', () => {
     };
 
     it('should throw NotFoundException if shortcut is not found', async () => {
-      mockPrismaService.raccourciCommunautaire.findUnique.mockResolvedValue(null);
-      await expect(service.voterRaccourci(shortcutId, userId, 'positif')).rejects.toThrow(NotFoundException);
+      mockPrismaService.raccourciCommunautaire.findUnique.mockResolvedValue(
+        null,
+      );
+      await expect(
+        service.voterRaccourci(shortcutId, userId, 'positif'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should record a positive vote and update reliability score', async () => {
-      mockPrismaService.raccourciCommunautaire.findUnique.mockResolvedValue(dbShortcut);
+      mockPrismaService.raccourciCommunautaire.findUnique.mockResolvedValue(
+        dbShortcut,
+      );
       mockPrismaService.voteRaccourci.upsert.mockResolvedValue({});
       mockPrismaService.raccourciCommunautaire.update.mockResolvedValue({
         ...dbShortcut,
@@ -129,7 +137,11 @@ describe('RoutesService', () => {
         scoreFiabilite: 0.75,
       });
 
-      const result = await service.voterRaccourci(shortcutId, userId, 'positif');
+      const result = await service.voterRaccourci(
+        shortcutId,
+        userId,
+        'positif',
+      );
 
       expect(prismaService.voteRaccourci.upsert).toHaveBeenCalled();
       expect(prismaService.raccourciCommunautaire.update).toHaveBeenCalledWith({
@@ -151,7 +163,9 @@ describe('RoutesService', () => {
         votesPositifs: 4,
         votesNegatifs: 0,
       };
-      mockPrismaService.raccourciCommunautaire.findUnique.mockResolvedValue(shortcutNearThreshold);
+      mockPrismaService.raccourciCommunautaire.findUnique.mockResolvedValue(
+        shortcutNearThreshold,
+      );
       mockPrismaService.raccourciCommunautaire.update.mockResolvedValue({
         ...shortcutNearThreshold,
         votesPositifs: 5,
@@ -159,7 +173,11 @@ describe('RoutesService', () => {
         statut: 'valide',
       });
 
-      const result = await service.voterRaccourci(shortcutId, userId, 'positif');
+      const result = await service.voterRaccourci(
+        shortcutId,
+        userId,
+        'positif',
+      );
 
       expect(prismaService.raccourciCommunautaire.update).toHaveBeenCalledWith({
         where: { id: shortcutId },
@@ -182,7 +200,7 @@ describe('RoutesService', () => {
         description: 'D1',
         pointDepartLat: 4.0511,
         pointDepartLng: 9.7679,
-        pointArriveeLat: 4.0520,
+        pointArriveeLat: 4.052,
         pointArriveeLng: 9.7689,
         trace: [],
         idUtilisateurCreateur: 'u1',
@@ -196,9 +214,9 @@ describe('RoutesService', () => {
         id: 's2',
         nom: 'Shortcut 2',
         description: 'D2',
-        pointDepartLat: 4.2500, // far away
+        pointDepartLat: 4.25, // far away
         pointDepartLng: 9.7679,
-        pointArriveeLat: 4.2520,
+        pointArriveeLat: 4.252,
         pointArriveeLng: 9.7689,
         trace: [],
         idUtilisateurCreateur: 'u2',
@@ -211,12 +229,14 @@ describe('RoutesService', () => {
     ];
 
     it('should filter suggestions within radius', async () => {
-      mockPrismaService.raccourciCommunautaire.findMany.mockResolvedValue(listShortcuts);
+      mockPrismaService.raccourciCommunautaire.findMany.mockResolvedValue(
+        listShortcuts,
+      );
 
       // Search with start=4.0511, 9.7679 and end=4.0520, 9.7689
       const result = await service.suggererRaccourcis(
         { latitude: 4.0511, longitude: 9.7679 },
-        { latitude: 4.0520, longitude: 9.7689 },
+        { latitude: 4.052, longitude: 9.7689 },
         1000,
       );
 

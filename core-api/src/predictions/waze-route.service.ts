@@ -56,7 +56,12 @@ export class WazeRouteService {
 
       const data = response.data;
       if (!data?.response?.results || data.response.results.length === 0) {
-        return { segments: [], totalTimeSeconds: 0, totalTimeFreeFlowSeconds: 0, success: false };
+        return {
+          segments: [],
+          totalTimeSeconds: 0,
+          totalTimeFreeFlowSeconds: 0,
+          success: false,
+        };
       }
 
       const results = data.response.results as any[];
@@ -70,12 +75,9 @@ export class WazeRouteService {
         const crossTimeFreeFlow = seg.crossTimeFreeFlow ?? crossTime;
 
         // Calculer la vitesse en km/h à partir de la longueur et du temps
-        const speedKmh =
-          crossTime > 0 ? (lengthMeters / crossTime) * 3.6 : 50;
+        const speedKmh = crossTime > 0 ? (lengthMeters / crossTime) * 3.6 : 50;
         const freeFlowSpeedKmh =
-          crossTimeFreeFlow > 0
-            ? (lengthMeters / crossTimeFreeFlow) * 3.6
-            : 50;
+          crossTimeFreeFlow > 0 ? (lengthMeters / crossTimeFreeFlow) * 3.6 : 50;
         const congestionRatio =
           crossTimeFreeFlow > 0 ? crossTime / crossTimeFreeFlow : 1;
 
@@ -113,8 +115,13 @@ export class WazeRouteService {
         success: true,
       };
     } catch (error) {
-      console.warn('[WazeRouteService] Erreur appel Waze:', (error as any)?.message);
-      return { segments: [], totalTimeSeconds: 0, totalTimeFreeFlowSeconds: 0, success: false };
+      console.warn('[WazeRouteService] Erreur appel Waze:', error?.message);
+      return {
+        segments: [],
+        totalTimeSeconds: 0,
+        totalTimeFreeFlowSeconds: 0,
+        success: false,
+      };
     }
   }
 
