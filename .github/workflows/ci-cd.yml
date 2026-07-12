@@ -101,13 +101,38 @@ jobs:
         run: npm run build
 
   # ──────────────────────────────────────────────
-  # Étape 4 — Docker Build & Push (Docker Hub)
+  # Étape 4 — SonarCloud (Analyse qualité)
   # Dépend de : build
   # ──────────────────────────────────────────────
-  docker:
-    name: 4. Docker Build & Push
+  sonarcloud:
+    name: 4. SonarCloud Analysis
     runs-on: ubuntu-latest
     needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: core-api/coverage/
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ──────────────────────────────────────────────
+  # Étape 5 — Docker Build & Push (Docker Hub)
+  # Dépend de : sonarcloud
+  # ──────────────────────────────────────────────
+  docker:
+    name: 5. Docker Build & Push
+    runs-on: ubuntu-latest
+    needs: [sonarcloud]
     if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
@@ -135,11 +160,11 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ──────────────────────────────────────────────
-  # Étape 5 — Deploy sur Render
+  # Étape 6 — Deploy sur Render
   # Dépend de : docker
   # ──────────────────────────────────────────────
   deploy:
-    name: 5. Deploy to Render
+    name: 6. Deploy to Render
     runs-on: ubuntu-latest
     needs: [docker]
     if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && github.event_name == 'push'
@@ -148,5 +173,5 @@ jobs:
         run: |
           curl -s -o /dev/null -w "%{http_code}" \
             "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" | grep -q "200\|201" \
-            && echo "✅ Deploy triggered successfully" \
-            || (echo "❌ Deploy trigger failed" && exit 1)
+            && echo "Deploy triggered successfully" \
+            || (echo "Deploy trigger failed" && exit 1)
