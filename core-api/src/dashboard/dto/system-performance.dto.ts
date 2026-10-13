@@ -2,29 +2,31 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class SystemPerformanceDto {
   @ApiProperty({ description: 'Temps de réponse moyen des itinéraires (ms)' })
-  averageRouteResponseTime: number;
+  averageRouteResponseTime!: number;
 
   @ApiProperty({ description: 'Taux de succès OSRM (%)' })
-  osrmSuccessRate: number;
+  osrmSuccessRate!: number;
 
   @ApiProperty({ description: 'Nombre total de requêtes de routage' })
-  totalRouteRequests: number;
+  totalRouteRequests!: number;
 
   @ApiProperty({ description: 'Utilisation des prédictions trafic (%)' })
-  trafficPredictionUsage: number;
+  trafficPredictionUsage!: number;
 
   @ApiProperty({ description: 'Notifications envoyées (24h)' })
-  notificationsSent24h: number;
+  notificationsSent24h!: number;
 
-  @ApiProperty({ description: 'Notifications FCM actives' })
-  activeFcmTokens: number;
+  @ApiProperty({
+    description: 'Utilisateurs actuellement connectés en WebSocket',
+  })
+  activeConnections!: number;
 
   @ApiProperty({ description: 'Temps de réponse moyen (ms)' })
-  averageResponseTime: number;
+  averageResponseTime!: number;
 
   @ApiProperty({ description: 'Disponibilité du système (%)' })
-  uptime: number;
+  uptime!: number;
 
   @ApiProperty({ description: "Taux d'erreur (%)" })
-  errorRate: number;
+  errorRate!: number;
 }

@@ -9,9 +9,15 @@ import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 
+// Origines autorisées : CORS_ORIGINS="https://app.kayy.com,https://admin.kayy.com"
+// Sans variable définie, on autorise tout (dev uniquement).
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
+  : '*';
+
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: allowedOrigins,
   },
   namespace: '/notifications',
 })
@@ -44,9 +50,10 @@ export class NotificationsGateway
       const userId = payload.sub;
       const role = payload.role;
 
-      // Stocker les infos utilisateur sur le socket
-      (client as any).userId = userId;
-      (client as any).userRole = role;
+      // Stocker les infos utilisateur dans client.data
+      // (visible aussi via fetchSockets())
+      client.data.userId = userId;
+      client.data.userRole = role;
 
       // Rejoindre la room personnelle
       client.join(`user:${userId}`);
@@ -69,6 +76,16 @@ export class NotificationsGateway
 
   handleDisconnect(client: Socket) {
     this.logger.log(`Client déconnecté : ${client.id}`);
+  }
+
+  // -------------------------------------------------------------------------
+  // Nombre d'utilisateurs uniques connectés (plusieurs onglets = 1 utilisateur)
+  // Note : ne voit que les sockets de l'instance courante. En multi-instances,
+  // il faudra l'adaptateur Redis (@socket.io/redis-adapter).
+  // -------------------------------------------------------------------------
+  async getConnectedUsersCount(): Promise<number> {
+    const sockets = await this.server.fetchSockets();
+    return new Set(sockets.map((s) => s.data.userId).filter(Boolean)).size;
   }
 
   // -------------------------------------------------------------------------

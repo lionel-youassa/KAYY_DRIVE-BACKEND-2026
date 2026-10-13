@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsGateway } from './notifications.gateway';
 
@@ -140,11 +140,28 @@ export class NotificationsService {
     }));
   }
 
-  async marquerCommeLue(notificationId: string): Promise<void> {
-    await this.prisma.notification.update({
-      where: { id: notificationId },
+  /**
+   * Marque une notification comme lue.
+   * Le filtre sur utilisateurId empêche de modifier la notification d'un autre.
+   */
+  async marquerCommeLue(notificationId: string, uid: string): Promise<void> {
+    const result = await this.prisma.notification.updateMany({
+      where: { id: notificationId, utilisateurId: uid },
       data: { lu: true },
     });
+
+    if (result.count === 0) {
+      throw new NotFoundException('Notification introuvable');
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Métriques
+  // -------------------------------------------------------------------------
+
+  /** Nombre d'utilisateurs uniques connectés en WebSocket (pour le dashboard) */
+  async getConnectedUsersCount(): Promise<number> {
+    return this.gateway.getConnectedUsersCount();
   }
 
   // -------------------------------------------------------------------------

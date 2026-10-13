@@ -19,15 +19,18 @@ export class NotificationsController {
 
   // PATCH /notifications/:id/lue
   @Patch(':id/lue')
-  async marquerLue(@Param('id') id: string) {
-    await this.notificationsService.marquerCommeLue(id);
+  async marquerLue(@Param('id') id: string, @CurrentUser() user: UserProfile) {
+    await this.notificationsService.marquerCommeLue(id, user.uid);
     return { success: true };
   }
 
   // POST /notifications/:id/lue (alias pour compatibilité frontend)
   @Post(':id/lue')
-  async marquerLuePost(@Param('id') id: string) {
-    await this.notificationsService.marquerCommeLue(id);
+  async marquerLuePost(
+    @Param('id') id: string,
+    @CurrentUser() user: UserProfile,
+  ) {
+    await this.notificationsService.marquerCommeLue(id, user.uid);
     return { success: true };
   }
 }

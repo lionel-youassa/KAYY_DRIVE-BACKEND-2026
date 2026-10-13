@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { OverviewStatsDto } from './dto/overview-stats.dto';
 import { ShortcutStatsDto } from './dto/shortcuts-stats.dto';
 import { IncidentsStatsDto, DailyIncidentDto } from './dto/incidents-stats.dto';
@@ -11,7 +12,10 @@ import { SystemPerformanceDto } from './dto/system-performance.dto';
 export class DashboardService {
   private readonly logger = new Logger(DashboardService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Récupère les statistiques générales du système
@@ -148,7 +152,6 @@ export class DashboardService {
    */
   async getIncidentsStats(): Promise<IncidentsStatsDto> {
     const now = new Date();
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     // Incidents par type
     const incidentsByType = await this.prisma.incident.groupBy({
@@ -370,7 +373,9 @@ export class DashboardService {
       },
     });
 
-    const activeFcmTokens = await this.prisma.tokenFCM.count();
+    // Utilisateurs actuellement connectés en WebSocket (remplace activeFcmTokens)
+    const activeConnections =
+      await this.notificationsService.getConnectedUsersCount();
 
     return {
       averageRouteResponseTime: 0, // À implémenter avec un système de logs
@@ -378,7 +383,7 @@ export class DashboardService {
       totalRouteRequests,
       trafficPredictionUsage: 0, // À implémenter avec des logs
       notificationsSent24h,
-      activeFcmTokens,
+      activeConnections,
       averageResponseTime: 150, // Valeur estimée
       uptime: 99.5, // Valeur estimée
       errorRate: 0.5, // Valeur estimée
