@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DashboardService } from './dashboard.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 describe('DashboardService', () => {
   let service: DashboardService;
-  let prismaService: PrismaService;
 
   const mockPrismaService = {
     utilisateur: {
@@ -39,13 +39,14 @@ describe('DashboardService', () => {
     notification: {
       count: jest.fn(),
     },
-    tokenFCM: {
-      count: jest.fn(),
-    },
     adresseFavorite: {
       count: jest.fn(),
       groupBy: jest.fn(),
     },
+  };
+
+  const mockNotificationsService = {
+    getConnectedUsersCount: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -56,11 +57,14 @@ describe('DashboardService', () => {
           provide: PrismaService,
           useValue: mockPrismaService,
         },
+        {
+          provide: NotificationsService,
+          useValue: mockNotificationsService,
+        },
       ],
     }).compile();
 
     service = module.get<DashboardService>(DashboardService);
-    prismaService = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {
@@ -221,13 +225,16 @@ describe('DashboardService', () => {
     it('should return system performance stats', async () => {
       mockPrismaService.sessionNavigation.count.mockResolvedValue(500);
       mockPrismaService.notification.count.mockResolvedValue(25);
-      mockPrismaService.tokenFCM.count.mockResolvedValue(120);
+      mockNotificationsService.getConnectedUsersCount.mockResolvedValue(12);
 
       const result = await service.getSystemPerformance();
 
       expect(result.totalRouteRequests).toBe(500);
       expect(result.notificationsSent24h).toBe(25);
-      expect(result.activeFcmTokens).toBe(120);
+      expect(result.activeConnections).toBe(12);
+      expect(
+        mockNotificationsService.getConnectedUsersCount,
+      ).toHaveBeenCalledTimes(1);
     });
   });
 });
