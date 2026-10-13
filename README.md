@@ -834,7 +834,7 @@ Authorization: Bearer <admin_token>
 ```
 
 ### POST /ads
-Créer une publicité.
+Création de la publicité.
 
 **Headers :**
 ```
@@ -886,7 +886,7 @@ Authorization: Bearer <admin_token>
 ```
 
 ### POST /rewards
-Créer une récompense.
+Creation d'une récompense.
 
 **Headers :**
 ```
