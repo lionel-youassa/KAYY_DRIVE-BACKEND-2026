@@ -357,7 +357,7 @@ export class DashboardService {
    */
   async getSystemPerformance(): Promise<SystemPerformanceDto> {
     // Ces métriques nécessiteraient un système de monitoring
-    // Pour l'instant, nous retournons des valeurs simulées ou basées sur les données disponibles
+    // Pour l'instant, nous retournons des valeurs simulées ou basées sur les données disponibles.
 
     const totalRouteRequests = await this.prisma.sessionNavigation.count();
 
