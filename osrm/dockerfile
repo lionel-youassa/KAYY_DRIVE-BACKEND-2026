@@ -1,0 +1,19 @@
+# OSRM pour le Cameroun, destiné à un service web Render.
+# Les données sont préparées pendant le build, car le disque de Render
+# est éphémère (il est vidé à chaque redémarrage).
+FROM osrm/osrm-backend:latest
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends wget ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /data
+
+RUN wget -q https://download.geofabrik.de/africa/cameroon-latest.osm.pbf -O cameroon.osm.pbf \
+    && osrm-extract -p /opt/car.lua cameroon.osm.pbf \
+    && osrm-partition cameroon.osrm \
+    && osrm-customize cameroon.osrm \
+    && rm cameroon.osm.pbf
+
+# Render fournit le port dans la variable PORT (10000 par défaut).
+CMD ["sh", "-c", "osrm-routed --algorithm mld --port ${PORT:-10000} /data/cameroon.osrm"]

@@ -9,6 +9,16 @@ import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 
+interface JwtPayload {
+  sub: string;
+  role?: string;
+}
+
+interface SocketUserData {
+  userId?: string;
+  userRole?: string;
+}
+
 // Origines autorisées : CORS_ORIGINS="https://app.kayy.com,https://admin.kayy.com"
 // Sans variable définie, on autorise tout (dev uniquement).
 const allowedOrigins = process.env.CORS_ORIGINS
@@ -34,11 +44,14 @@ export class NotificationsGateway
   // -------------------------------------------------------------------------
   // Connexion : authentifier via JWT et rejoindre la room utilisateur
   // -------------------------------------------------------------------------
-  async handleConnection(client: Socket) {
+  handleConnection(client: Socket): void {
     try {
-      const token =
-        client.handshake.auth?.token ||
-        client.handshake.headers?.authorization?.replace('Bearer ', '');
+      const authToken = client.handshake.auth?.token as string | undefined;
+      const headerToken = client.handshake.headers?.authorization?.replace(
+        'Bearer ',
+        '',
+      );
+      const token = authToken || headerToken;
 
       if (!token) {
         this.logger.warn(`Client ${client.id} rejeté : pas de token`);
@@ -46,21 +59,22 @@ export class NotificationsGateway
         return;
       }
 
-      const payload = this.jwtService.verify(token);
+      const payload = this.jwtService.verify<JwtPayload>(token);
       const userId = payload.sub;
       const role = payload.role;
 
       // Stocker les infos utilisateur dans client.data
       // (visible aussi via fetchSockets())
-      client.data.userId = userId;
-      client.data.userRole = role;
+      const data = client.data as SocketUserData;
+      data.userId = userId;
+      data.userRole = role;
 
       // Rejoindre la room personnelle
-      client.join(`user:${userId}`);
+      void client.join(`user:${userId}`);
 
       // Les admins rejoignent aussi la room admin
       if (role === 'admin') {
-        client.join('admins');
+        void client.join('admins');
       }
 
       this.logger.log(
@@ -68,7 +82,7 @@ export class NotificationsGateway
       );
     } catch (error) {
       this.logger.warn(
-        `Client ${client.id} rejeté : token invalide — ${error}`,
+        `Client ${client.id} rejeté : token invalide — ${String(error)}`,
       );
       client.disconnect();
     }
@@ -85,27 +99,30 @@ export class NotificationsGateway
   // -------------------------------------------------------------------------
   async getConnectedUsersCount(): Promise<number> {
     const sockets = await this.server.fetchSockets();
-    return new Set(sockets.map((s) => s.data.userId).filter(Boolean)).size;
+    const userIds = sockets
+      .map((s) => (s.data as SocketUserData).userId)
+      .filter((id): id is string => Boolean(id));
+    return new Set(userIds).size;
   }
 
   // -------------------------------------------------------------------------
   // Envoyer une notification à un utilisateur spécifique
   // -------------------------------------------------------------------------
-  sendToUser(userId: string, event: string, data: any) {
+  sendToUser(userId: string, event: string, data: unknown) {
     this.server.to(`user:${userId}`).emit(event, data);
   }
 
   // -------------------------------------------------------------------------
   // Envoyer une notification à tous les admins
   // -------------------------------------------------------------------------
-  sendToAdmins(event: string, data: any) {
+  sendToAdmins(event: string, data: unknown) {
     this.server.to('admins').emit(event, data);
   }
 
   // -------------------------------------------------------------------------
   // Broadcast à tous les utilisateurs connectés
   // -------------------------------------------------------------------------
-  broadcastToAll(event: string, data: any) {
+  broadcastToAll(event: string, data: unknown) {
     this.server.emit(event, data);
   }
 
