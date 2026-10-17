@@ -1,19 +1,19 @@
-# OSRM pour le Cameroun, destiné à un service web Render.
-# Les données sont préparées pendant le build, car le disque de Render
-# est éphémère (il est vidé à chaque redémarrage).
+# OSRM pour le Cameroun, destine a un service web Render.
+# Les donnees sont preparees pendant le build (le disque de Render est ephemere).
+#
+# L'image osrm/osrm-backend est basee sur un tres vieux Debian dont les depots
+# de paquets n'existent plus : on n'installe donc aucun paquet.
+# L'instruction ADD telecharge directement la carte.
 FROM osrm/osrm-backend:latest
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends wget ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /data
 
-RUN wget -q https://download.geofabrik.de/africa/cameroon-latest.osm.pbf -O cameroon.osm.pbf \
-    && osrm-extract -p /opt/car.lua cameroon.osm.pbf \
-    && osrm-partition cameroon.osrm \
-    && osrm-customize cameroon.osrm \
-    && rm cameroon.osm.pbf
+ADD https://download.geofabrik.de/africa/cameroon-latest.osm.pbf /data/cameroon.osm.pbf
 
-# Render fournit le port dans la variable PORT (10000 par défaut).
+RUN osrm-extract -p /opt/car.lua /data/cameroon.osm.pbf \
+    && osrm-partition /data/cameroon.osrm \
+    && osrm-customize /data/cameroon.osrm \
+    && rm /data/cameroon.osm.pbf
+
+# Render fournit le port dans la variable PORT (10000 par defaut).
 CMD ["sh", "-c", "osrm-routed --algorithm mld --port ${PORT:-10000} /data/cameroon.osrm"]
