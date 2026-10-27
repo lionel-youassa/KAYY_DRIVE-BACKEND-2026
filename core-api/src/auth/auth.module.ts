@@ -9,6 +9,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { PrismaModule } from '../prisma/prisma.module';
 import { StorageModule } from '../storage/storage.module';
+import { getJwtSecret } from './jwt-secret';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { StorageModule } from '../storage/storage.module';
     StorageModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'kayydrive-secret-key-2026',
+      secret: getJwtSecret(),
       signOptions: { expiresIn: '24h' },
     }),
   ],

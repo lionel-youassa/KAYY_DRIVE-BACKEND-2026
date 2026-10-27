@@ -5,13 +5,14 @@ import { NotificationsService } from './notifications.service';
 import { NotificationsGateway } from './notifications.gateway';
 import { AuthModule } from '../auth/auth.module';
 import { PrismaModule } from '../prisma/prisma.module';
+import { getJwtSecret } from '../auth/jwt-secret';
 
 @Module({
   imports: [
     AuthModule,
     PrismaModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'kayydrive-secret-key-2026',
+      secret: getJwtSecret(),
       signOptions: { expiresIn: '24h' },
     }),
   ],

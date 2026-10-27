@@ -11,8 +11,9 @@ services:
     plan: free
     region: oregon
     branch: develop
-    dockerfilePath: ./osrm/Dockerfile
+    dockerfilePath: ./osrm/dockerfile
     dockerContext: ./osrm
+    healthCheckPath: /nearest/v1/driving/0,0
 
   # ── Service IA (FastAPI) ──
   - type: web
@@ -23,6 +24,7 @@ services:
     branch: develop
     dockerfilePath: ./ia-service/Dockerfile
     dockerContext: ./ia-service
+    healthCheckPath: /health
     envVars:
       - key: ENVIRONMENT
         value: production

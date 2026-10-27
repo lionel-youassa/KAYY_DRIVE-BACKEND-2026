@@ -11,8 +11,10 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import { StorageService } from '../storage/storage.service';
 import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { PromoteDto } from './dto/promote.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -72,9 +74,10 @@ export class AuthController {
   }
 
   // POST /auth/login
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
-  async login(@Body() body: { email: string; password: string }) {
-    const result = await this.authService.login(body.email, body.password);
+  async login(@Body() dto: LoginDto) {
+    const result = await this.authService.login(dto.email, dto.password);
     return { success: true, ...result };
   }
 

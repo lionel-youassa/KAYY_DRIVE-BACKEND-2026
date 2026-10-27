@@ -1,13 +1,27 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { getAllowedOrigins } from './config/cors';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Active CORS
-  app.enableCors();
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+    }),
+  );
+
+  app.enableCors({
+    origin: getAllowedOrigins(),
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  });
 
   // Active automatiquement la validation des DTO (class-validator) sur
   // toutes les routes. Sans ça, les décorateurs @IsString(), @IsNumber()

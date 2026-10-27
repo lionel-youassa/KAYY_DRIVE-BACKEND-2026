@@ -8,6 +8,7 @@ import {
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
+import { getAllowedOrigins } from '../config/cors';
 
 interface JwtPayload {
   sub: string;
@@ -21,9 +22,7 @@ interface SocketUserData {
 
 // Origines autorisées : CORS_ORIGINS="https://app.kayy.com,https://admin.kayy.com"
 // Sans variable définie, on autorise tout (dev uniquement).
-const allowedOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
-  : '*';
+const allowedOrigins = getAllowedOrigins();
 
 @WebSocketGateway({
   cors: {

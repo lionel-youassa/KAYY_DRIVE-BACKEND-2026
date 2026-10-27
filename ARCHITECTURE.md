@@ -9,7 +9,7 @@ KayyDrive est une application de navigation intelligente pour le Cameroun, compo
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                         Frontend                             │
-│                    (Application Web/Mobile)                   │
+│                    (Application Mobile)                   │
 └────────────────────────┬────────────────────────────────────┘
                          │
                          │ HTTP
@@ -444,12 +444,10 @@ npx prisma studio         # Ouvrir Prisma Studio
 
 - **PostgreSQL :** Mot de passe configuré dans `.env`
 - **Redis :** Pas d'authentification (environnement de développement)
-- **Firebase :** Optionnel, désactivé si `FIREBASE_ADMIN_CONFIG` non défini
 - **Nginx :** Rate limiting activé (10 req/s par IP)
 
 ## Notes Importantes
 
 - **OSRM Backend :** Désactivé pour le moment (données manquantes)
-- **Firebase :** Optionnel pour les notifications push
 - **Hot-reload :** Activé pour Core-API et IA-Service en développement
 - **Volumes :** Les données PostgreSQL et Redis sont persistantes

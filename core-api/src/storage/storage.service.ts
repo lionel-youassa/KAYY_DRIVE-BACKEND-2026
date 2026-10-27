@@ -84,6 +84,12 @@ export class StorageService {
   }
 
   getFileUrl(objectName: string): string {
+    const publicUrl = this.configService.get<string>('MINIO_PUBLIC_URL');
+
+    if (publicUrl && publicUrl.trim() !== '') {
+      return `${publicUrl.trim().replace(/\/+$/, '')}/${this.bucketName}/${objectName}`;
+    }
+
     let endPoint = this.configService.get('MINIO_ENDPOINT') || 'localhost';
     if (endPoint === 'minio') {
       endPoint = 'localhost';

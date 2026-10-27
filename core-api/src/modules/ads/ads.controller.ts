@@ -2,14 +2,16 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
-import { AdsService } from './ads.service';
+import { AdsService, AdType } from './ads.service';
 import { AuthGuard } from '../../auth/guards/auth.guard';
 import { AdminGuard } from '../../auth/guards/admin.guard';
 import { StorageService } from '../../storage/storage.service';
@@ -23,6 +25,11 @@ export class AdsController {
     private readonly storageService: StorageService,
   ) {}
 
+  /**
+   * POST /ads — Création réservée aux administrateurs (modèle Spotify).
+   * Les utilisateurs standard ne créent jamais de pub : ils la subissent
+   * via GET /ads/active (bannière / interstitiel).
+   */
   @Post()
   @UseGuards(AdminGuard)
   @UseInterceptors(FileInterceptor('image'))
@@ -30,33 +37,72 @@ export class AdsController {
     @Body() data: any,
     @UploadedFile() image?: Express.Multer.File,
   ) {
-    console.log('DEBUG CREATE AD - Body data:', data);
-    console.log('DEBUG CREATE AD - Uploaded file:', image);
-
-    let imageUrl: string | undefined;
+    let imageUrl: string | undefined = data?.imageUrl;
 
     if (image) {
       imageUrl = await this.storageService.uploadFile(image, 'ads');
-      console.log(
-        'DEBUG CREATE AD - Image uploaded to storage, URL:',
-        imageUrl,
-      );
     }
 
     const ad = await this.adsService.createAdvertising({ ...data, imageUrl });
-    return { success: true, message: 'Publicité créée avec succès', ad };
+    return {
+      success: true,
+      message: 'Publicité créée avec succès',
+      ad,
+    };
   }
 
   @Get()
-  async getAllAdvertising() {
-    const ads = await this.adsService.getAllAdvertising();
+  @UseGuards(AdminGuard)
+  async getAllAdvertising(
+    @Query('type') type?: string,
+    @Query('actif') actif?: string,
+  ) {
+    const ads = await this.adsService.getAllAdvertising({
+      type: type as AdType | undefined,
+      actif:
+        actif === undefined ? undefined : actif === 'true' || actif === '1',
+    });
     return { ads };
   }
 
   @Get('active')
-  async getActiveAds() {
-    const ads = await this.adsService.getActiveAds();
+  async getActiveAds(
+    @Query('type') type?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const ads = await this.adsService.getActiveAds(
+      (type as AdType | undefined) ?? undefined,
+      limit ? parseInt(limit, 10) : undefined,
+    );
     return { ads };
+  }
+
+  /**
+   * PATCH /ads/:id — Modération / édition réservée admin.
+   * Permet activer/désactiver, corriger titre/description/type/dates.
+   */
+  @Patch(':id')
+  @UseGuards(AdminGuard)
+  async updateAdvertising(@Param('id') id: string, @Body() data: any) {
+    const ad = await this.adsService.updateAdvertising(id, data);
+    return { success: true, message: 'Publicité mise à jour', ad };
+  }
+
+  /**
+   * POST /ads/:id/view et /click — Tracking d'impressions/clics.
+   * No-op persistant pour l'instant (colonnes vues/clics absentes du schéma),
+   * mais contrat stable pour le frontend SmartAdManager.
+   */
+  @Post(':id/view')
+  async recordView(@Param('id') id: string) {
+    await this.adsService.recordView(id);
+    return { success: true };
+  }
+
+  @Post(':id/click')
+  async recordClick(@Param('id') id: string) {
+    await this.adsService.recordClick(id);
+    return { success: true };
   }
 
   @Delete(':id')

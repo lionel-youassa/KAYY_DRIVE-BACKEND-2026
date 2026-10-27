@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { BullModule } from '@nestjs/bullmq';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { NavigationModule } from './modules/navigation/navigation.module';
 import { AdsModule } from './modules/ads/ads.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -25,6 +27,12 @@ import { GeocodingModule } from './geocoding/geocoding.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     BullModule.forRoot({
       connection: {
         url: process.env.REDIS_URL,
@@ -52,6 +60,11 @@ import { GeocodingModule } from './geocoding/geocoding.module';
     RewardsModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

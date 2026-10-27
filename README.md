@@ -26,8 +26,9 @@ Pour plus d'informations détaillées, consultez :
 - **PostgreSQL + PostGIS**: Base de données principale avec support géospatial
 - **Redis**: Cache et gestion des sessions
 - **pgAdmin**: Interface d'administration de la base de données
-- **Core API (NestJS)**: API principale sur le port 4000
-- **IA Service (FastAPI)**: Service d'IA sur le port 9000
+- **Core API (NestJS)**: API principale sur le port 3200
+- **IA Service (FastAPI)**: Service d'IA sur le port 9820
+- **MinIO**: Stockage objet sur le port 9000
 - **Nginx**: Reverse proxy sur le port 80
 - **OSRM Backend**: Service de routage sur le port 5000
 
@@ -69,6 +70,8 @@ Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toute
    OSRM_URL=http://osrm-backend:5000
    IA_SERVICE_URL=http://ia-service:8000
    JWT_SECRET=your_jwt_secret_key_change_in_production
+   CORS_ORIGINS=
+   MINIO_PUBLIC_URL=
    PGADMIN_DEFAULT_EMAIL=admin@example.com
    PGADMIN_DEFAULT_PASSWORD=admin123
    ```
