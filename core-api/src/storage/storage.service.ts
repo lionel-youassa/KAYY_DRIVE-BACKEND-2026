@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import * as Minio from 'minio';
 import { ConfigService } from '@nestjs/config';
 
@@ -48,8 +52,12 @@ export class StorageService {
         `Politique de lecture publique appliquée au bucket ${this.bucketName}`,
       );
     } catch (error) {
+      const details =
+        error?.message ||
+        error?.code ||
+        (error instanceof Error ? error.name : String(error));
       this.logger.error(
-        `Erreur lors de l'initialisation du bucket: ${error.message}`,
+        `Erreur lors de l'initialisation du bucket: ${details}`,
       );
     }
   }
@@ -60,15 +68,26 @@ export class StorageService {
   ): Promise<string> {
     const fileName = `${folder}/${Date.now()}-${file.originalname}`;
 
-    await this.minioClient.putObject(
-      this.bucketName,
-      fileName,
-      file.buffer,
-      file.size,
-      {
-        'Content-Type': file.mimetype,
-      },
-    );
+    try {
+      await this.minioClient.putObject(
+        this.bucketName,
+        fileName,
+        file.buffer,
+        file.size,
+        {
+          'Content-Type': file.mimetype,
+        },
+      );
+    } catch (error) {
+      const details =
+        error?.message ||
+        error?.code ||
+        (error instanceof Error ? error.name : String(error));
+      this.logger.error(`Erreur lors de l'upload du fichier: ${details}`);
+      throw new ServiceUnavailableException(
+        'Le service de stockage est indisponible.',
+      );
+    }
 
     return this.getFileUrl(fileName);
   }

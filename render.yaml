@@ -2,6 +2,11 @@
 # Le backend (core-api), la base PostgreSQL et Redis existent déjà et sont
 # gérés à la main dans le tableau de bord : ils ne sont volontairement
 # PAS déclarés ici, pour éviter de créer des doublons ou des services payants.
+#
+# Variables à configurer sur le service core-api (tableau de bord Render) :
+#   OSRM_URL=https://kayy-osrm.onrender.com
+#   IA_SERVICE_URL=https://kayy-ia.onrender.com
+#   CORS_ORIGINS=https://<domaine-du-frontend>   (ou * pour autoriser tous les domaines)
 
 services:
   # ── OSRM (calcul d'itinéraires, carte du Cameroun) ──
@@ -28,5 +33,7 @@ services:
     envVars:
       - key: ENVIRONMENT
         value: production
+      - key: CORS_ORIGINS
+        value: "*"
       - key: GEMINI_API_KEY
         sync: false # à saisir dans le tableau de bord Render

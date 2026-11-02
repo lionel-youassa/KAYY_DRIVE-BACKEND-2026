@@ -26,12 +26,16 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+environment = os.getenv("ENVIRONMENT", "development").strip().lower()
+
 allowed_origins = [
     origin.strip()
     for origin in os.getenv("CORS_ORIGINS", "").split(",")
     if origin.strip()
 ]
-if not allowed_origins and os.getenv("ENVIRONMENT", "development") != "production":
+# Le service est consommé directement par l'application Flutter Web.
+# Sans origine explicite, on autorise toutes les origines (pas de credentials).
+if not allowed_origins:
     allowed_origins = ["*"]
 
 app.add_middleware(
@@ -51,7 +55,8 @@ def health_check():
         "status": "ok",
         "service": "ia-service",
         "version": "1.0.0",
-        "environment": os.getenv("ENVIRONMENT", "development")
+        "environment": environment,
+        "gemini_configured": bool(os.getenv("GEMINI_API_KEY")),
     }
 
 
@@ -186,8 +191,8 @@ async def chat(request: ChatRequest):
         )
         return {"reponse": response.text, "statut": "ok"}
     except Exception as e:
+        print(f"Erreur du service de chat IA: {e}")
         return {
             "reponse": "Je suis temporairement indisponible.",
-            "statut": "erreur",
-            "detail": str(e)
+            "statut": "erreur"
         }

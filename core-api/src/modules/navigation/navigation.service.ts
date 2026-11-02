@@ -4,6 +4,7 @@ import {
   HttpException,
   HttpStatus,
   Inject,
+  OnModuleInit,
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
@@ -32,7 +33,13 @@ function distanceEnMetres(
 }
 
 @Injectable()
-export class NavigationService {
+export class NavigationService implements OnModuleInit {
+  private static readonly LOCAL_OSRM_URL = 'http://osrm-backend:5000';
+  private static readonly LOCAL_IA_SERVICE_URL = 'http://ia-service:8000';
+  private static readonly PUBLIC_OSRM_URL = 'https://kayy-osrm.onrender.com';
+  private static readonly PUBLIC_IA_SERVICE_URL =
+    'https://kayy-ia.onrender.com';
+
   private readonly logger = new Logger(NavigationService.name);
   private readonly osrmUrl: string;
   private readonly iaServiceUrl: string;
@@ -45,13 +52,82 @@ export class NavigationService {
     private readonly traficService: TraficService,
     private readonly prisma: PrismaService,
   ) {
-    this.osrmUrl = this.configService.get<string>(
+    const usePublicServices =
+      process.env.RENDER === 'true' || process.env.NODE_ENV === 'production';
+
+    this.osrmUrl = this.resolveServiceUrl(
       'OSRM_URL',
-      'http://osrm-backend:5000',
+      usePublicServices,
+      NavigationService.PUBLIC_OSRM_URL,
+      NavigationService.LOCAL_OSRM_URL,
     );
-    this.iaServiceUrl = this.configService.get<string>(
+    this.iaServiceUrl = this.resolveServiceUrl(
       'IA_SERVICE_URL',
-      'http://ia-service:8000',
+      usePublicServices,
+      NavigationService.PUBLIC_IA_SERVICE_URL,
+      NavigationService.LOCAL_IA_SERVICE_URL,
+    );
+
+    this.logger.log(`OSRM configuré: ${this.osrmUrl}`);
+    this.logger.log(`Service IA configuré: ${this.iaServiceUrl}`);
+  }
+
+  async onModuleInit(): Promise<void> {
+    if (process.env.NODE_ENV === 'test') return;
+    void this.warmUpDownstreamServices();
+  }
+
+  private resolveServiceUrl(
+    key: string,
+    usePublicServices: boolean,
+    publicDefault: string,
+    localDefault: string,
+  ): string {
+    const configured = this.configService.get<string>(key)?.trim();
+    const deployedOnRender = process.env.RENDER === 'true';
+
+    // Sur Render, une URL Docker interne (osrm-backend, ia-service,
+    // localhost) ne peut pas fonctionner : on la remplace par le service public.
+    if (
+      configured &&
+      !(deployedOnRender && this.isDockerInternalUrl(configured))
+    ) {
+      return this.normalizeUrl(configured);
+    }
+
+    return this.normalizeUrl(usePublicServices ? publicDefault : localDefault);
+  }
+
+  private isDockerInternalUrl(url: string): boolean {
+    return /^https?:\/\/(osrm-backend|ia-service|localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(
+      url,
+    );
+  }
+
+  private normalizeUrl(url: string): string {
+    return url.trim().replace(/\/+$/, '');
+  }
+
+  private async warmUpDownstreamServices(): Promise<void> {
+    const targets = [
+      {
+        name: 'OSRM',
+        url: `${this.osrmUrl}/nearest/v1/driving/9.700147,4.050304`,
+      },
+      { name: 'Service IA', url: `${this.iaServiceUrl}/health` },
+    ];
+
+    await Promise.all(
+      targets.map(async ({ name, url }) => {
+        try {
+          await firstValueFrom(this.httpService.get(url));
+          this.logger.log(`${name} disponible (${url})`);
+        } catch (error) {
+          this.logger.warn(
+            `${name} indisponible au démarrage (${url}): ${error.message}`,
+          );
+        }
+      }),
     );
   }
 

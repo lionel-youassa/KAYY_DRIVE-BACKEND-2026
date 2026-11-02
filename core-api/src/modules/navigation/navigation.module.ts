@@ -10,7 +10,10 @@ import { TraficModule } from '../../trafic/trafic.module';
 
 @Module({
   imports: [
-    HttpModule,
+    HttpModule.register({
+      timeout: 60000,
+      maxRedirects: 3,
+    }),
     RoutesModule,
     TraficModule,
     BullModule.registerQueue({
