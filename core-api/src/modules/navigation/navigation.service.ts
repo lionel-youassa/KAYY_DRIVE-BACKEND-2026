@@ -74,6 +74,13 @@ export class NavigationService implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     if (process.env.NODE_ENV === 'test') return;
+
+    // En local, inutile de réveiller les services publics Render à chaque
+    // démarrage : cela consomme du quota et provoque des réponses 429.
+    const isDeployed =
+      process.env.RENDER === 'true' || process.env.NODE_ENV === 'production';
+    if (!isDeployed) return;
+
     void this.warmUpDownstreamServices();
   }
 
