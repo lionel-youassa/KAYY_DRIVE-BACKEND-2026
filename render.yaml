@@ -7,6 +7,12 @@
 #   OSRM_URL=https://kayy-osrm.onrender.com
 #   IA_SERVICE_URL=https://kayy-ia.onrender.com
 #   CORS_ORIGINS=https://<domaine-du-frontend>   (ou * pour autoriser tous les domaines)
+#
+# Stockage optionnel (MinIO/S3 compatible). Sans MINIO_ENDPOINT, le stockage
+# est désactivé et les uploads renvoient 503 :
+#   MINIO_ENDPOINT=..., MINIO_PORT=443, MINIO_USE_SSL=true
+#   MINIO_ACCESS_KEY=..., MINIO_SECRET_KEY=..., MINIO_BUCKET=kayydrive
+#   MINIO_PUBLIC_URL=https://...
 
 services:
   # ── OSRM (calcul d'itinéraires, carte du Cameroun) ──

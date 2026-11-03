@@ -11,10 +11,17 @@ export class StorageService {
   private readonly logger = new Logger(StorageService.name);
   private minioClient: Minio.Client;
   private bucketName: string;
+  private readonly enabled: boolean;
 
   constructor(private configService: ConfigService) {
+    const endPoint = this.configService.get<string>('MINIO_ENDPOINT')?.trim();
+    const invalidOnRender =
+      process.env.RENDER === 'true' &&
+      (endPoint === 'localhost' || endPoint === '127.0.0.1');
+    this.enabled = Boolean(endPoint) && !invalidOnRender;
+
     this.minioClient = new Minio.Client({
-      endPoint: this.configService.get('MINIO_ENDPOINT') || 'localhost',
+      endPoint: endPoint || 'localhost',
       port: parseInt(this.configService.get('MINIO_PORT') || '9000'),
       useSSL: this.configService.get('MINIO_USE_SSL') === 'true',
       accessKey: this.configService.get('MINIO_ACCESS_KEY') || 'minioadmin',
@@ -24,6 +31,13 @@ export class StorageService {
   }
 
   async onModuleInit() {
+    if (!this.enabled) {
+      this.logger.warn(
+        'MinIO non configuré (MINIO_ENDPOINT absent ou localhost sur Render) : stockage désactivé, les uploads renverront 503.',
+      );
+      return;
+    }
+
     try {
       const bucketExists = await this.minioClient.bucketExists(this.bucketName);
       if (!bucketExists) {
@@ -66,6 +80,12 @@ export class StorageService {
     file: Express.Multer.File,
     folder: string = 'uploads',
   ): Promise<string> {
+    if (!this.enabled) {
+      throw new ServiceUnavailableException(
+        "Le service de stockage n'est pas configuré.",
+      );
+    }
+
     const fileName = `${folder}/${Date.now()}-${file.originalname}`;
 
     try {
@@ -93,6 +113,8 @@ export class StorageService {
   }
 
   async deleteFile(objectName: string): Promise<void> {
+    if (!this.enabled) return;
+
     try {
       await this.minioClient.removeObject(this.bucketName, objectName);
     } catch (error) {
