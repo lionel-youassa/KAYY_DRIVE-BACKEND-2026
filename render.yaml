@@ -8,11 +8,16 @@
 #   IA_SERVICE_URL=https://kayy-ia.onrender.com
 #   CORS_ORIGINS=https://<domaine-du-frontend>   (ou * pour autoriser tous les domaines)
 #
-# Stockage optionnel (MinIO/S3 compatible). Sans MINIO_ENDPOINT, le stockage
-# est désactivé et les uploads renvoient 503 :
-#   MINIO_ENDPOINT=..., MINIO_PORT=443, MINIO_USE_SSL=true
-#   MINIO_ACCESS_KEY=..., MINIO_SECRET_KEY=..., MINIO_BUCKET=kayydrive
-#   MINIO_PUBLIC_URL=https://...
+# Stockage optionnel (S3 compatible : Cloudflare R2, AWS S3, MinIO...).
+# Sans S3_ENDPOINT, le stockage est désactivé et les uploads renvoient 503.
+# Cloudflare R2 (recommandé en production) :
+#   S3_ENDPOINT=<account-id>.r2.cloudflarestorage.com
+#   S3_PORT=443, S3_USE_SSL=true, S3_REGION=auto
+#   S3_ACCESS_KEY=..., S3_SECRET_KEY=..., S3_BUCKET=kayydrive
+#   S3_PUBLIC_BASE_URL=https://pub-xxxx.r2.dev
+#   S3_FORCE_PATH_STYLE=true
+#   S3_AUTO_CREATE_BUCKET=false, S3_SET_PUBLIC_POLICY=false
+# Compatibilité : les variables MINIO_* restent supportées.
 
 services:
   # ── OSRM (calcul d'itinéraires, carte du Cameroun) ──
