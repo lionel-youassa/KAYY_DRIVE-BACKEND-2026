@@ -67,19 +67,7 @@ function Save-EnvFile {
 function Resolve-ImagePrefix {
   $prefix = Get-EnvValue 'IMAGE_PREFIX'
   if ([string]::IsNullOrWhiteSpace($prefix) -or $prefix -match 'CHANGE_ME|your-github') {
-    $owner = ''
-    try {
-      $remote = (& git remote get-url origin 2>$null)
-      if ($remote -match 'github\.com[:/]([^/]+)/') {
-        $owner = $Matches[1].ToLowerInvariant()
-      }
-    } catch {
-      $owner = ''
-    }
-    if ([string]::IsNullOrWhiteSpace($owner)) {
-      $owner = 'lionel-youassa'
-    }
-    $prefix = "ghcr.io/$owner"
+    $prefix = 'ghcr.io/lionel-youassa'
     Set-EnvValue 'IMAGE_PREFIX' $prefix
   }
   return $prefix
@@ -120,7 +108,7 @@ function Initialize-LocalEnv {
   }
 
   if ([string]::IsNullOrWhiteSpace((Get-EnvValue 'IMAGE_TAG'))) {
-    Set-EnvValue 'IMAGE_TAG' 'latest'
+    Set-EnvValue 'IMAGE_TAG' 'develop'
   }
 
   if ([string]::IsNullOrWhiteSpace((Get-EnvValue 'ENVIRONMENT'))) {
@@ -148,7 +136,7 @@ try {
   $imagePrefix = Get-EnvValue 'IMAGE_PREFIX'
   $imageTag = Get-EnvValue 'IMAGE_TAG'
   if ([string]::IsNullOrWhiteSpace($imageTag)) {
-    $imageTag = 'latest'
+    $imageTag = 'develop'
   }
 
   $compose = @('compose', '-f', $ComposeFile, '--env-file', '.env')

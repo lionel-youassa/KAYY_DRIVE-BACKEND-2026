@@ -95,7 +95,7 @@ if [ -z "$(get_env CORS_ORIGINS)" ]; then
 fi
 
 if [ -z "$(get_env IMAGE_TAG)" ]; then
-  set_env IMAGE_TAG latest
+  set_env IMAGE_TAG develop
 fi
 
 if [ -z "$(get_env ENVIRONMENT)" ]; then
@@ -104,15 +104,12 @@ fi
 
 image_prefix="$(get_env IMAGE_PREFIX)"
 if [ -z "$image_prefix" ] || printf '%s' "$image_prefix" | grep -q 'CHANGE_ME'; then
-  remote="$(git remote get-url origin 2>/dev/null || true)"
-  owner="$(printf '%s' "$remote" | sed -nE 's#.*github\.com[:/]([^/]+)/.*#\1#p')"
-  [ -n "$owner" ] || owner="lionel-youassa"
-  image_prefix="ghcr.io/$owner"
+  image_prefix="ghcr.io/lionel-youassa"
   set_env IMAGE_PREFIX "$image_prefix"
 fi
 
 image_tag="$(get_env IMAGE_TAG)"
-[ -n "$image_tag" ] || image_tag="latest"
+[ -n "$image_tag" ] || image_tag="develop"
 core_port="$(get_env CORE_API_PORT)"
 [ -n "$core_port" ] || core_port="3200"
 

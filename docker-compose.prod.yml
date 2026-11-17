@@ -2,7 +2,7 @@ name: kayydrive-prod
 
 services:
   migrate:
-    image: ${IMAGE_PREFIX:?Definissez IMAGE_PREFIX dans .env}/kayydrive-core-api:${IMAGE_TAG:-latest}
+    image: ${IMAGE_PREFIX:?Definissez IMAGE_PREFIX dans .env}/kayydrive-core-api:${IMAGE_TAG:?Definissez IMAGE_TAG dans .env}
     command:
       [
         "node",
@@ -22,7 +22,7 @@ services:
     restart: "no"
 
   core-api:
-    image: ${IMAGE_PREFIX:?Definissez IMAGE_PREFIX dans .env}/kayydrive-core-api:${IMAGE_TAG:-latest}
+    image: ${IMAGE_PREFIX:?Definissez IMAGE_PREFIX dans .env}/kayydrive-core-api:${IMAGE_TAG:?Definissez IMAGE_TAG dans .env}
     ports:
       - "${CORE_API_PORT:-3200}:3000"
     env_file:
@@ -66,7 +66,7 @@ services:
       start_period: 45s
 
   ia-service:
-    image: ${IMAGE_PREFIX:?Definissez IMAGE_PREFIX dans .env}/kayydrive-ia-service:${IMAGE_TAG:-latest}
+    image: ${IMAGE_PREFIX:?Definissez IMAGE_PREFIX dans .env}/kayydrive-ia-service:${IMAGE_TAG:?Definissez IMAGE_TAG dans .env}
     ports:
       - "${IA_PORT:-9820}:8000"
     env_file:

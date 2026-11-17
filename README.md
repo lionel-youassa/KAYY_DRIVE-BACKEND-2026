@@ -60,7 +60,7 @@ Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toute
 
 ### Option recommandée : images publiées
 
-Le workflow `.github/workflows/publish-images.yml` publie automatiquement les images `core-api` et `ia-service` dans GitHub Container Registry (GHCR).
+Le workflow `.github/workflows/ci-cd.yml` publie automatiquement les images `core-api` et `ia-service` dans GitHub Container Registry (GHCR), une fois le lint, les tests et le build validés.
 
 **Windows :**
 
@@ -79,7 +79,7 @@ Le script :
 
 - crée `.env` depuis `.env.example` s'il n'existe pas ;
 - génère les secrets locaux (`POSTGRES_PASSWORD`, `JWT_SECRET`) ;
-- déduit `IMAGE_PREFIX` depuis le dépôt Git ;
+- utilise `ghcr.io/lionel-youassa` par défaut (surchargeable via `IMAGE_PREFIX`) ;
 - télécharge les images depuis GHCR ;
 - applique les migrations Prisma ;
 - démarre les services et attend que `core-api` soit sain.
@@ -323,11 +323,11 @@ docker tag kayydrive/core-api:1.0.0 ghcr.io/<organisation>/kayydrive-core-api:1.
 docker push ghcr.io/<organisation>/kayydrive-core-api:1.0.0
 ```
 
-Le workflow `.github/workflows/publish-images.yml` fait cela automatiquement pour `core-api` et `ia-service` à chaque push sur `develop`/`main` et pour les tags `v*`. Il publie aussi un tag basé sur le SHA du commit. Pour que les autres puissent télécharger sans authentification, rendez les packages publics dans GitHub > Packages > Package settings.
+Le workflow `.github/workflows/ci-cd.yml` publie ces images après le lint, les tests et le build, pour les pushes sur `develop`, `main`, les tags `v*` et les lancements manuels. Chaque publication reçoit un tag `sha-...`, plus `develop`/`main` pour une branche ou le tag `vX.Y.Z` pour une release. Le tag `latest` n'est mis à jour que depuis `main` et les tags de release `v*`. Docker Hub n'est plus utilisé pour les nouvelles publications : GHCR est le registre officiel.
 
-`docker-compose.prod.yml` utilise ces images via `IMAGE_PREFIX` et `IMAGE_TAG` définis dans `.env`.
+`docker-compose.prod.yml` utilise ces images via `IMAGE_PREFIX` et `IMAGE_TAG` définis dans `.env`. `IMAGE_TAG` est obligatoire pour éviter un téléchargement silencieux de `latest`.
 
-Utilisez des tags de version explicites (`1.0.0`, `sha-abc123`) plutôt que uniquement `latest`. Les autres développeurs peuvent ensuite faire `docker pull` ou utiliser ces images dans un `docker-compose.override.yml`. Ne commitez jamais une image Docker dans Git.
+`.env.example` utilise `IMAGE_TAG=develop` pour suivre les builds de développement. Pour une démo ou une release, fixez un tag `vX.Y.Z` ou `sha-...`. Les autres développeurs peuvent ensuite faire `docker pull` ou utiliser ces images dans un `docker-compose.override.yml`. Ne commitez jamais une image Docker dans Git.
 
 ### 9. Versionner la base de données
 
