@@ -24,16 +24,36 @@ enum TypeIncident {
 }
 
 model Utilisateur {
-  id                String                  @id @default(uuid())
-  pseudo            String
-  prenom            String?                 @default("")
-  email             String                  @unique
-  passwordHash      String?
-  telephone         String?
-  photoUrl          String?
-  role              String                  @default("user")
-  scoreReputation   Int                     @default(0)
-  dateCreation      DateTime                @default(now())
+  id              String   @id @default(uuid())
+  pseudo          String
+  prenom          String?  @default("")
+  email           String   @unique
+  pendingEmail    String?  @unique
+  passwordHash    String?
+  telephone       String?
+  photoUrl        String?
+  role            String   @default("user")
+  scoreReputation Int      @default(0)
+  dateCreation    DateTime @default(now())
+
+  googleId                    String?   @unique
+  emailVerified               Boolean   @default(true)
+  emailVerificationCodeHash   String?
+  emailVerificationExpiresAt  DateTime?
+  emailVerificationAttempts   Int       @default(0)
+  emailVerificationLastSentAt DateTime?
+  twoFactorEnabled            Boolean   @default(true)
+  twoFactorCodeHash           String?
+  twoFactorExpiresAt          DateTime?
+  twoFactorAttempts           Int       @default(0)
+  twoFactorLastSentAt         DateTime?
+  passwordResetCodeHash       String?
+  passwordResetExpiresAt      DateTime?
+  passwordResetAttempts       Int       @default(0)
+  passwordResetLastSentAt     DateTime?
+  lastLoginAt                 DateTime?
+
+  refreshTokens     RefreshToken[]
   preferences       PreferencesUtilisateur?
   sessions          SessionNavigation[]
   incidentsSignales Incident[]
@@ -98,30 +118,30 @@ model SegmentRoute {
 }
 
 model Incident {
-  id                String       @id @default(uuid())
-  type              TypeIncident
-  description       String?
-  horodatage        DateTime     @default(now())
-  nombreConfirmations Int        @default(0)
-  statut            String       @default("non_confirme")
-  idRapporteur      String
-  segmentId         String?
-  niveauEau         Int?
-  estPraticable     Boolean?
-  niveauVibration   Float?
-  tailleNidPoule    String?
-  detecteAuto       Boolean?
-  dateExpiration    DateTime?
-  confirmePar       String[]
+  id                      String       @id @default(uuid())
+  type                    TypeIncident
+  description             String?
+  horodatage              DateTime     @default(now())
+  nombreConfirmations     Int          @default(0)
+  statut                  String       @default("non_confirme")
+  idRapporteur            String
+  segmentId               String?
+  niveauEau               Int?
+  estPraticable           Boolean?
+  niveauVibration         Float?
+  tailleNidPoule          String?
+  detecteAuto             Boolean?
+  dateExpiration          DateTime?
+  confirmePar             String[]
   id_utilisateur_createur String
-  latitude          Float?
-  longitude         Float?
-  imageUrl          String?
-  quartier          String?
-  ville             String?
-  region            String?
+  latitude                Float?
+  longitude               Float?
+  imageUrl                String?
+  quartier                String?
+  ville                   String?
+  region                  String?
 
-  rapporteur Utilisateur  @relation(fields: [idRapporteur], references: [id], onDelete: Cascade)
+  rapporteur Utilisateur   @relation(fields: [idRapporteur], references: [id], onDelete: Cascade)
   segment    SegmentRoute? @relation(fields: [segmentId], references: [id], onDelete: Cascade)
 }
 
@@ -156,7 +176,7 @@ model Recompense {
 // Modèles pour centraliser les données Firebase
 
 model RaccourciCommunautaire {
-  id                    String   @id @default(uuid())
+  id                    String          @id @default(uuid())
   nom                   String
   description           String
   pointDepartLat        Float
@@ -165,53 +185,51 @@ model RaccourciCommunautaire {
   pointArriveeLng       Float
   trace                 Json
   idUtilisateurCreateur String
-  votesPositifs         Int      @default(0)
-  votesNegatifs         Int      @default(0)
-  scoreFiabilite        Float    @default(0)
-  statut                String   @default("propose")
-  dateCreation          DateTime @default(now())
-  createur              Utilisateur @relation("RaccourcisCrees", fields: [idUtilisateurCreateur], references: [id], onDelete: Cascade)
+  votesPositifs         Int             @default(0)
+  votesNegatifs         Int             @default(0)
+  scoreFiabilite        Float           @default(0)
+  statut                String          @default("propose")
+  dateCreation          DateTime        @default(now())
+  createur              Utilisateur     @relation("RaccourcisCrees", fields: [idUtilisateurCreateur], references: [id], onDelete: Cascade)
   votes                 VoteRaccourci[]
 
   @@index([statut])
 }
 
 model VoteRaccourci {
-  id           String   @id @default(uuid())
-  raccourciId  String
+  id            String                 @id @default(uuid())
+  raccourciId   String
   utilisateurId String
-  vote         String
-  dateVote     DateTime @default(now())
-  raccourci    RaccourciCommunautaire @relation(fields: [raccourciId], references: [id], onDelete: Cascade)
-  utilisateur  Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  vote          String
+  dateVote      DateTime               @default(now())
+  raccourci     RaccourciCommunautaire @relation(fields: [raccourciId], references: [id], onDelete: Cascade)
+  utilisateur   Utilisateur            @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
 
   @@unique([raccourciId, utilisateurId])
 }
 
 model PositionUtilisateur {
-  id                String   @id @default(uuid())
+  id                String      @id @default(uuid())
   utilisateurId     String
   latitude          Float
   longitude         Float
-  derniereMiseAJour DateTime @default(now())
+  derniereMiseAJour DateTime    @default(now())
   utilisateur       Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
 
   @@unique([utilisateurId])
 }
 
 model Notification {
-  id            String   @id @default(uuid())
+  id            String      @id @default(uuid())
   utilisateurId String
   type          String
   titre         String
   corps         String
   data          Json?
-  lu            Boolean  @default(false)
-  dateCreation  DateTime @default(now())
+  lu            Boolean     @default(false)
+  dateCreation  DateTime    @default(now())
   utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
 }
-
-
 
 model Categorie {
   id        String   @id @default(uuid())
@@ -228,42 +246,58 @@ model Categorie {
 }
 
 model AdresseFavorite {
-  id            String   @id @default(uuid())
+  id            String      @id @default(uuid())
   utilisateurId String
   nom           String
   adresse       String
   latitude      Float
   longitude     Float
   categorieId   String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
   utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
   categorie     Categorie?  @relation(fields: [categorieId], references: [id], onDelete: Cascade)
 }
 
 model ReleveTrafic {
-  id            String   @id @default(uuid())
-  latitude      Float
-  longitude     Float
+  id             String      @id @default(uuid())
+  latitude       Float
+  longitude      Float
   vitesseMoyenne Float
-  niveau        String
+  niveau         String
   id_utilisateur String
-  timestamp     DateTime @default(now())
-  utilisateur   Utilisateur @relation(fields: [id_utilisateur], references: [id], onDelete: Cascade)
+  timestamp      DateTime    @default(now())
+  utilisateur    Utilisateur @relation(fields: [id_utilisateur], references: [id], onDelete: Cascade)
 
   @@index([latitude, longitude])
   @@index([timestamp])
 }
 
 model SecousseData {
-  id            String   @id @default(uuid())
+  id             String      @id @default(uuid())
   id_utilisateur String
-  latitude      Float
-  longitude     Float
-  intensite     Float
-  timestamp     DateTime @default(now())
-  traite        Boolean  @default(false)
-  utilisateur   Utilisateur @relation(fields: [id_utilisateur], references: [id], onDelete: Cascade)
+  latitude       Float
+  longitude      Float
+  intensite      Float
+  timestamp      DateTime    @default(now())
+  traite         Boolean     @default(false)
+  utilisateur    Utilisateur @relation(fields: [id_utilisateur], references: [id], onDelete: Cascade)
 
   @@index([timestamp])
+}
+
+model RefreshToken {
+  id                  String      @id @default(uuid())
+  tokenHash           String      @unique
+  utilisateurId       String
+  utilisateur         Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  expiresAt           DateTime
+  createdAt           DateTime    @default(now())
+  revokedAt           DateTime?
+  replacedByTokenHash String?
+  userAgent           String?
+  ip                  String?
+
+  @@index([utilisateurId])
+  @@index([expiresAt])
 }

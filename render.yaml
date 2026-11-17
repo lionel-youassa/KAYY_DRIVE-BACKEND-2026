@@ -7,6 +7,19 @@
 #   OSRM_URL=https://kayy-osrm.onrender.com
 #   IA_SERVICE_URL=https://kayy-ia.onrender.com
 #   CORS_ORIGINS=https://<domaine-du-frontend>   (ou * pour autoriser tous les domaines)
+#   JWT_SECRET=<secret-long-et-aleatoire>
+#   JWT_ACCESS_EXPIRES_IN=15m
+#   JWT_REFRESH_EXPIRES_IN=30d
+#   AUTH_EMAIL_VERIFICATION_REQUIRED=true
+#   AUTH_2FA_REQUIRED=true
+#   AUTH_CODE_TTL_MINUTES=10
+#   AUTH_CODE_MAX_ATTEMPTS=5
+#   AUTH_CODE_RESEND_SECONDS=60
+#   AUTH_OTP_PEPPER=<secret-hmac-dedie>   (sinon JWT_SECRET)
+#   BREVO_API_KEY=<clé-api-brevo>
+#   BREVO_SENDER_EMAIL=<expéditeur-vérifié-dans-brevo>
+#   BREVO_SENDER_NAME=KAYY Drive
+#   GOOGLE_CLIENT_IDS=<client-id-web-google>[,<autre-client-id>]
 #
 # Stockage optionnel (S3 compatible : Cloudflare R2, AWS S3, MinIO...).
 # Sans S3_ENDPOINT, le stockage est désactivé et les uploads renvoient 503.

@@ -7,11 +7,13 @@
 *.njsproj
 *.sln
 *.sw?
+*.code-workspace
 
 # Environment files (secrets)
 .env
 .env.local
 .env.*.local
+render.env
 
 # Root level node_modules
 node_modules/

@@ -4,7 +4,6 @@ import { AuthService, UserProfile } from './auth.service';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 import { StorageService } from '../storage/storage.service';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -18,12 +17,24 @@ describe('AuthController', () => {
     telephone: '+237123456',
     role: 'user',
     dateCreation: '2026-07-09T10:00:00Z',
+    emailVerified: true,
+    twoFactorEnabled: true,
+    provider: 'local',
+    hasPassword: true,
   };
 
   const mockAuthService = {
     createUser: jest.fn(),
-    checkUserExists: jest.fn(),
+    verifyEmail: jest.fn(),
+    resendVerification: jest.fn(),
     login: jest.fn(),
+    verifyTwoFactor: jest.fn(),
+    resendTwoFactor: jest.fn(),
+    googleLogin: jest.fn(),
+    refresh: jest.fn(),
+    logout: jest.fn(),
+    forgotPassword: jest.fn(),
+    resetPassword: jest.fn(),
     updateProfile: jest.fn(),
     setUserRole: jest.fn(),
     changePassword: jest.fn(),
@@ -70,72 +81,259 @@ describe('AuthController', () => {
   });
 
   describe('register', () => {
-    it('should create and return user profile', async () => {
+    it('returns the verification flow result', async () => {
       const dto = {
         email: 'test@example.com',
-        password: 'password123',
+        password: 'Password123!',
         nom: 'Test',
       };
-      mockAuthService.createUser.mockResolvedValue(mockUserProfile);
+      const registerResult = {
+        requiresEmailVerification: true,
+        email: dto.email,
+        emailSent: true,
+        message: 'Code envoyé',
+      };
+      mockAuthService.createUser.mockResolvedValue(registerResult);
 
       const result = await controller.register(dto);
 
       expect(service.createUser).toHaveBeenCalledWith(dto);
-      expect(result).toEqual({ success: true, user: mockUserProfile });
+      expect(result).toEqual({ success: true, ...registerResult });
     });
   });
 
-  describe('forgotPassword', () => {
-    it('should throw BadRequestException if email not provided', async () => {
-      await expect(controller.forgotPassword('')).rejects.toThrow(
-        BadRequestException,
+  describe('verifyEmail', () => {
+    it('returns the verification result', async () => {
+      mockAuthService.verifyEmail.mockResolvedValue({
+        verified: true,
+        message: 'Vérifié',
+      });
+
+      const result = await controller.verifyEmail({
+        email: 'test@example.com',
+        code: '123456',
+      });
+
+      expect(service.verifyEmail).toHaveBeenCalledWith(
+        'test@example.com',
+        '123456',
       );
-    });
-
-    it('should throw NotFoundException if user does not exist', async () => {
-      mockAuthService.checkUserExists.mockResolvedValue(false);
-      await expect(
-        controller.forgotPassword('nonexistent@example.com'),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should return success message if user exists', async () => {
-      mockAuthService.checkUserExists.mockResolvedValue(true);
-      const result = await controller.forgotPassword('test@example.com');
       expect(result).toEqual({
         success: true,
-        message: 'Un e-mail de réinitialisation de mot de passe a été envoyé.',
+        verified: true,
+        message: 'Vérifié',
       });
     });
   });
 
+  describe('resendVerification', () => {
+    it('returns the generic resend result', async () => {
+      const resendResult = {
+        success: true,
+        resendAfterSeconds: 60,
+        message: 'Si un compte non vérifié existe...',
+      };
+      mockAuthService.resendVerification.mockResolvedValue(resendResult);
+
+      const result = await controller.resendVerification({
+        email: 'test@example.com',
+      });
+
+      expect(service.resendVerification).toHaveBeenCalledWith(
+        'test@example.com',
+      );
+      expect(result).toEqual(resendResult);
+    });
+  });
+
+  describe('forgotPassword', () => {
+    it('returns the generic message without revealing account existence', async () => {
+      const forgotResult = {
+        success: true,
+        message: 'Si un compte existe...',
+      };
+      mockAuthService.forgotPassword.mockResolvedValue(forgotResult);
+
+      const result = await controller.forgotPassword({
+        email: 'unknown@example.com',
+      });
+
+      expect(service.forgotPassword).toHaveBeenCalledWith(
+        'unknown@example.com',
+      );
+      expect(result).toEqual(forgotResult);
+    });
+  });
+
   describe('login', () => {
-    it('should return token and user profile on success', async () => {
-      const loginBody = { email: 'test@example.com', password: 'password123' };
-      const loginResponse = { token: 'jwt-token', user: mockUserProfile };
+    it('passes request metadata to the service', async () => {
+      const loginBody = {
+        email: 'test@example.com',
+        password: 'Password123!',
+      };
+      const loginResponse = {
+        token: 'jwt-token',
+        accessToken: 'jwt-token',
+        refreshToken: 'refresh-token',
+        expiresIn: 900,
+        user: mockUserProfile,
+      };
       mockAuthService.login.mockResolvedValue(loginResponse);
 
-      const result = await controller.login(loginBody);
+      const result = await controller.login(
+        loginBody,
+        'jest-agent',
+        '127.0.0.1',
+      );
 
       expect(service.login).toHaveBeenCalledWith(
         loginBody.email,
         loginBody.password,
+        { userAgent: 'jest-agent', ip: '127.0.0.1' },
       );
       expect(result).toEqual({ success: true, ...loginResponse });
+    });
+
+    it('returns a 2FA challenge', async () => {
+      const challenge = {
+        requiresTwoFactor: true,
+        challengeToken: 'challenge-token',
+        email: 'test@example.com',
+        expiresInSeconds: 600,
+        resendAfterSeconds: 60,
+      };
+      mockAuthService.login.mockResolvedValue(challenge);
+
+      const result = await controller.login({
+        email: 'test@example.com',
+        password: 'Password123!',
+      });
+
+      expect(result).toEqual({ success: true, ...challenge });
+    });
+  });
+
+  describe('verifyTwoFactor', () => {
+    it('returns auth tokens', async () => {
+      const tokens = {
+        token: 'jwt-token',
+        accessToken: 'jwt-token',
+        refreshToken: 'refresh-token',
+        expiresIn: 900,
+        user: mockUserProfile,
+      };
+      mockAuthService.verifyTwoFactor.mockResolvedValue(tokens);
+
+      const result = await controller.verifyTwoFactor(
+        { challengeToken: 'challenge', code: '123456' },
+        'jest-agent',
+        '127.0.0.1',
+      );
+
+      expect(service.verifyTwoFactor).toHaveBeenCalledWith(
+        'challenge',
+        '123456',
+        { userAgent: 'jest-agent', ip: '127.0.0.1' },
+      );
+      expect(result).toEqual({ success: true, ...tokens });
+    });
+  });
+
+  describe('resendTwoFactor', () => {
+    it('returns the resend result', async () => {
+      const resendResult = {
+        success: true,
+        emailSent: true,
+        resendAfterSeconds: 60,
+        message: 'Code envoyé',
+      };
+      mockAuthService.resendTwoFactor.mockResolvedValue(resendResult);
+
+      const result = await controller.resendTwoFactor({
+        challengeToken: 'challenge',
+      });
+
+      expect(result).toEqual(resendResult);
+    });
+  });
+
+  describe('googleLogin', () => {
+    it('returns auth tokens', async () => {
+      const tokens = {
+        token: 'jwt-token',
+        accessToken: 'jwt-token',
+        refreshToken: 'refresh-token',
+        expiresIn: 900,
+        user: { ...mockUserProfile, provider: 'google' as const },
+      };
+      mockAuthService.googleLogin.mockResolvedValue(tokens);
+
+      const result = await controller.googleLogin(
+        { idToken: 'google-id-token' },
+        'jest-agent',
+        '127.0.0.1',
+      );
+
+      expect(service.googleLogin).toHaveBeenCalledWith('google-id-token', {
+        userAgent: 'jest-agent',
+        ip: '127.0.0.1',
+      });
+      expect(result).toEqual({ success: true, ...tokens });
+    });
+  });
+
+  describe('refresh', () => {
+    it('returns rotated tokens', async () => {
+      const tokens = {
+        token: 'jwt-token',
+        accessToken: 'jwt-token',
+        refreshToken: 'new-refresh-token',
+        expiresIn: 900,
+        user: mockUserProfile,
+      };
+      mockAuthService.refresh.mockResolvedValue(tokens);
+
+      const result = await controller.refresh(
+        { refreshToken: 'old-refresh-token' },
+        'jest-agent',
+        '127.0.0.1',
+      );
+
+      expect(service.refresh).toHaveBeenCalledWith('old-refresh-token', {
+        userAgent: 'jest-agent',
+        ip: '127.0.0.1',
+      });
+      expect(result).toEqual({ success: true, ...tokens });
+    });
+  });
+
+  describe('logout', () => {
+    it('revokes the refresh token', async () => {
+      mockAuthService.logout.mockResolvedValue({ success: true });
+
+      const result = await controller.logout({
+        refreshToken: 'refresh-token',
+      });
+
+      expect(service.logout).toHaveBeenCalledWith('refresh-token');
+      expect(result).toEqual({ success: true });
     });
   });
 
   describe('me', () => {
-    it('should return the current user', async () => {
+    it('returns the current user', async () => {
       const result = await controller.me(mockUserProfile);
       expect(result).toEqual({ user: mockUserProfile });
     });
   });
 
   describe('updateProfile', () => {
-    it('should update and return updated user profile', async () => {
+    it('returns the updated profile and verification flag', async () => {
       const updateDto = { nom: 'Updated Nom' };
-      const updatedProfile = { ...mockUserProfile, nom: 'Updated Nom' };
+      const updatedProfile = {
+        ...mockUserProfile,
+        nom: 'Updated Nom',
+      };
       mockAuthService.updateProfile.mockResolvedValue(updatedProfile);
 
       const result = await controller.updateProfile(mockUserProfile, updateDto);
@@ -144,12 +342,16 @@ describe('AuthController', () => {
         mockUserProfile.uid,
         updateDto,
       );
-      expect(result).toEqual({ success: true, user: updatedProfile });
+      expect(result).toEqual({
+        success: true,
+        user: updatedProfile,
+        requiresEmailVerification: false,
+      });
     });
   });
 
   describe('promote', () => {
-    it('should promote user and return success message', async () => {
+    it('promotes the user and returns a success message', async () => {
       const promoteDto = { uid: 'user-123', role: 'admin' as const };
       mockAuthService.setUserRole.mockResolvedValue(undefined);
 

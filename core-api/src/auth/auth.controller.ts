@@ -2,10 +2,11 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
+  Ip,
   Post,
   Patch,
   UseGuards,
-  NotFoundException,
   BadRequestException,
   UseInterceptors,
   UploadedFile,
@@ -19,6 +20,15 @@ import { RegisterDto } from './dto/register.dto';
 import { PromoteDto } from './dto/promote.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { VerifyTwoFactorDto } from './dto/verify-two-factor.dto';
+import { ResendTwoFactorDto } from './dto/resend-two-factor.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { LogoutDto } from './dto/logout.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -31,7 +41,6 @@ export class AuthController {
     private readonly storageService: StorageService,
   ) {}
 
-  // POST /auth/me/photo
   @Post('me/photo')
   @UseGuards(AuthGuard)
   @UseInterceptors(FileInterceptor('photo'))
@@ -50,40 +59,112 @@ export class AuthController {
     return { success: true, user: updatedProfile };
   }
 
-  // POST /auth/register
   @Post('register')
-  async register(@Body() dto: RegisterDto) {
-    const profile = await this.authService.createUser(dto);
-    return { success: true, user: profile };
-  }
-
-  // POST /auth/forgot-password
-  @Post('forgot-password')
-  async forgotPassword(@Body('email') email: string) {
-    if (!email) {
-      throw new BadRequestException('Email requis');
-    }
-    const exists = await this.authService.checkUserExists(email);
-    if (!exists) {
-      throw new NotFoundException('Utilisateur introuvable avec cet e-mail');
-    }
-    return {
-      success: true,
-      message: 'Un e-mail de réinitialisation de mot de passe a été envoyé.',
-    };
-  }
-
-  // POST /auth/login
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @Post('login')
-  async login(@Body() dto: LoginDto) {
-    const result = await this.authService.login(dto.email, dto.password);
+  async register(@Body() dto: RegisterDto) {
+    const result = await this.authService.createUser(dto);
     return { success: true, ...result };
   }
 
-  // POST /auth/change-password
+  @Post('verify-email')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    const result = await this.authService.verifyEmail(dto.email, dto.code);
+    return { success: true, ...result };
+  }
+
+  @Post('resend-verification')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  async resendVerification(@Body() dto: ResendVerificationDto) {
+    const result = await this.authService.resendVerification(dto.email);
+    return result;
+  }
+
+  @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async login(
+    @Body() dto: LoginDto,
+    @Headers('user-agent') userAgent?: string,
+    @Ip() ip?: string,
+  ) {
+    const result = await this.authService.login(dto.email, dto.password, {
+      userAgent,
+      ip,
+    });
+    return { success: true, ...result };
+  }
+
+  @Post('verify-2fa')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async verifyTwoFactor(
+    @Body() dto: VerifyTwoFactorDto,
+    @Headers('user-agent') userAgent?: string,
+    @Ip() ip?: string,
+  ) {
+    const result = await this.authService.verifyTwoFactor(
+      dto.challengeToken,
+      dto.code,
+      { userAgent, ip },
+    );
+    return { success: true, ...result };
+  }
+
+  @Post('resend-2fa')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  async resendTwoFactor(@Body() dto: ResendTwoFactorDto) {
+    const result = await this.authService.resendTwoFactor(dto.challengeToken);
+    return result;
+  }
+
+  @Post('google')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async googleLogin(
+    @Body() dto: GoogleLoginDto,
+    @Headers('user-agent') userAgent?: string,
+    @Ip() ip?: string,
+  ) {
+    const result = await this.authService.googleLogin(dto.idToken, {
+      userAgent,
+      ip,
+    });
+    return { success: true, ...result };
+  }
+
+  @Post('refresh')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  async refresh(
+    @Body() dto: RefreshTokenDto,
+    @Headers('user-agent') userAgent?: string,
+    @Ip() ip?: string,
+  ) {
+    const result = await this.authService.refresh(dto.refreshToken, {
+      userAgent,
+      ip,
+    });
+    return { success: true, ...result };
+  }
+
+  @Post('logout')
+  async logout(@Body() dto?: LogoutDto) {
+    const result = await this.authService.logout(dto?.refreshToken);
+    return result;
+  }
+
+  @Post('forgot-password')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  @Post('reset-password')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.email, dto.code, dto.newPassword);
+  }
+
   @Post('change-password')
   @UseGuards(AuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async changePassword(
     @CurrentUser() user: UserProfile,
     @Body() dto: ChangePasswordDto,
@@ -96,14 +177,12 @@ export class AuthController {
     return { success: true, message: 'Mot de passe modifié avec succès.' };
   }
 
-  // GET /auth/me
   @Get('me')
   @UseGuards(AuthGuard)
   async me(@CurrentUser() user: UserProfile) {
     return { user };
   }
 
-  // PATCH /auth/me
   @Patch('me')
   @UseGuards(AuthGuard)
   async updateProfile(
@@ -114,10 +193,14 @@ export class AuthController {
       user.uid,
       updateData,
     );
-    return { success: true, user: updatedProfile };
+    return {
+      success: true,
+      user: updatedProfile,
+      requiresEmailVerification:
+        Boolean(updatedProfile.pendingEmail) || !updatedProfile.emailVerified,
+    };
   }
 
-  // POST /auth/promote (admin uniquement)
   @Post('promote')
   @UseGuards(AuthGuard, AdminGuard)
   async promote(@Body() dto: PromoteDto) {

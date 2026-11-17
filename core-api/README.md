@@ -56,7 +56,7 @@ npx prisma generate
 docker compose up --build
 ```
 
-Le service est accessible sur `http://localhost:3001` (port mappé dans docker-compose.yml).
+Le service est accessible sur `http://localhost:3200` (port mappé dans docker-compose.yml).
 
 ## 6. Tests
 

@@ -16,7 +16,9 @@ Pour plus d'informations détaillées, consultez :
 
 - `core-api/`: Le service principal (NestJS) géré par Lionel, Cindy et Atouga. Il orchestre la navigation, gère les requêtes API et interagit avec les autres microservices.
 - `ia-service/`: Le microservice d'Intelligence Artificielle (FastAPI/Python) géré par Danielle. Il est responsable des prédictions de trafic, de l'analyse des données et d'autres logiques IA.
-- `docker-compose.yml`: Fichier d'orchestration Docker pour démarrer et gérer tous les services.
+- `docker-compose.yml`: orchestration Docker de développement, construit les images localement.
+- `docker-compose.prod.yml`: orchestration à partir des images publiées sur GHCR, avec migrations Prisma.
+- `start.ps1` / `start.sh`: initialisation `.env`, téléchargement des images et démarrage en une commande.
 - `postgres/`: Configuration PostgreSQL avec pgAdmin intégré.
 
 ## Architecture
@@ -46,70 +48,330 @@ Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toute
 
 **L'authentification est entièrement gérée par PostgreSQL avec JWT.**
 
-## Démarrage Rapide
+## Démarrage rapide en local
 
-1. **Cloner le dépôt :**
-   ```bash
-   git clone [URL_DU_DEPOT]
-   cd kayyDrive
-   ```
+### Prérequis
 
-2. **Configuration des variables d'environnement :**
-   Créez un fichier `.env` à la racine du projet en vous basant sur `.env.example` :
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Éditez le fichier `.env` avec vos valeurs :
-   ```env
-   POSTGRES_USER=kayydrive_user
-   POSTGRES_PASSWORD=kayydrive_secure_password_2026
-   POSTGRES_DB=kayydrive_db
-   DATABASE_URL=postgresql://kayydrive_user:kayydrive_secure_password_2026@postgres:5432/kayydrive_db
-   REDIS_URL=redis://redis:6379
-   OSRM_URL=http://osrm-backend:5000
-   IA_SERVICE_URL=http://ia-service:8000
-   JWT_SECRET=your_jwt_secret_key_change_in_production
-   CORS_ORIGINS=
-   MINIO_PUBLIC_URL=
-   PGADMIN_DEFAULT_EMAIL=admin@example.com
-   PGADMIN_DEFAULT_PASSWORD=admin123
-   ```
+- Docker Desktop (Windows/macOS) ou Docker Engine + Docker Compose
+- Node.js 22 et npm, uniquement pour lancer NestJS hors Docker
+- Flutter 3.x, pour le dépôt frontend séparé
+- Git
+- Environ 8 Go de RAM disponibles pour la stack complète (PostgreSQL, OSRM, MinIO, IA)
 
-3. **Générer les données OSRM (optionnel mais recommandé) :**
-   
-   Le service OSRM nécessite des données de routage pour fonctionner. Pour générer les données du Cameroun :
-   
-   **Sur Windows :**
-   ```bash
-   .\generate-osrm-data.bat
-   ```
-   
-   **Sur Linux/Mac :**
-   ```bash
-   chmod +x generate-osrm-data.sh
-   ./generate-osrm-data.sh
-   ```
-   
-   Cette commande télécharge les données OSM du Cameroun depuis Geofabrik et génère les fichiers OSRM nécessaires. Le processus peut prendre plusieurs minutes.
+### Option recommandée : images publiées
 
-4. **Démarrer les services avec Docker Compose :**
-   ```bash
-   docker-compose up --build
-   ```
-   Ceci construira les images Docker et démarrera tous les services définis dans `docker-compose.yml`.
+Le workflow `.github/workflows/publish-images.yml` publie automatiquement les images `core-api` et `ia-service` dans GitHub Container Registry (GHCR).
 
-   **Note :** Au premier démarrage, le conteneur `core-api` exécutera automatiquement :
-   - `prisma db push` pour créer les tables dans la base de données
-   - Le seed pour créer l'admin par défaut et les catégories (si aucun admin n'existe)
+**Windows :**
 
-5. **Accéder aux services :**
-   - **Core API (NestJS):** `http://localhost:3001`
-   - **IA Service (FastAPI):** `http://localhost:9820`
-   - **Minio Console:** `http://localhost:9001`
-   - **Minio API:** `http://localhost:9000`
-   - **Nginx:** `http://localhost:80`
-   - **OSRM Backend:** `http://localhost:5000`
+```powershell
+.\start.ps1
+```
+
+**Linux/macOS :**
+
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+Le script :
+
+- crée `.env` depuis `.env.example` s'il n'existe pas ;
+- génère les secrets locaux (`POSTGRES_PASSWORD`, `JWT_SECRET`) ;
+- déduit `IMAGE_PREFIX` depuis le dépôt Git ;
+- télécharge les images depuis GHCR ;
+- applique les migrations Prisma ;
+- démarre les services et attend que `core-api` soit sain.
+
+Si les packages GHCR sont privés, connectez-vous d'abord :
+
+```bash
+docker login ghcr.io -u <votre-utilisateur-github>
+```
+
+Utilisez un token GitHub avec le scope `read:packages`, ou rendez les packages publics dans GitHub > Packages > Package settings.
+
+Pour construire les images localement au lieu de les télécharger :
+
+```powershell
+.\start.ps1 -Build
+```
+
+```bash
+./start.sh --build
+```
+
+Le frontend Flutter reste séparé : lancez-le avec `flutter run` et `API_URL=http://localhost:3200`.
+
+### 1. Cloner et configurer le backend
+
+```bash
+git clone <URL_DU_DEPOT_BACKEND> kayyDrive
+cd kayyDrive
+cp .env.example .env
+```
+
+Sur Windows PowerShell :
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Éditez ensuite le `.env` à la racine. Configuration locale minimale :
+
+```env
+POSTGRES_USER=kayydrive_user
+POSTGRES_PASSWORD=kayydrive_local_password
+POSTGRES_DB=kayydrive_db
+DATABASE_URL=postgresql://kayydrive_user:kayydrive_local_password@postgres:5432/kayydrive_db
+REDIS_URL=redis://redis:6379
+OSRM_URL=http://osrm-backend:5000
+IA_SERVICE_URL=http://ia-service:8000
+CORS_ORIGINS=http://localhost:55555
+JWT_SECRET=remplacez_par_le_secret_genere_ci_dessous
+AUTH_2FA_REQUIRED=false
+AUTH_EMAIL_VERIFICATION_REQUIRED=false
+```
+
+Générez un secret JWT :
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
+```
+
+Points importants :
+
+- Les hôtes `postgres`, `redis`, `minio`, `osrm-backend` et `ia-service` sont les noms des services Docker. Ils ne sont joignables que depuis le réseau Docker.
+- N'utilisez jamais une URL interne Render du type `dpg-xxxxx-a:5432` dans le `.env` local : elle n'est pas accessible depuis votre machine.
+- `render.env` est réservé au déploiement Render, pas au développement local.
+- Sans `BREVO_API_KEY`, les codes d'authentification sont écrits dans les logs du backend en développement.
+- Les flags `AUTH_2FA_REQUIRED=false` et `AUTH_EMAIL_VERIFICATION_REQUIRED=false` sont utiles pour tester une version du frontend qui n'a pas encore l'interface 2FA. Repassez-les à `true` pour tester le flux complet.
+- Si le mot de passe PostgreSQL contient des caractères spéciaux, encodez-le dans `DATABASE_URL`.
+
+### 2. Générer les données OSRM
+
+OSRM a besoin des données de routage du Cameroun. Elles ne sont pas versionnées dans Git car elles sont volumineuses.
+
+**Windows :**
+
+```powershell
+.\generate-osrm-data.bat
+```
+
+**Linux/macOS :**
+
+```bash
+chmod +x generate-osrm-data.sh
+./generate-osrm-data.sh
+```
+
+Cette étape télécharge les données OSM et génère les fichiers OSRM. Elle peut prendre plusieurs minutes. Sans ces fichiers, le conteneur `osrm-backend` ne démarrera pas.
+
+### 3. Démarrer les services
+
+Pour le backend et ses dépendances :
+
+```bash
+docker compose up -d --build postgres redis minio core-api ia-service
+```
+
+Pour toute la stack, OSRM et Nginx compris :
+
+```bash
+docker compose up -d --build
+```
+
+Au premier démarrage, `core-api` exécute automatiquement :
+
+- `prisma generate` et `prisma db push` pour créer les tables ;
+- `scripts/init-db.ts`, qui lance le seed si aucun administrateur n'existe.
+
+Suivez le démarrage :
+
+```bash
+docker compose logs -f core-api
+docker compose ps
+```
+
+Si vous lancez le backend directement avec `npm run start:dev`, il écoute sur le port `3000` et il faut renseigner `DATABASE_URL`, `REDIS_URL` et `JWT_SECRET` dans `core-api/.env`. Dans ce cas, utilisez `localhost` au lieu de `postgres`/`redis` et exposez Redis sur l'hôte si nécessaire ; sinon, préférez le lancement via Docker Compose.
+
+### 4. Vérifier les services
+
+| Service | URL locale |
+|---|---|
+| Core API | `http://localhost:3200` |
+| Health check Core API | `http://localhost:3200/health` |
+| Swagger | `http://localhost:3200/api/docs` |
+| IA Service | `http://localhost:9820` |
+| Health check IA | `http://localhost:9820/health` |
+| OSRM | `http://localhost:5000` |
+| MinIO API | `http://localhost:9000` |
+| MinIO Console | `http://localhost:9001` |
+| Nginx | `http://localhost` |
+
+Le port **3200** est le port exposé sur la machine hôte ; à l'intérieur du réseau Docker, le core-api écoute sur **3000**. Utilisez donc `http://localhost:3200` depuis Flutter et `http://core-api:3000` entre conteneurs.
+
+Comptes MinIO par défaut :
+
+- Utilisateur : `minioadmin`
+- Mot de passe : `minioadmin123`
+- Bucket : `kayydrive`
+
+### 5. Lancer le frontend Flutter en local
+
+Le frontend est dans un dépôt séparé :
+
+```bash
+git clone <URL_DU_DEPOT_FRONTEND> KAYY_DRIVE
+cd KAYY_DRIVE
+flutter pub get
+```
+
+Pour Flutter Web :
+
+```powershell
+flutter run -d chrome --web-port=55555 `
+  --dart-define=API_URL=http://localhost:3200
+```
+
+Pour l'émulateur Android :
+
+```powershell
+flutter run -d emulator-5554 `
+  --dart-define=API_URL=http://10.0.2.2:3200
+```
+
+Pour un téléphone physique, utilisez l'adresse IP locale du PC et le même réseau Wi-Fi :
+
+```powershell
+flutter run --dart-define=API_URL=http://192.168.1.50:3200
+```
+
+Variables Flutter optionnelles :
+
+```powershell
+flutter run -d chrome --web-port=55555 `
+  --dart-define=API_URL=http://localhost:3200 `
+  --dart-define=IA_URL=http://localhost:9820 `
+  --dart-define=OSRM_URL=http://localhost:5000 `
+  --dart-define=STORAGE_URL=http://localhost:9000/kayydrive `
+  --dart-define=GOOGLE_WEB_CLIENT_ID=xxxx.apps.googleusercontent.com
+```
+
+`API_URL` est une variable de compilation Flutter : elle se passe avec `--dart-define`, pas dans un fichier `.env`. Après modification, il faut relancer complètement `flutter run`, pas seulement un hot reload.
+
+### 6. Créer l'administrateur initial
+
+Avec la stack de développement, le seed est lancé automatiquement si aucun admin n'existe. Sinon :
+
+```bash
+docker compose exec core-api npm run seed
+```
+
+Le `docker-compose.prod.yml` ne lance pas le seed automatiquement. Après inscription, promouvez le compte en base si nécessaire :
+
+```bash
+docker compose -f docker-compose.prod.yml exec postgres psql -U <postgres_user> -d <postgres_db> -c "UPDATE \"Utilisateur\" SET role='admin' WHERE email='vous@example.com';"
+```
+
+Compte par défaut :
+
+- Email : `admin@kayydrive.com`
+- Mot de passe : `Admin123!`
+
+Changez ce mot de passe après la première connexion.
+
+### 7. Erreurs fréquentes
+
+- **Docker Desktop n'est pas démarré** : lancez Docker Desktop et attendez que le moteur soit prêt.
+- **`P1001: Can't reach database server`** : vérifiez que `DATABASE_URL` utilise `postgres:5432` et que le conteneur `postgres` est `healthy`.
+- **Une URL `dpg-...` apparaît dans les logs** : une URL interne Render a été copiée dans le `.env` local. Remplacez-la par l'URL locale.
+- **`port is already allocated`** : un autre service utilise déjà 3200, 5432, 6379, 9000, 9001, 9820, 5000 ou 80.
+- **OSRM redémarre en boucle** : les données OSRM n'ont pas été générées.
+- **`flutter pub get` bloque** : réessayez, ou utilisez `flutter pub get --offline` si les paquets sont déjà en cache.
+- **Warning Redis `allkeys-lru`** : BullMQ recommande `noeviction`. Le warning n'empêche pas toujours le démarrage, mais peut faire perdre des jobs.
+
+### 8. Construire et partager les images Docker
+
+Un **conteneur** est une instance en cours d'exécution. Une **image** est le modèle versionnable à partir duquel on crée des conteneurs. On partage des images, pas des conteneurs.
+
+Construire toutes les images du compose :
+
+```bash
+docker compose build
+```
+
+Construire une image individuellement :
+
+```bash
+# Backend en mode développement (hot reload)
+docker build --target development -t kayydrive/core-api:dev ./core-api
+
+# Backend en mode production
+docker build -t kayydrive/core-api:1.0.0 ./core-api
+
+# Service IA
+docker build -t kayydrive/ia-service:1.0.0 ./ia-service
+```
+
+Publier une image dans GitHub Container Registry :
+
+```bash
+docker login ghcr.io -u <votre-utilisateur>
+docker tag kayydrive/core-api:1.0.0 ghcr.io/<organisation>/kayydrive-core-api:1.0.0
+docker push ghcr.io/<organisation>/kayydrive-core-api:1.0.0
+```
+
+Le workflow `.github/workflows/publish-images.yml` fait cela automatiquement pour `core-api` et `ia-service` à chaque push sur `develop`/`main` et pour les tags `v*`. Il publie aussi un tag basé sur le SHA du commit. Pour que les autres puissent télécharger sans authentification, rendez les packages publics dans GitHub > Packages > Package settings.
+
+`docker-compose.prod.yml` utilise ces images via `IMAGE_PREFIX` et `IMAGE_TAG` définis dans `.env`.
+
+Utilisez des tags de version explicites (`1.0.0`, `sha-abc123`) plutôt que uniquement `latest`. Les autres développeurs peuvent ensuite faire `docker pull` ou utiliser ces images dans un `docker-compose.override.yml`. Ne commitez jamais une image Docker dans Git.
+
+### 9. Versionner la base de données
+
+Il faut distinguer l'image PostgreSQL, le schéma et les données :
+
+| Élément | À versionner | Où |
+|---|---|---|
+| Image PostgreSQL/PostGIS | Oui | `docker-compose.yml` avec `postgis/postgis:15-3.3` |
+| Schéma de la base | Oui | `core-api/prisma/migrations` |
+| Seed de démonstration | Oui | `core-api/prisma/seed.ts` et scripts associés |
+| Données locales | Non | volume Docker local |
+| Dump de production | Non | stockage sécurisé, jamais Git |
+
+Une migration initiale est versionnée dans `core-api/prisma/migrations/20261117000000_init`. La stack de développement continue d'utiliser `prisma db push` pour le prototypage, tandis que `docker-compose.prod.yml` exécute `prisma migrate deploy` dans le service `migrate` avant de démarrer `core-api`.
+
+Pour créer une nouvelle migration :
+
+```bash
+cd core-api
+npx prisma migrate dev --name ajout_nouvelle_table
+```
+
+Puis committez le dossier `core-api/prisma/migrations`. En production et dans les environnements partagés, appliquez-les avec :
+
+```bash
+npx prisma migrate deploy
+```
+
+Si une base existante contient déjà les tables mais n'a pas d'historique Prisma, baselinez-la une seule fois avant `migrate deploy` :
+
+```bash
+npx prisma migrate resolve --applied 20261117000000_init
+```
+
+Évitez `prisma db push` sur une base partagée : il ne conserve pas d'historique de migration et peut casser le travail des autres.
+
+Pour une base de démonstration préremplie, vous pouvez créer une image dédiée :
+
+```dockerfile
+FROM postgis/postgis:15-3.3
+COPY init/ /docker-entrypoint-initdb.d/
+```
+
+Chaque développeur obtient alors une copie fraîche des données initiales au démarrage. Cette approche est adaptée aux démos et aux tests, mais pas à une base collaborative où plusieurs personnes écrivent en même temps. Pour un environnement partagé, préférez un staging Render avec une base ou un schéma par développeur.
 
 ### Minio (Stockage d'images)
 
@@ -142,7 +404,7 @@ Content-Type: multipart/form-data
 
 **Exemple avec curl :**
 ```bash
-curl -X POST http://localhost:4000/storage/upload \
+curl -X POST http://localhost:3200/storage/upload \
   -F "file=@/path/to/image.jpg" \
   -F "folder=incidents"
 ```
@@ -176,8 +438,9 @@ Les services doivent afficher un statut "Up" et ne doivent pas avoir d'erreurs d
 
 ### Configuration pgAdmin
 
-Pour accéder à pgAdmin :
-1. Allez sur `http://localhost:5050`
+pgAdmin est optionnel et commenté dans `docker-compose.yml`. Si vous l'activez :
+
+1. Allez sur `http://localhost:5052`
 2. Connectez-vous avec :
    - Email: `admin@example.com`
    - Mot de passe: `admin123`
@@ -190,7 +453,7 @@ Pour accéder à pgAdmin :
 
 ## Documentation API
 
-L'API principale est accessible sur `http://localhost:4000`. Toutes les routes protégées nécessitent un JWT dans le header `Authorization: Bearer <token>`.
+L'API principale est accessible sur `http://localhost:3200`. Toutes les routes protégées nécessitent un JWT dans le header `Authorization: Bearer <token>`.
 
 ### Authentification
 
@@ -566,6 +829,8 @@ Authorization: Bearer <token>
   ],
   "horodatage": "2026-06-30T12:00:00Z"
 }
+```
+
 **Réponse :**
 ```json
 {
