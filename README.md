@@ -50,6 +50,20 @@ Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toute
 
 ## Démarrage rapide en local
 
+### Quel mode de démarrage choisir ?
+
+| Contexte | Commande | Source des images | À utiliser quand |
+|---|---|---|---|
+| Développement quotidien | `docker compose up -d --build` | Build local | Vous modifiez `core-api`/`ia-service` et voulez le hot reload. |
+| Onboarding / démo rapide | `.\start.ps1` ou `./start.sh` | GHCR (`develop` par défaut) | Vous voulez lancer sans builder ni installer Node. |
+| Release reproductible | Dans `.env` : `IMAGE_TAG=v1.2.3`, puis `docker compose -f docker-compose.prod.yml up -d` | GHCR, tag figé | Tester une version précise, faire une démo ou revenir à une version antérieure. |
+| Déploiement public | Push Git / Render | Build Render | Mise en ligne du backend ; la stack locale n'est pas exposée. |
+
+- `docker-compose.yml` sert au **développement local** : le code est monté et rechargé automatiquement.
+- `docker-compose.prod.yml` sert à **exécuter localement les images publiées** avec les migrations Prisma. Ce n'est pas un déploiement production public.
+- Le **frontend Flutter** reste dans un dépôt séparé et se lance avec `flutter run`.
+- Au premier lancement, générez les données OSRM si `osrm-data/cameroon-latest.osrm` est absent (voir section 2).
+
 ### Prérequis
 
 - Docker Desktop (Windows/macOS) ou Docker Engine + Docker Compose
@@ -58,9 +72,11 @@ Le projet utilise PostgreSQL avec Prisma ORM pour la gestion des données. Toute
 - Git
 - Environ 8 Go de RAM disponibles pour la stack complète (PostgreSQL, OSRM, MinIO, IA)
 
-### Option recommandée : images publiées
+### Option rapide : images publiées (onboarding/démo)
 
-Le workflow `.github/workflows/ci-cd.yml` publie automatiquement les images `core-api` et `ia-service` dans GitHub Container Registry (GHCR), une fois le lint, les tests et le build validés.
+Le workflow `.github/workflows/ci-cd.yml` publie automatiquement les images `core-api` et `ia-service` dans GitHub Container Registry (GHCR), une fois le lint, les tests et le build du backend validés.
+
+Pour modifier le code, utilisez plutôt le mode **Développement quotidien** : cette option ne monte pas les sources locales.
 
 **Windows :**
 
@@ -83,6 +99,16 @@ Le script :
 - télécharge les images depuis GHCR ;
 - applique les migrations Prisma ;
 - démarre les services et attend que `core-api` soit sain.
+
+Par défaut, le script reprend `IMAGE_TAG=develop` depuis `.env.example`. Pour une démo stable, créez `.env` avant le premier lancement (`Copy-Item .env.example .env` ou `cp .env.example .env`), puis remplacez `IMAGE_TAG=develop` par un tag publié (`v1.2.3` ou `sha-...`).
+
+**Conventions d'équipe pour les images :**
+
+- `develop` : dernière build validée de la branche `develop`, adaptée à l'onboarding et aux tests rapides.
+- `vX.Y.Z` ou `sha-...` : version figée pour une démo ou une release ; à privilégier pour reproduire un bug.
+- `latest` : réservé à `main` et aux releases ; ne pas l'utiliser comme version de travail.
+- GHCR est le registre officiel ; Docker Hub n'est plus mis à jour.
+- Ne jamais committer `.env`, `render.env` ou `postgres/.env`.
 
 Si les packages GHCR sont privés, connectez-vous d'abord :
 
@@ -107,7 +133,7 @@ Le frontend Flutter reste séparé : lancez-le avec `flutter run` et `API_URL=ht
 ### 1. Cloner et configurer le backend
 
 ```bash
-git clone <URL_DU_DEPOT_BACKEND> kayyDrive
+git clone https://github.com/lionel-youassa/KAYY_DRIVE-BACKEND-2026.git kayyDrive
 cd kayyDrive
 cp .env.example .env
 ```
@@ -323,7 +349,7 @@ docker tag kayydrive/core-api:1.0.0 ghcr.io/<organisation>/kayydrive-core-api:1.
 docker push ghcr.io/<organisation>/kayydrive-core-api:1.0.0
 ```
 
-Le workflow `.github/workflows/ci-cd.yml` publie ces images après le lint, les tests et le build, pour les pushes sur `develop`, `main`, les tags `v*` et les lancements manuels. Chaque publication reçoit un tag `sha-...`, plus `develop`/`main` pour une branche ou le tag `vX.Y.Z` pour une release. Le tag `latest` n'est mis à jour que depuis `main` et les tags de release `v*`. Docker Hub n'est plus utilisé pour les nouvelles publications : GHCR est le registre officiel.
+Le workflow `.github/workflows/ci-cd.yml` publie ces images après le lint, les tests et le build du backend, pour les pushes sur `develop`, `main`, les tags `v*` et les lancements manuels. Chaque publication reçoit un tag `sha-...`, plus `develop`/`main` pour une branche ou le tag `vX.Y.Z` pour une release. Le tag `latest` n'est mis à jour que depuis `main` et les tags de release `v*`. Docker Hub n'est plus utilisé pour les nouvelles publications : GHCR est le registre officiel.
 
 `docker-compose.prod.yml` utilise ces images via `IMAGE_PREFIX` et `IMAGE_TAG` définis dans `.env`. `IMAGE_TAG` est obligatoire pour éviter un téléchargement silencieux de `latest`.
 
